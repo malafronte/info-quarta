@@ -1,0 +1,36 @@
+---
+// src/components/ObfuscatedEmail.astro
+interface Props {
+  user: string;
+  domain: string;
+}
+
+const { user, domain } = Astro.props;
+---
+
+<a href="#" class="obfuscated-email" data-user={user} data-domain={domain}>
+  <span>email protetta</span>
+</a>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const emailLinks = document.querySelectorAll(".obfuscated-email");
+    emailLinks.forEach((link) => {
+      const user = link.getAttribute("data-user");
+      const domain = link.getAttribute("data-domain");
+      if (user && domain) {
+        const email = `${user}@${domain}`;
+        link.setAttribute("href", `mailto:${email}`);
+        link.textContent = email;
+      }
+    });
+  });
+</script>
+
+<style>
+  .obfuscated-email span {
+    /* Mostra un testo segnaposto prima che JS carichi l'email */
+    font-style: italic;
+    color: #888;
+  }
+</style>

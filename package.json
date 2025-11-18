@@ -1,5 +1,5 @@
 {
-  "name": "informatica",
+  "name": "info-quarta",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -11,7 +11,20 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.36.2",
-    "astro": "^5.6.1",
-    "sharp": "^0.34.2"
+    "astro": "^5.15.9",
+    "astro-mermaid": "^1.1.0",
+    "astro-plantuml": "^0.1.4",
+    "katex": "^0.16.25",
+    "mermaid": "^11.12.1",
+    "rehype-katex": "^7.0.1",
+    "remark-emoji": "^5.0.2",
+    "remark-math": "^6.0.0",
+    "sharp": "^0.34.5",
+    "starlight-codeblock-fullscreen": "^0.1.4",
+    "starlight-fullview-mode": "^0.2.6",
+    "starlight-theme-flexoki": "^0.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

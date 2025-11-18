@@ -1,0 +1,447 @@
+---
+const {
+  src = "",
+  ariaLabel = "Video player",
+  filename,
+  poster,
+} = Astro.props as {
+  src?: string;
+  ariaLabel?: string;
+  filename?: string;
+  poster?: string;
+};
+
+let videoSrc: string = src;
+if (!/^https?:\/\//i.test(src) && !src.startsWith("/")) {
+  try {
+    videoSrc = new URL(`../assets/video-lessons/${src}`, import.meta.url).href;
+  } catch (e) {
+    videoSrc = src;
+  }
+}
+// small unique id for DOM targets
+const uid = `vp-${Math.random().toString(36).slice(2, 9)}`;
+const encodedSrc = encodeURIComponent(videoSrc);
+---
+
+<!-- Thumbnail / lazy-load container: the real <video> element is created client-side on click -->
+<div
+  class="video-player"
+  id={uid}
+  data-title={filename || ariaLabel}
+  data-poster={poster || ""}
+>
+  <div
+    class="video-thumb"
+    role="button"
+    tabindex="0"
+    aria-label={`Play video: ${filename || ariaLabel}`}
+    data-enc-src={encodedSrc}
+  >
+    {
+      poster ? (
+        <img
+          src={poster}
+          alt={filename || ariaLabel}
+          style="width:328px;height:73px;display:block;border-radius:6px;object-fit:cover;"
+        />
+      ) : (
+        <div
+          class="video-placeholder"
+          style="width:56px;height:39px;border-radius:6px;display:flex;align-items:center;justify-content:center;"
+        >
+          <div class="mini-icon" aria-hidden>
+            <svg
+              class="mini-icon-svg"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="25"
+              height="25"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path fill="currentColor" d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      )
+    }
+    {
+      poster ? (
+        <div class="play-overlay" aria-hidden>
+          ▶
+        </div>
+      ) : null
+    }
+  </div>
+
+  <!-- client loader script: defines a local loader and attaches listeners -->
+  <script type="module">
+    function createVideoElement(src) {
+      const wrapper = document.createElement("div");
+      wrapper.style.maxWidth = "100%";
+      const video = document.createElement("video");
+      video.controls = true;
+      video.playsInline = true;
+      video.preload = "metadata";
+      video.style.width = "100%";
+      video.style.height = "auto";
+      const source = document.createElement("source");
+      source.src = src;
+      source.type = "video/mp4";
+      video.appendChild(source);
+      wrapper.appendChild(video);
+      return wrapper;
+    }
+
+    function createMinimizeButton() {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "video-minimize";
+      btn.setAttribute("aria-label", "Minimize video");
+      btn.textContent = "✕";
+      return btn;
+    }
+
+    function loadVideo(container, encSrc) {
+      try {
+        if (!container) return;
+        // save original thumb HTML to restore later
+        if (!container.dataset.thumbHtml) {
+          container.dataset.thumbHtml = container.innerHTML;
+        }
+        const src = decodeURIComponent(encSrc);
+        const el = createVideoElement(src);
+
+        // pause any other playing videos on the page so only one plays at a time
+        try {
+          const all = document.querySelectorAll("video");
+          all.forEach((v) => {
+            const p = v.closest(".video-player");
+            if (p && p !== container) {
+              try {
+                v.pause();
+              } catch (e) {
+                /* ignore */
+              }
+            }
+          });
+        } catch (e) {
+          /* ignore */
+        }
+
+        // build active wrapper with minimize control
+        const active = document.createElement("div");
+        active.className = "video-active";
+        const minBtn = createMinimizeButton();
+        try {
+          container.setAttribute("aria-expanded", "true");
+        } catch (e) {}
+        // when minimizing, stop playback and restore thumb HTML
+        minBtn.addEventListener("click", () => {
+          const v = active.querySelector("video");
+          if (v && !v.paused) {
+            try {
+              v.pause();
+            } catch (e) {
+              /* ignore */
+            }
+          }
+          if (container.dataset.thumbHtml) {
+            container.innerHTML = container.dataset.thumbHtml;
+            // remove stale attached marker (data-vp-attached) so attachSingle will rebind
+            const restoredThumb = container.querySelector(
+              ".video-thumb[data-enc-src]"
+            );
+            if (
+              restoredThumb &&
+              restoredThumb.hasAttribute("data-vp-attached")
+            ) {
+              restoredThumb.removeAttribute("data-vp-attached");
+            }
+            // reattach listeners to restored thumbnail
+            attachSingle(container);
+            try {
+              restoredThumb.focus();
+            } catch (e) {
+              /* ignore */
+            }
+            try {
+              container.setAttribute("aria-expanded", "false");
+            } catch (e) {}
+          }
+        });
+
+        // place minimize button visually above video
+        active.appendChild(minBtn);
+        active.appendChild(el);
+
+        container.innerHTML = "";
+        container.appendChild(active);
+
+        // make active focusable and support ESC to minimize
+        try {
+          active.tabIndex = 0;
+          active.focus();
+          active.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" || e.key === "Esc") {
+              e.preventDefault();
+              minBtn.click();
+            }
+          });
+        } catch (e) {
+          /* ignore */
+        }
+
+        // try to autoplay after user gesture that triggered load
+        const videoEl = active.querySelector("video");
+        if (videoEl) {
+          // permit playsInline and focus
+          try {
+            videoEl.setAttribute("playsinline", "");
+          } catch (e) {}
+          try {
+            videoEl.focus();
+          } catch (e) {}
+
+          // Setup Media Session metadata and handlers for better lock-screen controls
+          try {
+            const title = container.dataset.title || document.title || "Video";
+            const posterUrl = container.dataset.poster || "";
+            if ("mediaSession" in navigator) {
+              try {
+                const meta = {
+                  title: title,
+                  artist: "",
+                  album: "",
+                };
+                if (posterUrl) {
+                  meta.artwork = [
+                    { src: posterUrl, sizes: "512x512", type: "image/png" },
+                  ];
+                }
+                navigator.mediaSession.metadata = new MediaMetadata(meta);
+                navigator.mediaSession.setActionHandler("play", () => {
+                  videoEl.play().catch(() => {});
+                });
+                navigator.mediaSession.setActionHandler("pause", () => {
+                  videoEl.pause();
+                });
+                try {
+                  navigator.mediaSession.setActionHandler(
+                    "seekbackward",
+                    (d) => {
+                      const skip = (d && d.seekOffset) || 10;
+                      videoEl.currentTime = Math.max(
+                        0,
+                        videoEl.currentTime - skip
+                      );
+                    }
+                  );
+                  navigator.mediaSession.setActionHandler(
+                    "seekforward",
+                    (d) => {
+                      const skip = (d && d.seekOffset) || 10;
+                      videoEl.currentTime = Math.min(
+                        videoEl.duration || Infinity,
+                        videoEl.currentTime + skip
+                      );
+                    }
+                  );
+                  navigator.mediaSession.setActionHandler("stop", () => {
+                    videoEl.pause();
+                    videoEl.currentTime = 0;
+                  });
+                } catch (er) {}
+              } catch (er) {}
+            }
+          } catch (er) {}
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error("Failed to load video", err);
+      }
+    }
+
+    // expose for backwards compatibility
+    if (!window.__loadVideo) {
+      // @ts-ignore
+      window.__loadVideo = (id, encSrc) => {
+        const c = document.getElementById(id);
+        loadVideo(c, encSrc);
+      };
+    }
+
+    // Attach listeners to all thumbnails on the page (robust across build placements)
+    function attachSingle(container) {
+      const thumb = container.querySelector(".video-thumb[data-enc-src]");
+      if (!thumb) return;
+      // avoid attaching twice
+      if (thumb.dataset.vpAttached === "1") return;
+      const enc = thumb.getAttribute("data-enc-src");
+      const handler = () => loadVideo(container, enc);
+      thumb.addEventListener("click", handler);
+      thumb.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handler();
+        }
+      });
+      thumb.dataset.vpAttached = "1";
+    }
+
+    function attachAll() {
+      const players = document.querySelectorAll(".video-player");
+      players.forEach((p) => attachSingle(p));
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", attachAll);
+    } else {
+      attachAll();
+    }
+  </script>
+</div>
+
+<style>
+  .video-player {
+    margin: 0.25rem 0 0.75rem 0;
+    /* stronger border color for light theme so it is visible */
+    --video-border-color: rgba(11, 12, 13, 0.32);
+    --video-box-shadow: 0 1px 6px rgba(11, 12, 13, 0.06);
+    /* mini icon contrast for light theme */
+    --mini-icon-bg: rgba(11, 12, 13, 0.04);
+    --mini-icon-border: rgba(11, 12, 13, 0.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    .video-player {
+      --video-border-color: rgba(255, 255, 255, 0.12);
+      --video-box-shadow: 0 1px 6px rgba(11, 12, 13, 0.6);
+      /* mini icon contrast for dark theme: light inner rectangle */
+      --mini-icon-bg: rgba(255, 255, 255, 0.03);
+      --mini-icon-border: rgba(255, 255, 255, 0.06);
+    }
+  }
+  .video-meta {
+    margin-top: 0.35rem;
+    font-size: 0.9rem;
+    color: var(--astro-content-text-muted, #666);
+  }
+  .video-thumb {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--video-border-color);
+    background: transparent;
+    /* slightly larger footprint (+40%) */
+    padding: 11px;
+    transform-origin: left top;
+    box-shadow: var(--video-box-shadow);
+  }
+  .play-overlay {
+    position: absolute;
+    left: 17px;
+    top: 17px;
+    background: transparent;
+    color: var(--astro-content-text, inherit);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    line-height: 1;
+    opacity: 1;
+  }
+  .video-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    padding: 0 4px;
+    background: transparent;
+    color: var(--astro-content-text, inherit);
+  }
+  .minimal-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    /* +40% width/height */
+    width: 400px;
+    height: 73px;
+    color: var(--astro-content-text, inherit);
+    font-size: 1rem;
+  }
+  .mini-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mini-play {
+    width: 32px;
+    height: 32px;
+    background: var(--sl-shadow-black-4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    pointer-events: none;
+    color: var(--astro-content-text, inherit);
+    font-size: 0.95rem;
+  }
+  .time {
+    color: var(--astro-content-text-muted, #666);
+    font-size: 0.78rem;
+  }
+  .mini-progress {
+    width: 200px;
+    height: 8px;
+    background: var(--sl-shadow-black-4);
+    border-radius: 4px;
+  }
+  .mini-right {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .mini-volume,
+  .mini-more {
+    background: transparent;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--astro-content-text, inherit);
+  }
+  .mini-icon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--mini-icon-bg);
+    border: 1px solid var(--mini-icon-border);
+    color: var(--astro-content-text, inherit);
+    font-size: 1rem;
+    box-shadow: 0 1px 0 var(--sl-shadow-white-2) inset;
+  }
+  .video-active {
+    position: relative;
+  }
+  .video-minimize {
+    position: absolute;
+    right: 11px;
+    top: 11px;
+    background: var(--sl-shadow-black-45);
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    z-index: 30;
+    opacity: 1;
+  }
+</style>
