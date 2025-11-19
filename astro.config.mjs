@@ -6,7 +6,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import mermaid from "astro-mermaid";
 import plantuml from "astro-plantuml";
-import starlightThemeFlexoki from "starlight-theme-flexoki";
+import starlightThemeGalaxy from "starlight-theme-galaxy";
 import starlightFullViewMode from "starlight-fullview-mode";
 import starlightCodeblockFullscreen from "starlight-codeblock-fullscreen";
 
@@ -24,9 +24,7 @@ export default defineConfig({
         en: "Computer Science in Year 4",
       },
       plugins: [
-        starlightThemeFlexoki({
-          accentColor: "cyan",
-        }),
+        starlightThemeGalaxy(),
         starlightFullViewMode({
           leftSidebarEnabled: true,
           rightSidebarEnabled: true,

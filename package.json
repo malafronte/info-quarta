@@ -2,7 +2,7 @@
   "name": "info-quarta",
   "type": "module",
   "version": "0.0.1",
-  "packageManager": "pnpm@10.12.4",
+  "packageManager": "pnpm@10.22.0",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@astrojs/starlight": "^0.36.2",
+    "@fontsource/geist-mono": "^5.2.7",
+    "@fontsource/geist-sans": "^5.2.5",
     "astro": "^5.15.9",
     "astro-mermaid": "^1.1.0",
     "astro-plantuml": "^0.1.4",
@@ -23,7 +25,7 @@
     "sharp": "^0.34.5",
     "starlight-codeblock-fullscreen": "^0.1.4",
     "starlight-fullview-mode": "^0.2.6",
-    "starlight-theme-flexoki": "^0.2.1"
+    "starlight-theme-galaxy": "^0.5.2"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
