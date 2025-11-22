@@ -45,6 +45,7 @@ export default defineConfig({
         root: { label: "Italiano", lang: "it" },
         en: { label: "English", lang: "en" },
       },
+      favicon: "/src/assets/images/brand-icon.png",
       customCss: ["./src/styles/custom.css"],
       social: [
         {

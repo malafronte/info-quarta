@@ -7,6 +7,7 @@ import ThemeSelect from "starlight-theme-galaxy/overrides/ThemeSelect.astro";
 import LanguageSelect from "@astrojs/starlight/components/LanguageSelect.astro";
 import ProgressScroll from "starlight-theme-galaxy/components/ProgressScroll.astro";
 import brandIcon from "@assets/images/brand-icon.png";
+import { headerNav } from "../config/header";
 
 // Logic to hide progress scroll on homepage (optional, based on Galaxy theme docs)
 const baseUrl = import.meta.env.BASE_URL || "/";
@@ -17,7 +18,7 @@ const normalizedBase = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
 const displayProgressScroll = normalizedPath !== normalizedBase;
 ---
 
-<div class="header sl-flex">
+<div class="header custom-header-container sl-flex">
     <div class="left-group sl-flex">
         <div class="title-wrapper sl-flex">
             <a href={import.meta.env.BASE_URL} class="brand-logo">
@@ -27,55 +28,88 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         </div>
 
         <!-- Mobile menu button (three dots) - visible only on mobile -->
-        <button class="mobile-menu-btn" aria-label="Open navigation menu">
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            >
-                <circle cx="12" cy="12" r="1"></circle>
-                <circle cx="19" cy="12" r="1"></circle>
-                <circle cx="5" cy="12" r="1"></circle>
-            </svg>
-        </button>
+        <!-- Mobile menu button (three dots) - visible only on mobile -->
+        {
+            headerNav.length > 0 && (
+                <button
+                    class="mobile-menu-btn"
+                    aria-label="Open navigation menu"
+                >
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <circle cx="12" cy="12" r="1" />
+                        <circle cx="19" cy="12" r="1" />
+                        <circle cx="5" cy="12" r="1" />
+                    </svg>
+                </button>
+            )
+        }
 
         <div class="nav-wrapper sl-flex">
             <nav class="top-nav">
                 <ul>
-                    <li><a href="/info-quarta/gemini-cli">Gemini CLI</a></li>
-                    <li class="dropdown">
-                        <button class="dropdown-btn">
-                            Extensions
-                            <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="caret"
-                            >
-                                <path d="m6 9 6 6 6-6"></path>
-                            </svg>
-                        </button>
-                        <ul class="dropdown-content">
-                            <li><a href="/info-quarta/gallery">Gallery</a></li>
+                    {
+                        headerNav.map((item) => (
                             <li>
-                                <a href="/info-quarta/about-extensions"
-                                    >About Extensions</a
-                                >
+                                {item.items ? (
+                                    <div class="dropdown">
+                                        <button class="dropdown-btn">
+                                            {item.icon && (
+                                                <span class="nav-icon">
+                                                    {item.icon}
+                                                </span>
+                                            )}
+                                            {item.label}
+                                            <svg
+                                                width="12"
+                                                height="12"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                                class="caret"
+                                            >
+                                                <path d="m6 9 6 6 6-6" />
+                                            </svg>
+                                        </button>
+                                        <ul class="dropdown-content">
+                                            {item.items.map((subItem) => (
+                                                <li>
+                                                    <a href={subItem.href}>
+                                                        {subItem.icon && (
+                                                            <span class="nav-icon">
+                                                                {subItem.icon}
+                                                            </span>
+                                                        )}
+                                                        {subItem.label}
+                                                    </a>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ) : (
+                                    <a href={item.href}>
+                                        {item.icon && (
+                                            <span class="nav-icon">
+                                                {item.icon}
+                                            </span>
+                                        )}
+                                        {item.label}
+                                    </a>
+                                )}
                             </li>
-                        </ul>
-                    </li>
-                    <li><a href="/info-quarta/docs">Docs</a></li>
-                    <li><a href="/info-quarta/changelog">Changelog</a></li>
+                        ))
+                    }
                 </ul>
             </nav>
         </div>
@@ -96,15 +130,10 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
 
 <!-- Mobile Navigation Drawer -->
 <div class="mobile-drawer-overlay" aria-hidden="true"></div>
-<div
-    class="mobile-drawer"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Navigation menu"
->
+<div class="mobile-drawer" id="mobileDrawer" aria-hidden="true">
     <div class="mobile-drawer-header">
         <span class="mobile-drawer-title">Menu</span>
-        <button class="mobile-drawer-close" aria-label="Close navigation menu">
+        <button class="mobile-drawer-close" aria-label="Close menu">
             <svg
                 width="24"
                 height="24"
@@ -115,42 +144,65 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
                 stroke-linecap="round"
                 stroke-linejoin="round"
             >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
+                <path d="M17 7 L7 17"></path>
+                <path d="M7 7 L17 17"></path>
             </svg>
         </button>
     </div>
     <nav class="mobile-drawer-nav">
         <ul>
-            <li><a href="/info-quarta/gemini-cli">Gemini CLI</a></li>
-            <li class="mobile-dropdown">
-                <button class="mobile-dropdown-btn">
-                    Extensions
-                    <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        class="mobile-caret"
-                    >
-                        <path d="m6 9 6 6 6-6"></path>
-                    </svg>
-                </button>
-                <ul class="mobile-dropdown-content">
-                    <li><a href="/info-quarta/gallery">Gallery</a></li>
+            {
+                headerNav.map((item) => (
                     <li>
-                        <a href="/info-quarta/about-extensions"
-                            >About Extensions</a
-                        >
+                        {item.items ? (
+                            <div class="mobile-dropdown">
+                                <button class="mobile-dropdown-btn">
+                                    {item.icon && (
+                                        <span class="nav-icon">
+                                            {item.icon}
+                                        </span>
+                                    )}
+                                    {item.label}
+                                    <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="mobile-caret"
+                                    >
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </button>
+                                <ul class="mobile-dropdown-content">
+                                    {item.items.map((subItem) => (
+                                        <li>
+                                            <a href={subItem.href}>
+                                                {subItem.icon && (
+                                                    <span class="nav-icon">
+                                                        {subItem.icon}
+                                                    </span>
+                                                )}
+                                                {subItem.label}
+                                            </a>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ) : (
+                            <a href={item.href}>
+                                {item.icon && (
+                                    <span class="nav-icon">{item.icon}</span>
+                                )}
+                                {item.label}
+                            </a>
+                        )}
                     </li>
-                </ul>
-            </li>
-            <li><a href="/info-quarta/docs">Docs</a></li>
-            <li><a href="/info-quarta/changelog">Changelog</a></li>
+                ))
+            }
         </ul>
     </nav>
 </div>
@@ -158,132 +210,77 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
 {displayProgressScroll && <ProgressScroll />}
 
 <script>
-    // Handle dropdown toggling
-    function setupDropdowns() {
-        const dropdowns = document.querySelectorAll(".dropdown");
+    // Logic to handle mobile drawer
+    const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
+    const mobileDrawer = document.querySelector(".mobile-drawer");
+    const mobileDrawerOverlay = document.querySelector(
+        ".mobile-drawer-overlay",
+    );
+    const mobileDrawerClose = document.querySelector(".mobile-drawer-close");
 
-        dropdowns.forEach((dropdown) => {
-            const btn = dropdown.querySelector(".dropdown-btn");
-            const content = dropdown.querySelector(".dropdown-content");
+    function toggleDrawer() {
+        if (!mobileDrawer || !mobileDrawerOverlay) return;
 
-            if (btn && content) {
-                // Remove old listeners to prevent duplicates if re-running
-                const newBtn = btn.cloneNode(true);
-                if (btn.parentNode) {
-                    btn.parentNode.replaceChild(newBtn, btn);
-                }
-
-                // Toggle on button click
-                newBtn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    // Close other dropdowns first
-                    dropdowns.forEach((d) => {
-                        if (d !== dropdown) d.classList.remove("open");
-                    });
-                    dropdown.classList.toggle("open");
-                });
-
-                // Close on link click
-                const links = content.querySelectorAll("a");
-                links.forEach((link) => {
-                    link.addEventListener("click", () => {
-                        dropdown.classList.remove("open");
-                    });
-                });
-            }
-        });
-
-        // Close when clicking outside
-        document.addEventListener("click", (e) => {
-            const target = e.target;
-            if (target instanceof HTMLElement && !target.closest(".dropdown")) {
-                dropdowns.forEach((d) => d.classList.remove("open"));
-            }
-        });
-    }
-
-    // Run on initial load
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", setupDropdowns);
-    } else {
-        setupDropdowns();
-    }
-
-    // Support View Transitions (if enabled)
-    document.addEventListener("astro:page-load", setupDropdowns);
-
-    // Handle mobile drawer toggling
-    function setupMobileDrawer() {
-        const menuBtn = document.querySelector(".mobile-menu-btn");
-        const drawer = document.querySelector(".mobile-drawer");
-        const overlay = document.querySelector(".mobile-drawer-overlay");
-        const closeBtn = document.querySelector(".mobile-drawer-close");
-        const drawerLinks = document.querySelectorAll(".mobile-drawer-nav a");
-        const mobileDropdowns = document.querySelectorAll(".mobile-dropdown");
-
-        if (!menuBtn || !drawer || !overlay || !closeBtn) {
-            console.log("Mobile drawer elements not found");
-            return;
-        }
-
-        // Clone menu button to remove old listeners
-        const newMenuBtn = menuBtn.cloneNode(true);
-        if (menuBtn.parentNode) {
-            menuBtn.parentNode.replaceChild(newMenuBtn, menuBtn);
-        }
-
-        // Clone close button to remove old listeners
-        const newCloseBtn = closeBtn.cloneNode(true);
-        if (closeBtn.parentNode) {
-            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-        }
-
-        // Open drawer
-        newMenuBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            console.log("Opening drawer");
-            drawer.classList.add("open");
-            overlay.classList.add("open");
-            document.body.style.overflow = "hidden"; // Prevent scrolling
-        });
-
-        // Close drawer
-        const closeDrawer = () => {
-            console.log("Closing drawer");
-            drawer.classList.remove("open");
-            overlay.classList.remove("open");
+        const isOpen = mobileDrawer.classList.contains("open");
+        if (isOpen) {
+            mobileDrawer.classList.remove("open");
+            mobileDrawerOverlay.classList.remove("open");
+            mobileDrawer.setAttribute("aria-hidden", "true");
+            mobileDrawerOverlay.setAttribute("aria-hidden", "true");
             document.body.style.overflow = "";
-        };
+        } else {
+            mobileDrawer.classList.add("open");
+            mobileDrawerOverlay.classList.add("open");
+            mobileDrawer.setAttribute("aria-hidden", "false");
+            mobileDrawerOverlay.setAttribute("aria-hidden", "false");
+            document.body.style.overflow = "hidden";
+        }
+    }
 
-        newCloseBtn.addEventListener("click", closeDrawer);
-        overlay.addEventListener("click", closeDrawer);
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener("click", toggleDrawer);
+    }
 
-        // Close drawer when clicking on a link (except dropdown buttons)
-        drawerLinks.forEach((link) => {
-            link.addEventListener("click", closeDrawer);
+    if (mobileDrawerClose) {
+        mobileDrawerClose.addEventListener("click", toggleDrawer);
+    }
+
+    if (mobileDrawerOverlay) {
+        mobileDrawerOverlay.addEventListener("click", toggleDrawer);
+    }
+
+    // Mobile Dropdown Logic
+    const mobileDropdownBtns = document.querySelectorAll(
+        ".mobile-dropdown-btn",
+    );
+
+    mobileDropdownBtns.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            const dropdown = btn.closest(".mobile-dropdown");
+            if (dropdown) {
+                dropdown.classList.toggle("open");
+            }
+        });
+    });
+
+    // Dropdown Logic for Desktop
+    const dropdownBtn = document.querySelector(".dropdown-btn");
+    const dropdown = document.querySelector(".dropdown");
+
+    if (dropdownBtn && dropdown) {
+        dropdownBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle("open");
         });
 
-        // Handle mobile dropdown toggles inside drawer
-        mobileDropdowns.forEach((dropdown) => {
-            const btn = dropdown.querySelector(".mobile-dropdown-btn");
-            if (btn) {
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.toggle("open");
-                });
+        // Close dropdown when clicking outside
+        document.addEventListener("click", (e) => {
+            if (dropdown && !dropdown.contains(e.target as Node)) {
+                dropdown.classList.remove("open");
             }
         });
     }
-
-    // Run mobile drawer setup on initial load
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", setupMobileDrawer);
-    } else {
-        setupMobileDrawer();
-    }
-
-    // Support View Transitions (if enabled)
-    document.addEventListener("astro:page-load", setupMobileDrawer);
 </script>
 
 <style>
@@ -357,6 +354,13 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         color: var(--sl-color-accent-high);
     }
 
+    /* Icon styles */
+    .nav-icon {
+        margin-right: 0.25rem;
+        font-size: 1.1em;
+        vertical-align: middle;
+    }
+
     /* Dropdown Styles */
     .dropdown-content {
         position: absolute;
@@ -426,103 +430,33 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         }
     }
 
-    /* Mobile: Ensure icon only */
-    @media (max-width: 49.9375rem) {
-        .search-wrapper {
-            flex-grow: 0 !important;
-            width: auto !important;
-        }
-
-        .search-wrapper :global(button[data-open-modal]) {
-            border: none !important;
-            background: transparent !important;
-            padding: 0.5rem !important;
-            width: auto !important;
-        }
-
-        .search-wrapper :global(.sl-hidden) {
-            display: none !important;
-        }
-    }
-
     .right-group {
         gap: 1rem;
         align-items: center;
-        height: 100%;
     }
 
-    .social-icons {
-        gap: 1rem;
-        align-items: center;
-        display: flex;
-        height: 100%;
-    }
-
-    .social-icons :global(a) {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .social-icons a {
         color: var(--sl-color-text-accent);
-        text-decoration: none;
-        line-height: 1;
-        height: 100%;
     }
 
-    .social-icons :global(svg) {
-        display: block;
-        vertical-align: middle;
-    }
-
-    .social-icons :global(a:hover) {
+    .social-icons a:hover {
         color: var(--sl-color-white);
     }
 
-    @media (min-width: 50rem) {
-        :global(:root[data-has-sidebar]) {
-            --sl-content-width: 67.5rem;
-        }
-    }
-
-    /* Mobile Menu Button - visible only on mobile when nav is hidden */
-    .mobile-menu-btn {
-        display: none;
-        background: none;
-        border: none;
-        color: var(--sl-color-white);
-        cursor: pointer;
-        padding: 0.5rem;
-        margin-left: 0.5rem;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.2s;
-        flex-shrink: 0;
-    }
-
-    .mobile-menu-btn:hover {
-        opacity: 0.8;
-    }
-
-    @media (max-width: 49.9375rem) {
-        .mobile-menu-btn {
-            display: flex;
-        }
-    }
-
-    /* Mobile Drawer Overlay */
+    /* Mobile Drawer Styles */
     .mobile-drawer-overlay {
         position: fixed;
         top: 0;
         left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
         opacity: 0;
         visibility: hidden;
         transition:
-            opacity 0.3s,
-            visibility 0.3s;
-        z-index: 9998;
+            opacity 0.3s ease,
+            visibility 0.3s ease;
     }
 
     .mobile-drawer-overlay.open {
@@ -530,39 +464,37 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         visibility: visible;
     }
 
-    /* Mobile Drawer Panel */
     .mobile-drawer {
         position: fixed;
         top: 0;
         left: 0;
         width: 80%;
-        max-width: 320px;
-        height: 100%;
-        background: var(--sl-color-bg-nav);
-        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
-        transform: translateX(-100%);
-        transition: transform 0.3s ease-out;
+        max-width: 300px;
+        height: 100vh !important; /* Force full height */
+        background-color: var(--sl-color-bg-nav);
         z-index: 9999;
-        overflow-y: auto;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: var(--sl-shadow-xl);
         display: flex;
         flex-direction: column;
+        overflow-y: auto; /* Allow scrolling within drawer */
     }
 
     .mobile-drawer.open {
         transform: translateX(0);
     }
 
-    /* Mobile Drawer Header */
     .mobile-drawer-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1.25rem;
+        padding: 1rem;
         border-bottom: 1px solid var(--sl-color-gray-5);
     }
 
     .mobile-drawer-title {
-        font-size: 1.125rem;
+        font-size: var(--sl-text-lg);
         font-weight: 600;
         color: var(--sl-color-white);
     }
@@ -570,24 +502,13 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
     .mobile-drawer-close {
         background: none;
         border: none;
-        color: var(--sl-color-white);
+        color: var(--sl-color-gray-3);
         cursor: pointer;
         padding: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: opacity 0.2s;
     }
 
     .mobile-drawer-close:hover {
-        opacity: 0.8;
-    }
-
-    /* Mobile Drawer Navigation */
-    .mobile-drawer-nav {
-        flex: 1;
-        padding: 0;
-        overflow-y: auto;
+        color: var(--sl-color-white);
     }
 
     .mobile-drawer-nav ul {
@@ -596,146 +517,129 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         margin: 0;
     }
 
-    .mobile-drawer-nav > ul > li {
-        border-bottom: 1px solid var(--sl-color-gray-6);
-    }
-
-    .mobile-drawer-nav > ul > li > a {
-        display: block;
-        padding: 1rem 1.25rem;
-        color: var(--sl-color-white);
-        text-decoration: none;
-        font-size: 1rem;
-        transition: background-color 0.2s;
-    }
-
-    .mobile-drawer-nav > ul > li > a:hover {
-        background-color: var(--sl-color-gray-6);
-    }
-
-    /* Mobile Dropdown in Drawer */
-    .mobile-dropdown {
-        position: relative;
-    }
-
+    .mobile-drawer-nav a,
     .mobile-dropdown-btn {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        display: block;
+        padding: 1rem;
+        color: var(--sl-color-text); /* Use theme text color */
+        text-decoration: none;
+        border-bottom: 1px solid var(--sl-color-gray-5);
+        font-size: var(--sl-text-base);
         width: 100%;
-        padding: 1rem 1.25rem;
+        text-align: left;
         background: none;
         border: none;
-        color: var(--sl-color-white);
-        font-size: 1rem;
         cursor: pointer;
-        text-align: left;
-        transition: background-color 0.2s;
     }
 
+    .mobile-drawer-nav a:hover,
     .mobile-dropdown-btn:hover {
         background-color: var(--sl-color-gray-6);
+        color: var(--sl-color-white);
+    }
+
+    /* Mobile Dropdown */
+    .mobile-dropdown-content {
+        display: none;
+        background-color: var(--sl-color-bg-sidebar);
+        padding-left: 1rem;
+    }
+
+    .mobile-dropdown.open .mobile-dropdown-content {
+        display: block;
     }
 
     .mobile-caret {
-        transition: transform 0.2s;
-        flex-shrink: 0;
         margin-left: 0.5rem;
+        transition: transform 0.2s ease;
     }
 
     .mobile-dropdown.open .mobile-caret {
         transform: rotate(180deg);
     }
 
-    .mobile-dropdown-content {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease-out;
-        background-color: var(--sl-color-gray-7);
-    }
-
-    .mobile-dropdown.open .mobile-dropdown-content {
-        max-height: 500px;
-    }
-
-    .mobile-dropdown-content li {
-        border-top: 1px solid var(--sl-color-gray-6);
-    }
-
-    .mobile-dropdown-content a {
-        display: block;
-        padding: 0.875rem 1.25rem 0.875rem 2.5rem;
-        color: var(--sl-color-gray-2);
-        text-decoration: none;
-        font-size: 0.9375rem;
-        transition: background-color 0.2s;
-    }
-
-    .mobile-dropdown-content a:hover {
-        background-color: var(--sl-color-gray-6);
+    .mobile-menu-btn {
+        display: none;
+        background: none;
+        border: none;
         color: var(--sl-color-white);
+        cursor: pointer;
+        padding: 0.5rem;
     }
 
-    /* Responsive visibility control - aligned at 50rem (800px) */
-    /* Hide navigation and show mobile menu below 800px */
+    /* Mobile Layout Fixes */
+
+    /* 1. Reserve space for Starlight's hamburger menu and ensure flexible layout */
     @media (max-width: 49.9375rem) {
-        .nav-wrapper {
-            display: none !important;
+        .custom-header-container {
+            padding-right: 1.5rem !important; /* Reduced reserved space for Starlight hamburger */
+            gap: 0 !important; /* Remove gap between groups to tighten spacing */
         }
 
+        /* Ensure left group takes available space */
+        .left-group {
+            flex: 1;
+            max-width: 100%;
+            min-width: 0; /* Allow shrinking */
+            align-items: center;
+            gap: 0.5rem !important; /* Reduce gap on mobile */
+        }
+
+        /* Allow title to shrink if needed but GROW to fill space */
+        .title-wrapper {
+            flex: 1 1 auto !important; /* Grow to fill space, shrink if needed */
+            min-width: 0;
+            overflow: hidden;
+            margin-right: 0; /* Remove margin to bring dots closer */
+        }
+
+        /* Prevent logo from shrinking */
+        .brand-logo,
+        .brand-logo img {
+            flex-shrink: 0 !important;
+        }
+
+        /* Force truncation on the title text elements */
+        .title-wrapper :global(a),
+        .title-wrapper :global(span),
+        .site-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+        }
+
+        /* Prevent mobile menu button from shrinking */
         .mobile-menu-btn {
-            display: flex !important;
+            flex: 0 0 auto;
+            margin-right: 0.25rem; /* Small gap between dots and search */
+            display: block; /* Show on mobile */
         }
     }
 
-    /* Show navigation and hide mobile menu above 800px */
-    @media (min-width: 50rem) {
-        .nav-wrapper {
-            display: flex !important;
-        }
-
-        .mobile-menu-btn {
-            display: none !important;
-        }
-    }
-
-    /* Fix drawer to occupy full viewport height */
-    .mobile-drawer {
-        height: 100vh !important;
-        min-height: 100vh !important;
-    }
-
-    /* Ensure mobile menu button doesn't overlap with Starlight hamburger */
-    @media (max-width: 71.9375rem) {
-        .mobile-menu-btn {
-            margin-right: 0.5rem;
-        }
-    }
-
-    /* CRITICAL FIXES for visibility */
-    .mobile-drawer-nav > ul > li > a,
-    .mobile-dropdown-btn {
-        color: var(--sl-color-text) !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-    }
-
-    .mobile-drawer-nav,
-    .mobile-drawer-nav > ul,
-    .mobile-drawer-nav > ul > li {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-
-    /* Fix search wrapper expansion on mobile */
+    /* 2. Ensure search icon is ALWAYS visible on mobile */
     @media (max-width: 49.9375rem) {
         .search-wrapper {
+            display: flex !important;
             flex: 0 0 auto !important;
-            max-width: fit-content !important;
+            width: auto !important;
+            height: auto !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            margin: 0 !important; /* Remove margin to bring search closer to dots and edge */
+        }
+
+        .search-wrapper button {
+            display: flex !important;
+            width: auto !important;
+            height: auto !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            padding-inline: 0.5rem !important; /* Reduce internal padding of search button if needed */
+        }
+
+        .search-wrapper :global(.sl-hidden) {
+            display: none !important;
         }
     }
 </style>
