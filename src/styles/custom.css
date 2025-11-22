@@ -1,0 +1,48 @@
+/* Fix hero section alignment on mobile - Galaxy theme override */
+@media (max-width: 50rem) {
+
+    /* Remove all nested padding that causes the offset */
+    .main-pane {
+        padding-inline: 1rem !important;
+    }
+
+    .content-panel {
+        padding-inline: 0 !important;
+    }
+
+    .hero {
+        padding-inline: 0 !important;
+        margin-inline: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Add minimal padding directly to hero children for breathing room */
+    .hero>* {
+        padding-inline: 1rem;
+        margin-inline: auto;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    /* Center the action buttons */
+    .hero .actions,
+    .sl-flex.actions {
+        justify-content: center;
+        margin-inline: auto;
+        display: flex;
+    }
+
+    /* Ensure hero image is centered */
+    .hero img {
+        margin-inline: auto;
+        display: block;
+        max-width: 100%;
+    }
+
+    /* Ensure the tagline and title are centered */
+    .hero h1,
+    .hero p {
+        text-align: center;
+    }
+}
