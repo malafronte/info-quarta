@@ -2,7 +2,10 @@
 title: Git config
 description: Configurazione di Git (nome, email, editor, credenziali e SSH)
 sidebar:
-  order: 3
+  order: 1
+  badge:
+    text: Demo
+    variant: note
 ---
 
 

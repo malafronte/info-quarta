@@ -28,6 +28,7 @@ export default defineConfig({
         starlightFullViewMode({
           leftSidebarEnabled: true,
           rightSidebarEnabled: true,
+          rightSidebarExpandedWidth: "20%"
         }),
         starlightCodeblockFullscreen({
           // Optional configuration
@@ -70,6 +71,20 @@ export default defineConfig({
               },
               autogenerate: { directory: "corso/git-and-github" },
             },
+            {
+              label: "Advanced CSharp",
+              translations: {
+                en: "Advanced CSharp",
+              },
+              autogenerate: { directory: "corso/advanced-csharp" },
+            },
+            {
+              label: "Dev tools",
+              translations: {
+                en: "Dev tools",
+              },
+              autogenerate: { directory: "corso/dev-tools" },
+            },
           ],
         },
         {
@@ -94,6 +109,7 @@ export default defineConfig({
       ],
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
       components: {
+        Header: "./src/components/CustomHeader.astro",
         // Footer override example
         // Footer: "./src/components/Footer.astro",
       },
