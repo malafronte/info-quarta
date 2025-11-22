@@ -5,6 +5,15 @@ export interface NavItem {
     icon?: string; // Optional icon
 }
 
+// Site title (used in mobile drawer header)
+export const siteTitle = "Informatica in quarta";
+
+// Social links (used in mobile drawer)
+export const socialLinks = {
+    github: "https://github.com/malafronte",
+    linkedin: "https://www.linkedin.com/in/gennaromalafronte",
+};
+
 export const headerNav: NavItem[] = [
     { label: "Gemini CLI", href: "/info-quarta/gemini-cli", icon: "🤖" },
     {
