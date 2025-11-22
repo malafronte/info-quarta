@@ -640,6 +640,265 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
 
         .search-wrapper :global(.sl-hidden) {
             display: none !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9998;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+            opacity 0.3s ease,
+            visibility 0.3s ease;
+    }
+
+    .mobile-drawer-overlay.open {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .mobile-drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 80%;
+        max-width: 300px;
+        height: 100vh !important; /* Force full height */
+        background-color: var(--sl-color-bg-nav);
+        z-index: 9999;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: var(--sl-shadow-xl);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto; /* Allow scrolling within drawer */
+    }
+
+    .mobile-drawer.open {
+        transform: translateX(0);
+    }
+
+    .mobile-drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid var(--sl-color-gray-5);
+    }
+
+    .mobile-drawer-title {
+        font-size: var(--sl-text-lg);
+        font-weight: 600;
+        color: var(--sl-color-white);
+    }
+
+    .mobile-drawer-close {
+        background: none;
+        border: none;
+        color: var(--sl-color-gray-3);
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+
+    .mobile-drawer-close:hover {
+        color: var(--sl-color-white);
+    }
+
+    .mobile-drawer-nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .mobile-drawer-nav a,
+    .mobile-dropdown-btn {
+        display: block;
+        padding: 1rem;
+        color: var(--sl-color-text); /* Use theme text color */
+        text-decoration: none;
+        border-bottom: 1px solid var(--sl-color-gray-5);
+        font-size: var(--sl-text-base);
+        width: 100%;
+        text-align: left;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .mobile-drawer-nav a:hover,
+    .mobile-dropdown-btn:hover {
+        background-color: var(--sl-color-gray-6);
+        color: var(--sl-color-white);
+    }
+
+    /* Mobile Dropdown */
+    .mobile-dropdown-content {
+        display: none;
+        background-color: var(--sl-color-bg-sidebar);
+        padding-left: 1rem;
+    }
+
+    .mobile-dropdown.open .mobile-dropdown-content {
+        display: block;
+    }
+
+    .mobile-caret {
+        margin-left: 0.5rem;
+        transition: transform 0.2s ease;
+    }
+
+    .mobile-dropdown.open .mobile-caret {
+        transform: rotate(180deg);
+    }
+
+    .mobile-menu-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: var(--sl-color-white);
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+
+    /* Mobile Layout Fixes */
+
+    /* 1. Reserve space for Starlight's hamburger menu and ensure flexible layout */
+    @media (max-width: 49.9375rem) {
+        .custom-header-container {
+            padding-right: 1.5rem !important; /* Reduced reserved space for Starlight hamburger */
+            gap: 0 !important; /* Remove gap between groups to tighten spacing */
+        }
+
+        /* Ensure left group takes available space */
+        .left-group {
+            flex: 1;
+            max-width: 100%;
+            min-width: 0; /* Allow shrinking */
+            align-items: center;
+            gap: 0.5rem !important; /* Reduce gap on mobile */
+        }
+
+        /* Allow title to shrink if needed but GROW to fill space */
+        .title-wrapper {
+            flex: 1 1 auto !important; /* Grow to fill space, shrink if needed */
+            min-width: 0;
+            overflow: hidden;
+            margin-right: 0; /* Remove margin to bring dots closer */
+        }
+
+        /* Prevent logo from shrinking */
+        .brand-logo,
+        .brand-logo img {
+            flex-shrink: 0 !important;
+        }
+
+        /* Force truncation on the title text elements */
+        .title-wrapper :global(a),
+        .title-wrapper :global(span),
+        .site-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+        }
+
+        /* Prevent mobile menu button from shrinking */
+        .mobile-menu-btn {
+            flex: 0 0 auto;
+            margin-right: 0.25rem; /* Small gap between dots and search */
+            display: block; /* Show on mobile */
+        }
+    }
+
+    /* 2. Ensure search icon is ALWAYS visible on mobile */
+    @media (max-width: 49.9375rem) {
+        .search-wrapper {
+            display: flex !important;
+            flex: 0 0 auto !important;
+            width: auto !important;
+            height: auto !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            margin: 0 !important; /* Remove margin to bring search closer to dots and edge */
+        }
+
+        .search-wrapper button {
+            display: flex !important;
+            width: auto !important;
+            height: auto !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            padding-inline: 0.5rem !important; /* Reduce internal padding of search button if needed */
+        }
+
+        .search-wrapper :global(.sl-hidden) {
+            display: none !important;
+        }
+    }
+
+    /* 3. Ultra-narrow screens (< 400px): Two-row layout */
+    @media (max-width: 25rem) {
+        :global(:root) {
+            --sl-nav-height: 5rem !important; /* Reduced from 6rem */
+        }
+
+        .custom-header-container {
+            flex-wrap: wrap !important;
+            height: auto !important;
+            min-height: var(--sl-nav-height);
+            padding-bottom: 0.25rem !important;
+            padding-left: 1rem !important; /* Symmetric padding */
+            padding-right: 1rem !important; /* Symmetric padding */
+            align-content: center !important;
+            justify-content: space-between !important; /* User requested space-between */
+            /* Removed background-color to restore theme default */
+        }
+
+        .left-group {
+            display: contents !important; /* Flatten structure */
+        }
+
+        .title-wrapper {
+            flex: 1 0 100% !important; /* Force full width */
+            margin-bottom: 0 !important; /* Removed margin between rows */
+            margin-right: 0 !important;
+            justify-content: center; /* Center title */
+        }
+
+        .mobile-menu-btn {
+            order: 2;
+            margin-left: 0 !important; 
+            padding-left: 0.5rem !important; /* Match logo offset for vertical alignment */
+            margin-right: auto !important; /* Push others away if needed, but space-between handles it */
+            /* Ensure vertical center */
+            align-self: center !important;
+            height: 100%; 
+            display: flex;
+            align-items: center;
+        }
+
+        .search-wrapper {
+            order: 3;
+            margin: 0 !important;
+            justify-content: flex-end !important; /* Align content to right */
+            flex: 0 1 auto !important; 
+            /* Fix vertical alignment */
+            align-self: center !important;
+            display: flex !important;
+            align-items: center !important;
+            height: 100%;
+        }
+        
+        /* Ensure search button doesn't take full width if it was set to */
+        .search-wrapper button {
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            height: auto !important;
         }
     }
 </style>
