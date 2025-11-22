@@ -66,13 +66,6 @@ export default defineConfig({
               slug: "corso",
             },
             {
-              label: "Git e GitHub",
-              translations: {
-                en: "Git and GitHub",
-              },
-              autogenerate: { directory: "corso/git-and-github" },
-            },
-            {
               label: "Advanced CSharp",
               translations: {
                 en: "Advanced CSharp",
