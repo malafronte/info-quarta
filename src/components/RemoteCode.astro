@@ -1,0 +1,118 @@
+---
+/**
+ * RemoteCode component
+ * Fetches code from a remote URL and displays it using Starlight's Code component with Expressive Code features.
+ *
+ * @example Basic usage
+ * <RemoteCode
+ *   url="https://raw.githubusercontent.com/user/repo/main/file.cs"
+ *   lang="csharp"
+ *   title="MyFile.cs"
+ * />
+ *
+ * @example With line highlighting
+ * <RemoteCode
+ *   url="..."
+ *   lang="javascript"
+ *   meta="{5-10}"
+ * />
+ *
+ * @example With diff syntax (insertions/deletions)
+ * <RemoteCode
+ *   url="..."
+ *   lang="python"
+ *   meta="ins={10-15} del={5-7}"
+ * />
+ *
+ * @example With labeled annotations
+ * <RemoteCode
+ *   url="..."
+ *   lang="typescript"
+ *   meta='ins={"New Feature":10-15} del={"Deprecated":5}'
+ * />
+ *
+ * @example With collapsible sections
+ * <RemoteCode
+ *   url="..."
+ *   lang="java"
+ *   meta="collapse={20-50}"
+ * />
+ *
+ * @example Complete example
+ * <RemoteCode
+ *   url="..."
+ *   lang="csharp"
+ *   title="Example.cs"
+ *   meta='showLineNumbers ins={"Added":10-12} del={"Removed":5} {20}'
+ * />
+ */
+import { Code } from "@astrojs/starlight/components";
+
+interface Props {
+    /** URL to fetch the code from (e.g., GitHub raw URL) */
+    url: string;
+    /** Language for syntax highlighting (e.g., 'javascript', 'python', 'csharp') */
+    lang: string;
+    /** Optional title to display above the code block */
+    title?: string;
+    /** Optional meta string for advanced features (e.g., "showLineNumbers {1-3}") */
+    meta?: string;
+}
+
+const { url, lang, title, meta = "" } = Astro.props;
+
+let code = "";
+let error = "";
+
+try {
+    // Fetch the code during build time
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    code = await response.text();
+} catch (e) {
+    error = `Errore nel recuperare il file da ${url}: ${e instanceof Error ? e.message : "Errore sconosciuto"}`;
+    console.error(error);
+}
+---
+
+{
+    error ? (
+        <div class="remote-code-error">
+            <p>
+                <strong>⚠️ Errore:</strong> {error}
+            </p>
+            <p>
+                <small>
+                    URL: <code>{url}</code>
+                </small>
+            </p>
+        </div>
+    ) : (
+        <Code code={code} lang={lang} title={title} meta={meta} />
+    )
+}
+
+<style>
+    .remote-code-error {
+        padding: 1rem;
+        background-color: var(--sl-color-bg-alert, #fee);
+        border: 1px solid var(--sl-color-red, #c00);
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+    }
+
+    .remote-code-error p {
+        margin: 0.5rem 0;
+    }
+
+    .remote-code-error code {
+        background: rgba(0, 0, 0, 0.1);
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+    }
+</style>

@@ -1,0 +1,352 @@
+---
+title: Esempio RemoteCode
+description: Dimostrazione dell'utilizzo del componente RemoteCode per importare codice da GitHub
+---
+
+import RemoteCode from '../../components/RemoteCode.astro';
+
+# Esempio di utilizzo del componente RemoteCode
+
+Questo documento dimostra come utilizzare il componente `RemoteCode` per importare e visualizzare codice da repository GitHub esterni.
+
+## Esempio Base
+
+Ecco il file `Romanzo.cs` dal repository di esempi:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs"
+/>
+
+## Esempio Base con Evidenziazione
+
+Puoi evidenziare linee specifiche usando la sintassi `{linee}`:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Proprietà evidenziate"
+  meta="{5-10}"
+/>
+
+## Esempio con Numeri di Riga
+
+Mostra i numeri di riga con `showLineNumbers`:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Con numeri di riga"
+  meta="showLineNumbers"
+/>
+
+## Funzionalità Avanzate: Diff Syntax
+
+### Linee Inserite (ins)
+
+Evidenzia linee come **aggiunte** (sfondo verde):
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Codice aggiunto"
+  meta="ins={5-8}"
+/>
+
+### Linee Cancellate (del)
+
+Evidenzia linee come **rimosse** (sfondo rosso):
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Codice rimosso"
+  meta="del={3-4}"
+/>
+
+### Combinazione ins + del
+
+Mostra modifiche con inserimenti e cancellazioni:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Modifiche al codice"
+  meta="ins={10-15} del={5-7}"
+/>
+
+## Etichette Colorate
+
+Aggiungi etichette descrittive alle linee evidenziate:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Con etichette"
+  meta='ins={"Nuova Proprietà":10-12} del={"Proprietà Obsoleta":5}'
+/>
+
+## Sezioni Collassabili
+
+Le sezioni collassabili sono utili per nascondere parti di codice meno rilevanti, mantenendo visibili solo le parti importanti. L'utente può espandere le sezioni cliccando sul bottone.
+
+### Esempio Base: Collassa una sezione
+
+Nascondi linee intermedie per concentrarti sulle parti importanti:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Boilerplate collassato"
+  meta="collapse={5-15}"
+/>
+
+### Esempio: Multiple Sezioni Collassate
+
+Puoi collassare più sezioni indipendenti nello stesso file:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Multiple sezioni collassate"
+  meta="collapse={3-5, 10-15}"
+/>
+
+### Esempio: Collasso + Evidenziazione
+
+Combina collasso con evidenziazione per focalizzare su codice specifico:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Codice importante evidenziato"
+  meta="{18-20} collapse={5-15}"
+/>
+
+### Esempio: Collasso + Diff Syntax
+
+Mostra solo le modifiche importanti nascondendo il codice non modificato:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Solo modifiche visibili"
+  meta="ins={18-20} collapse={5-15}"
+/>
+
+### Esempio: Collasso + Numeri di Riga + Etichette
+
+Combinazione completa per tutorial dettagliati:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Tutorial con focus"
+  meta='showLineNumbers ins={"Metodo Importante":18-20} collapse={5-15}'
+/>
+
+## Esempio Completo: Combinazione di Tutte le Funzionalità
+
+Combina numeri di riga, evidenziazione, diff e etichette:
+
+<RemoteCode 
+  url="https://raw.githubusercontent.com/malafronte/malafronte-doc-samples/main/samples-quarta/EFCore/Romanzi/Romanzi/Model/Romanzo.cs"
+  lang="csharp"
+  title="Romanzo.cs - Esempio completo"
+  meta='showLineNumbers ins={"Miglioramento":10-12} del={5-6} {20}'
+/>
+
+## Utilizzo nei tuoi documenti
+
+Per usare questo componente nei tuoi file MDX:
+
+1. **Importa il componente** all'inizio del file:
+   ```mdx
+   import RemoteCode from '../../components/RemoteCode.astro';
+   ```
+
+2. **Usa il componente** nel documento:
+   ```mdx
+   <RemoteCode 
+     url="URL_AL_FILE_RAW_SU_GITHUB"
+     lang="LINGUAGGIO"
+     title="TITOLO_OPZIONALE"
+   />
+   ```
+
+## Parametri disponibili
+
+Il componente `RemoteCode` supporta i seguenti parametri:
+
+- **`url`** (obbligatorio): URL del file raw da GitHub
+- **`lang`** (obbligatorio): Linguaggio per il syntax highlighting (es. `csharp`, `javascript`, `python`, `typescript`, `java`, `go`, ecc.)
+- **`title`** (opzionale): Titolo da mostrare sopra il blocco di codice
+- **`meta`** (opzionale): Stringa per funzionalità avanzate di Expressive Code (vedi sintassi completa sotto)
+
+## Sintassi Completa della Prop `meta`
+
+### 📍 Evidenziazione Base
+
+Evidenzia linee specifiche in modo neutro:
+
+```mdx
+<!-- Singola linea -->
+<RemoteCode meta="{5}" ... />
+
+<!-- Range di linee -->
+<RemoteCode meta="{1-5}" ... />
+
+<!-- Linee multiple -->
+<RemoteCode meta="{1, 3, 5-10}" ... />
+```
+
+### 📊 Numeri di Riga
+
+Mostra i numeri di riga nel margine sinistro:
+
+```mdx
+<RemoteCode meta="showLineNumbers" ... />
+
+<!-- Con evidenziazione -->
+<RemoteCode meta="showLineNumbers {5-10}" ... />
+```
+
+### ➕ Inserimenti (Diff - Verde)
+
+Evidenzia linee come codice **aggiunto**:
+
+```mdx
+<!-- Linee inserite -->
+<RemoteCode meta="ins={5-10}" ... />
+
+<!-- Con numeri di riga -->
+<RemoteCode meta="showLineNumbers ins={5-10}" ... />
+```
+
+### ➖ Cancellazioni (Diff - Rosso)
+
+Evidenzia linee come codice **rimosso**:
+
+```mdx
+<!-- Linee cancellate -->
+<RemoteCode meta="del={1-3}" ... />
+
+<!-- Inserimenti e cancellazioni insieme -->
+<RemoteCode meta="ins={10-15} del={5-7}" ... />
+```
+
+### 🏷️ Etichette Colorate
+
+Aggiungi etichette descrittive con colori:
+
+```mdx
+<!-- Etichetta su inserimento -->
+<RemoteCode meta='ins={"Nuova Feature":10-15}' ... />
+
+<!-- Etichetta su cancellazione -->
+<RemoteCode meta='del={"Codice Deprecato":5-7}' ... />
+
+<!-- Etichetta su evidenziazione neutra -->
+<RemoteCode meta='{"Importante":20}' ... />
+
+<!-- Multiple etichette -->
+<RemoteCode meta='ins={"Fix":10} del={"Bug":5} {"Note":15}' ... />
+```
+
+> **Nota:** Usa sempre apici singoli `'` per l'attributo `meta` quando includi etichette con apici doppi `"`.
+
+### 📦 Sezioni Collassabili
+
+Nascondi sezioni di codice meno rilevanti per migliorare la leggibilità. Gli utenti possono espandere le sezioni collassate cliccando sul pulsante "X linee nascoste".
+
+**Casi d'uso ideali**:
+- Nascondere boilerplate code (imports, configurazioni)
+- Collassare implementazioni di metodi già noti
+- Mostrare solo le modifiche in file lunghi
+- Tutorial step-by-step con focus progressivo
+
+```mdx
+<!-- Singola sezione collassata -->
+<RemoteCode meta="collapse={10-50}" ... />
+
+<!-- Multiple sezioni collassate -->
+<RemoteCode meta="collapse={5-10, 20-30}" ... />
+
+<!-- Con evidenziazione delle parti importanti -->
+<RemoteCode meta="{3-5} collapse={10-50}" ... />
+
+<!-- Con diff: mostra solo le modifiche -->
+<RemoteCode meta="ins={25-30} del={15-20} collapse={35-100}" ... />
+
+<!-- Tutorial completo con focus -->
+<RemoteCode 
+  meta='showLineNumbers ins={"New":10-12} collapse={20-50}' 
+  ... 
+/>
+```
+
+> **💡 Suggerimento**: Usa `collapse` per nascondere codice di contesto e mantieni visibile solo ciò che vuoi spiegare.
+
+### 🎯 Combinazioni Avanzate
+
+Combina più funzionalità insieme:
+
+```mdx
+<!-- Numeri di riga + evidenziazione + diff -->
+<RemoteCode 
+  meta="showLineNumbers ins={10-15} del={5-7} {20}" 
+  ... 
+/>
+
+<!-- Diff con etichette + collasso -->
+<RemoteCode 
+  meta='ins={"New API":10-15} del={"Old API":5-7} collapse={30-50}' 
+  ... 
+/>
+
+<!-- Esempio completo -->
+<RemoteCode 
+  meta='showLineNumbers ins={"Added":10-12} del={"Removed":5-6} {"Focus":20} collapse={25-35}' 
+  ... 
+/>
+```
+
+## Tabella Riepilogativa Sintassi
+
+| Funzionalità | Sintassi | Esempio |
+|-------------|----------|---------|
+| Evidenziazione | `{linee}` | `{5-10}` |
+| Numeri di riga | `showLineNumbers` | `showLineNumbers` |
+| Inserimenti | `ins={linee}` | `ins={5-10}` |
+| Cancellazioni | `del={linee}` | `del={1-3}` |
+| Etichette inserimenti | `ins={"testo":linee}` | `ins={"New":5-10}` |
+| Etichette cancellazioni | `del={"testo":linee}` | `del={"Old":1-3}` |
+| Etichette neutre | `{"testo":linee}` | `{"Important":15}` |
+| Collasso | `collapse={linee}` | `collapse={10-50}` |
+
+## Linguaggi Supportati
+
+Expressive Code supporta tutti i linguaggi di Shiki, tra cui:
+
+- **Web**: `html`, `css`, `javascript`, `typescript`, `jsx`, `tsx`, `vue`, `svelte`
+- **Backend**: `python`, `java`, `csharp`, `go`, `rust`, `php`, `ruby`  
+- **Database**: `sql`, `mongodb`, `postgresql`
+- **Config**: `json`, `yaml`, `toml`, `xml`, `ini`
+- **Shell**: `bash`, `powershell`, `cmd`, `fish`
+- **Altri**: `markdown`, `dockerfile`, `graphql`, `regex`
+
+Vedi la [lista completa dei linguaggi Shiki](https://shiki.style/languages).
+
+## Come ottenere l'URL raw da GitHub
+
+1. Vai al file su GitHub
+2. Clicca sul pulsante **"Raw"**
+3. Copia l'URL dalla barra degli indirizzi
+4. L'URL avrà il formato: `https://raw.githubusercontent.com/utente/repo/branch/percorso/file.estensione`
+
+## Note tecniche
+
+- Il codice viene scaricato durante la fase di build, non a runtime
+- Se l'URL non è raggiungibile, verrà mostrato un messaggio di errore
+- Supporta tutte le funzionalità di Expressive Code integrate in Starlight
