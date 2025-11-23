@@ -865,11 +865,19 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         color: var(--sl-color-white);
     }
 
-    /* Mobile Dropdown */
-    .mobile-dropdown-content {
-        display: none;
-        background-color: var(--sl-color-bg-sidebar);
+    .mobile-dropdown-content a {
         padding-left: 1rem;
+        font-size: var(--sl-text-sm);
+        border-bottom: none; /* Optional: remove border for cleaner look inside dropdown */
+    }
+
+    /* Mobile Dropdown */
+    .mobile-drawer-nav .mobile-dropdown-content {
+        display: none;
+        background-color: transparent;
+        padding-left: 0;
+        margin-left: 1rem !important;
+        border-left: 1px solid var(--sl-color-gray-5);
     }
 
     .mobile-dropdown.open .mobile-dropdown-content {
