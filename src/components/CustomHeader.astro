@@ -380,7 +380,7 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         display: none;
     }
 
-    @media (min-width: 50rem) {
+    @media (min-width: 72rem) {
         .nav-wrapper {
             display: flex;
         }
@@ -471,8 +471,8 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         margin: 0 1rem;
     }
 
-    /* Desktop: Expand search bar */
-    @media (min-width: 50rem) {
+    /* Desktop: Expand search bar only on very large screens */
+    @media (min-width: 72rem) {
         .search-wrapper {
             flex-grow: 1;
             justify-content: center;
@@ -493,6 +493,40 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
             border-radius: 0.5rem;
             padding-inline: 1rem;
             justify-content: space-between;
+        }
+    }
+
+    /* Medium screens: Give search bar reasonable space */
+    /* Medium screens: Give search bar reasonable space and force full display */
+    @media (min-width: 50rem) and (max-width: 71.9375rem) {
+        .search-wrapper {
+            flex-grow: 1;
+            min-width: 200px;
+            max-width: 400px;
+            margin-inline: 1rem; /* Match the 1rem gap of right-group */
+        }
+
+        /* Force search button to look like desktop version */
+        .search-wrapper :global(site-search),
+        .search-wrapper :global(.site-search) {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .search-wrapper :global(button[data-open-modal]) {
+            width: 100% !important;
+            border: 1px solid var(--sl-color-gray-5);
+            border-radius: 0.5rem;
+            padding-inline: 1rem;
+            justify-content: space-between;
+            background-color: var(--sl-color-black);
+        }
+
+        /* Force visibility of text and shortcut hint inside the button */
+        .search-wrapper :global(button[data-open-modal] > *),
+        .search-wrapper :global(button[data-open-modal] .sl-hidden),
+        .search-wrapper :global(button[data-open-modal] .sl-hidden-md) {
+            display: flex !important;
         }
     }
 
@@ -630,7 +664,7 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
     }
 
     .mobile-menu-btn {
-        display: none;
+        display: block; /* Show by default */
         background: none;
         border: none;
         color: var(--sl-color-white);
@@ -638,10 +672,25 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         padding: 0.5rem;
     }
 
+    /* Hide the three-dot menu on large screens where nav links are visible */
+    @media (min-width: 72rem) {
+        .mobile-menu-btn {
+            display: none;
+        }
+    }
+
+    /* Explicitly show the three-dot menu on medium screens when TOC is compact */
+    @media (min-width: 50rem) and (max-width: 71.9375rem) {
+        .mobile-menu-btn {
+            display: block !important;
+            margin-right: 1rem; /* Add spacing before search bar */
+        }
+    }
+
     /* Mobile Layout Fixes */
 
     /* 1. Reserve space for Starlight's hamburger menu and ensure flexible layout */
-    @media (max-width: 49.9375rem) {
+    @media (max-width: 71.9375rem) {
         .custom-header-container {
             padding-right: 1.5rem !important; /* Reduced reserved space for Starlight hamburger */
             gap: 0 !important; /* Remove gap between groups to tighten spacing */
@@ -680,16 +729,16 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
             display: block;
         }
 
-        /* Prevent mobile menu button from shrinking */
+        /* Show mobile menu button on mobile and medium screens */
         .mobile-menu-btn {
             flex: 0 0 auto;
             margin-right: 0.25rem; /* Small gap between dots and search */
-            display: block; /* Show on mobile */
+            display: block !important; /* Force show with !important */
         }
     }
 
-    /* 2. Ensure search icon is ALWAYS visible on mobile */
-    @media (max-width: 49.9375rem) {
+    /* 2. Ensure search icon is ALWAYS visible on mobile and medium screens */
+    @media (max-width: 71.9375rem) {
         .search-wrapper {
             display: flex !important;
             flex: 0 0 auto !important;
@@ -697,7 +746,7 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
             height: auto !important;
             opacity: 1 !important;
             pointer-events: auto !important;
-            margin: 0 !important; /* Remove margin to bring search closer to dots and edge */
+            pointer-events: auto !important;
         }
 
         .search-wrapper button {
@@ -711,6 +760,13 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
 
         .search-wrapper :global(.sl-hidden) {
             display: none !important;
+        }
+    }
+
+    /* 3. Mobile-specific search bar adjustments */
+    @media (max-width: 49.9375rem) {
+        .search-wrapper {
+            margin: 0 !important;
         }
     }
 
@@ -924,11 +980,13 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
             flex-wrap: wrap !important;
             height: auto !important;
             min-height: var(--sl-nav-height);
-            padding-bottom: 0.25rem !important;
+            min-height: var(--sl-nav-height);
+            padding-bottom: 0.5rem !important;
+            padding-left: 1rem !important; /* Symmetric padding */
             padding-left: 1rem !important; /* Symmetric padding */
             padding-right: 1rem !important; /* Symmetric padding */
             align-content: center !important;
-            justify-content: space-between !important; /* User requested space-between */
+            justify-content: flex-start !important; /* Left align everything */
             /* Removed background-color to restore theme default */
         }
 
@@ -940,17 +998,17 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
             flex: 1 0 100% !important; /* Force full width */
             margin-bottom: 0 !important; /* Removed margin between rows */
             margin-right: 0 !important;
-            justify-content: center; /* Center title */
+            justify-content: flex-start !important; /* Left align title */
         }
 
         .mobile-menu-btn {
             order: 2;
-            margin-left: 0 !important;
+            margin-left: -0.5rem !important; /* Compensate for padding to align with logo */
             padding-left: 0.5rem !important; /* Match logo offset for vertical alignment */
-            margin-right: auto !important; /* Push others away if needed, but space-between handles it */
+            margin-right: 0.5rem !important; /* Small gap before search icon */
             /* Ensure vertical center */
             align-self: center !important;
-            height: 100%;
+            height: auto !important;
             display: flex;
             align-items: center;
         }
@@ -958,20 +1016,22 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         .search-wrapper {
             order: 3;
             margin: 0 !important;
-            justify-content: flex-end !important; /* Align content to right */
+            margin-bottom: 0.5rem !important; /* Push up from bottom */
+            justify-content: flex-start !important; /* Align content to left */
             flex: 0 1 auto !important;
             /* Fix vertical alignment */
             align-self: center !important;
             display: flex !important;
             align-items: center !important;
-            height: 100%;
+            height: auto !important;
         }
 
         /* Ensure search button doesn't take full width if it was set to */
         .search-wrapper button {
             width: auto !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0.5rem !important;
+            line-height: 1 !important;
             display: flex !important;
             align-items: center !important;
             height: auto !important;
