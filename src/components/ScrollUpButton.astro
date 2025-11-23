@@ -1,0 +1,99 @@
+---
+// No props needed for this simple component
+---
+
+<button
+    id="scroll-up-button"
+    aria-label="Scroll to top"
+    class="scroll-up-button"
+>
+    <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+    >
+        <path d="M18 15l-6-6-6 6"></path>
+    </svg>
+</button>
+
+<script>
+    const scrollUpBtn = document.getElementById("scroll-up-button");
+    let lastScrollY = window.scrollY;
+
+    if (scrollUpBtn) {
+        // Show/hide button based on scroll direction and position
+        window.addEventListener("scroll", () => {
+            const currentScrollY = window.scrollY;
+
+            // Show if scrolling up AND not at the very top (e.g., > 300px)
+            if (currentScrollY < lastScrollY && currentScrollY > 300) {
+                scrollUpBtn.classList.add("visible");
+            } else {
+                // Hide if scrolling down OR at the top
+                scrollUpBtn.classList.remove("visible");
+            }
+
+            lastScrollY = currentScrollY;
+        });
+
+        // Smooth scroll to top on click
+        scrollUpBtn.addEventListener("click", () => {
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth",
+            });
+        });
+    }
+</script>
+
+<style>
+    .scroll-up-button {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background-color: var(--sl-color-bg-nav);
+        border: 1px solid var(--sl-color-gray-5);
+        color: var(--sl-color-text-accent);
+        box-shadow: var(--sl-shadow-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 100; /* Above content, below mobile drawer (9999) */
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(1rem);
+        transition: all 0.3s ease;
+    }
+
+    .scroll-up-button:hover {
+        background-color: var(--sl-color-gray-6);
+        color: var(--sl-color-white);
+        transform: translateY(-2px);
+        box-shadow: var(--sl-shadow-lg);
+    }
+
+    .scroll-up-button.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    /* Adjust position on mobile to avoid overlapping with other elements if needed */
+    @media (max-width: 50rem) {
+        .scroll-up-button {
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 2.5rem;
+            height: 2.5rem;
+        }
+    }
+</style>

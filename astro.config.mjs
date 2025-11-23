@@ -108,6 +108,7 @@ export default defineConfig({
         // Footer: "./src/components/Footer.astro",
       },
       expressiveCode: {
+        themes: ["houston", "light-plus"],
         frames: {
           showCopyToClipboardButton: true,
         },

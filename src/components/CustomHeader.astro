@@ -8,6 +8,7 @@ import LanguageSelect from "@astrojs/starlight/components/LanguageSelect.astro";
 import ProgressScroll from "starlight-theme-galaxy/components/ProgressScroll.astro";
 import brandIcon from "@assets/images/brand-icon.png";
 import { headerNav, siteTitle, socialLinks } from "../config/header";
+import ScrollUpButton from "./ScrollUpButton.astro";
 
 // Logic to hide progress scroll on homepage (optional, based on Galaxy theme docs)
 const baseUrl = import.meta.env.BASE_URL || "/";
@@ -251,6 +252,8 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
 
 {displayProgressScroll && <ProgressScroll />}
 
+<ScrollUpButton />
+
 <script>
     // Logic to handle mobile drawer
     const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
@@ -331,19 +334,34 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
 </script>
 
 <style>
+    /* Override Galaxy theme's transparent header with solid background */
+    :global(.header),
+    :global(header),
+    :global(.sl-header),
+    :global([data-has-hero] header) {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        background: var(--sl-color-bg-nav) !important;
+        background-color: var(--sl-color-bg-nav) !important;
+        opacity: 1 !important;
+    }
+
     .header {
         gap: var(--sl-nav-gap);
         justify-content: space-between;
         align-items: center;
         height: 100%;
         display: flex;
-        background: transparent; /* Ensure no white background on light theme */
+        background: transparent !important; /* Revert to transparent to avoid overlap rectangle */
+        padding-right: 1.5rem; /* Prevent right-side items from being cut off */
+        box-sizing: border-box; /* Ensure padding is included in width */
+        width: 100%; /* Ensure it doesn't exceed parent */
     }
 
     .left-group {
         display: flex;
         align-items: center;
-        gap: 2rem;
+        gap: 2.5rem; /* Increase gap between title and nav links */
     }
 
     .title-wrapper {
@@ -458,7 +476,7 @@ const displayProgressScroll = normalizedPath !== normalizedBase;
         .search-wrapper {
             flex-grow: 1;
             justify-content: center;
-            width: 100%;
+            width: auto; /* Allow flex-grow to handle width, preventing overflow */
             max-width: 100%;
         }
 
