@@ -15,15 +15,16 @@ export const socialLinks = {
 };
 
 export const headerNav: NavItem[] = [
-    { label: "Gemini CLI", href: "/info-quarta/gemini-cli", icon: "🤖" },
-    {
-        label: "Extensions",
-        icon: "🧩",
-        items: [
-            { label: "Gallery", href: "/info-quarta/gallery", icon: "🖼️" },
-            { label: "About Extensions", href: "/info-quarta/about-extensions", icon: "ℹ️" },
-        ],
-    },
-    { label: "Docs", href: "/info-quarta/docs", icon: "📚" },
-    { label: "Changelog", href: "/info-quarta/changelog", icon: "📝" },
+    // { label: "Gemini CLI", href: "/info-quarta/gemini-cli", icon: "🤖" },
+    // {
+    //     label: "Extensions",
+    //     icon: "🧩",
+    //     items: [
+    //         { label: "Gallery", href: "/info-quarta/gallery", icon: "🖼️" },
+    //         { label: "About Extensions", href: "/info-quarta/about-extensions", icon: "ℹ️" },
+    //     ],
+    // },
+    { label: "Tools", href: "/info-quarta/corso/dev-tools/", icon: "🛠️" },
+    { label: "C#", href: "/info-quarta/corso/advanced-csharp", icon: "💻" },
+    
 ];

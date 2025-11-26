@@ -28,7 +28,7 @@ export default defineConfig({
         starlightFullViewMode({
           leftSidebarEnabled: true,
           rightSidebarEnabled: true,
-          rightSidebarExpandedWidth: "20%"
+          rightSidebarExpandedWidth: "20%",
         }),
         starlightCodeblockFullscreen({
           // Optional configuration
@@ -45,7 +45,7 @@ export default defineConfig({
         root: { label: "Italiano", lang: "it" },
         en: { label: "English", lang: "en" },
       },
-      favicon: "/src/assets/images/brand-icon.png",
+      favicon: "./src/assets/images/brand-icon.png",
       customCss: ["./src/styles/custom.css"],
       social: [
         {
@@ -56,8 +56,8 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Corso di Informatica",
-          translations: { en: "Computer Science Course" },
+          label: "🧑‍💻 Corso di Informatica",
+          translations: { en: "🧑‍💻 Computer Science Course" },
           collapsed: false,
           items: [
             {
@@ -66,18 +66,38 @@ export default defineConfig({
               slug: "corso",
             },
             {
-              label: "Advanced CSharp",
+              label: "🛠️ Dev tools",
+              collapsed: true,
               translations: {
-                en: "Advanced CSharp",
-              },
-              autogenerate: { directory: "corso/advanced-csharp" },
-            },
-            {
-              label: "Dev tools",
-              translations: {
-                en: "Dev tools",
+                en: "🛠️ Dev tools",
               },
               autogenerate: { directory: "corso/dev-tools" },
+            },
+            {
+              label: "💻 Advanced CSharp",
+              collapsed: true,
+              translations: {
+                en: "💻 Advanced CSharp",
+              },
+              items: [
+                { slug: "corso/advanced-csharp" },
+                { slug: "corso/advanced-csharp/delegates" },
+                { slug: "corso/advanced-csharp/lambda" },
+                { slug: "corso/advanced-csharp/events" },
+                { slug: "corso/advanced-csharp/linq" },
+                {
+                  label: "EF Core",
+                  autogenerate: { directory: "corso/advanced-csharp/ef-core" },
+                  collapsed: true,
+                },
+                {
+                  label: "Concurrent Computing",
+                  autogenerate: {
+                    directory: "corso/advanced-csharp/concurrent-computing",
+                  },
+                  collapsed: true,
+                },
+              ],
             },
           ],
         },
