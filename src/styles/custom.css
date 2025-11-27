@@ -1,4 +1,3 @@
-
 /* Remove Galaxy theme header transparency - force solid background */
 /* header,
 .header,
@@ -58,3 +57,57 @@
     }
 }
 
+/* Resize logo in default header */
+.site-title img {
+    height: 30px !important;
+    /* Adjust this value to change the logo size */
+    width: auto;
+    max-height: 100%;
+}
+
+/* Fix: Ensure code block highlights extend to full scroll width */
+.expressive-code pre>code,
+.expressive-code .frame pre>code {
+    display: inline-block;
+    min-width: 100%;
+    min-width: -webkit-fill-available;
+    min-width: -moz-fit-content;
+    /* stylelint-disable-next-line property-no-unknown */
+    /* stylelint-disable-next-line plugin/no-unsupported-browser-features */
+    min-width: fit-content;
+}
+
+/* Ensure individual lines also respect the width */
+.expressive-code .ec-line {
+    min-width: -webkit-fill-available;
+    min-width: 100%;
+    /* stylelint-disable-next-line property-no-unknown */
+    /* Provide vendor-prefixed fallbacks for older/quirky browsers */
+    width: -webkit-fill-available;
+    width: -moz-fit-content;
+    /* stylelint-disable-next-line property-no-unknown */
+    /* stylelint-disable-next-line plugin/no-unsupported-browser-features */
+    width: fit-content;
+}
+
+/* Make Starlight Cards clickable */
+.card {
+    position: relative;
+    transition: border-color 0.3s ease, transform 0.2s ease;
+}
+
+.card:hover {
+    border-color: var(--sl-color-accent);
+    transform: translateY(-2px);
+    cursor: pointer;
+}
+
+.card-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    opacity: 0;
+}

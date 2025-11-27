@@ -23,7 +23,7 @@ In C#, delegates form the basic building blocks for events. A delegate is a type
 
 ## Primo esempio
 
-```cs
+```cs 
 internal class Program
 {
     // declare delegate
@@ -73,7 +73,7 @@ Print printDel = new Print(PrintNumber);
 
 The delegate can be invoked like a method because it is a reference to a method. Invoking a delegate will in-turn invoke a method which id referred to. The delegate can be invoked by two ways: using () operator or using the Invoke() method of delegate as shown below.
 
-```cs
+```cs 
 Print printDel = PrintNumber;
 printDel.Invoke(10000);
 //or
@@ -82,7 +82,7 @@ printDel(10000);
 
 ## Secondo esempio
 
-```cs
+```cs 
 internal class Program
 {
     public delegate double MathDelegate(double value1, double value2);
@@ -125,7 +125,7 @@ An instantiated delegate is an object; you can pass it around and give it as an 
 
 Another great feature of delegates is that you can combine them together. This is called multicast. You can use the + or += operator to add another method to the invocation list of an existing delegate instance. Similarly, you can also remove a method from an invocation list by using the decrement assignment operator (- or -=). This feature forms the base for events in C#. Below is a multicast delegate example.
 
-```cs
+```cs 
 internal class Program
 {
     static void Hello(string s)
@@ -209,7 +209,7 @@ When you assign a method to a delegate, the method signature does not have to ma
 
 Here is an example of covariance:
 
-```cs
+```cs 
 class Program
 {
     public delegate TextWriter CovarianceDel();
@@ -232,7 +232,7 @@ Because both StreamWriter and StringWriter inherit from TextWriter, you can use 
 
 Below is an example of contravariance.
 
-```cs
+```cs 
 internal class Program
 {
     public static void DoSomething(TextWriter textWriter) { }

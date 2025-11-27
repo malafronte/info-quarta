@@ -24,7 +24,7 @@ export default defineConfig({
         en: "Computer Science in Year 4",
       },
       logo: {
-        src: "./src/assets/images/brand-icon.png",
+        src: "./src/assets/images/brand-icon-128.png",
       },
       plugins: [
         starlightThemeGalaxy(),
@@ -48,7 +48,7 @@ export default defineConfig({
         root: { label: "Italiano", lang: "it" },
         en: { label: "English", lang: "en" },
       },
-      favicon: "./src/assets/images/brand-icon.png",
+      favicon: "./src/assets/images/brand-icon-128.png",
       customCss: ["./src/styles/custom.css"],
       social: [
         {

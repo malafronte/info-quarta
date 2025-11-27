@@ -22,7 +22,7 @@ when writing new code.
 
 Below is an example of newer lambda syntax.
 
-```cs
+```cs 
 internal class Program
 {
     public delegate double MathDelegate(double value1, double value2);
@@ -55,7 +55,7 @@ You can create lambdas that span multiple statements. You can do this by
 adding curly braces around the statements that form the lambda as below
 example shows.
 
-```cs
+```cs 
 MathDelegate mathDelegate = (x, y) =>
 {
     Console.WriteLine("Add");
@@ -73,7 +73,7 @@ funzione anonima a lambda expression
 
 Si consideri il seguente esempio di delegato con funzione anonima:
 
-```cs
+```cs 
 public class Student
 {
     public int Id { get; set; }
@@ -99,7 +99,7 @@ internal class Program
 
 Lo stesso risultato si può ottenere con il seguente costrutto lambda
 
-```cs
+```cs 
 public class Student
 {
     public int Id { get; set; }
@@ -150,7 +150,7 @@ Lambda Expression Structure in C#
 You can wrap the parameters in parenthesis if you need to pass more than
 one parameter, as below:
 
-```cs
+```cs 
 public class Student
 {
     public int Id { get; set; }
@@ -175,7 +175,7 @@ internal class Program
 
 You can also give type of each parameters if parameters are confusing:
 
-```cs
+```cs 
 (Student s,int youngAge) => s.Age >= youngAge;
 ```
 
@@ -183,13 +183,13 @@ It is not necessary to have at least one parameter in a lambda
 expression. The lambda expression can be specify without any parameter
 also.
 
-```cs
+```cs 
 () => Console.WriteLine("Parameter less lambda expression")
 ```
 
 Ad esempio:
 
-```cs
+```cs 
 internal class Program
 {
     delegate void Print();
@@ -205,7 +205,7 @@ internal class Program
 You can wrap expressions in curly braces if you want to have more than
 one statement in the body:
 
-```cs
+```cs 
 (s, youngAge) =>
 {
     Console.WriteLine("Lambda expression with multiple statements in the body");
@@ -215,7 +215,7 @@ one statement in the body:
 
 Altro esempio: lambda expression con due parametri
 
-```cs
+```cs 
 public class Student
 {
     public int Id { get; set; }
@@ -237,7 +237,7 @@ internal class Program
 You can declare a variable in the expression body to use it anywhere in
 the expression body, as below:
 
-```cs
+```cs 
 internal class Program
 {
     delegate bool IsAdult(Student stud);
@@ -273,8 +273,7 @@ Func<int, int, int>
 
 like this,
 
-```cs
-
+```cs 
 internal class Program
 {
     static void Main(string[] args)
@@ -347,7 +346,7 @@ don't return a value.
 
 Here is an example of using the Action type
 
-```cs
+```cs 
 internal class Program
 {
     static void Main(string[] args)
@@ -368,7 +367,7 @@ internal class Program
 
 Esempio con le lambda expressions:
 
-```cs
+```cs 
 internal class Program
 {
     static void Main(string[] args)
@@ -406,7 +405,7 @@ means that local variables from the parenting method body can be
 referenced within the anonymous method\'s body. So, this code prints 0
 to the console as expected:
 
-```cs
+```cs 
 internal class Program
 {
     delegate void MyAction();
@@ -427,7 +426,7 @@ that writes \"x\" to the console. Finally, \"a\" is called and the value
 of \"x\" (0) is printed to the console. The rub occurs when the code is
 changed like this:
 
-```cs
+```cs 
 internal class Program
 {
     delegate void MyAction();
@@ -454,7 +453,7 @@ is used so that `a` will always use the most recent value of`x`. In
 fact, this reference to `x` will be persisted even if`x` goes out
 of scope. Consider this code:
 
-```cs
+```cs 
 internal class Program
 {
     delegate void MyAction();

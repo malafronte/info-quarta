@@ -27,7 +27,7 @@ In generale usare thread paralleli (usando la classe Thread e la classe Task in 
 
 I thread in C# sono modellati dalla classe Thread[^1]. Quando un processo viene avviato (si esegue un programma) si ottiene un singolo thread (noto anche come thread principale) per eseguire il codice dell'applicazione. Per avviare esplicitamente un altro thread (diverso dal thread principale) bisogna creare un'istanza della classe Thread e chiamare il suo metodo Start per eseguirlo in C#. Vediamo un esempio:
 
-```cs showLineNumbers
+```cs 
 namespace ThreadsDemo
 {
     internal class Program
@@ -82,7 +82,7 @@ Thread t = new(SomeMethod)
 
 Esiste anche una proprietà di thread chiamata `IsBackground`. Se impostata a true il thread sarà un background thread, altrimenti sarà un foreground thread. **Per default è false, quindi sarà sempre un foreground thread**. Esempio:
 
-```cs showLineNumbers
+```cs 
 namespace ThreadsDemo
 {
     internal class Program
@@ -134,7 +134,7 @@ public delegate void ParameterizedThreadStart(object obj)
 
 Se il metodo richiede un argomento è possibile usare `ParameterizedThreadStart` e passare il parametro al metodo `Start`. Esempio:
 
-```cs showLineNumbers
+```cs 
 namespace StartWithParameters
 {
     internal class Program
@@ -166,7 +166,7 @@ namespace StartWithParameters
 
 Si noti che ora è necessario passare l'argomento del metodo Speak al metodo Start. Finora abbiamo usato solo metodi statici, ma è possibile usare anche metodi di istanza, come nell'esempio seguente:
 
-```cs showLineNumbers
+```cs 
 namespace StartWithParameters
 {
     internal class Program
@@ -258,7 +258,7 @@ Se si chiama il metodo `Thread.Sleep`, il thread corrente viene bloccato immedia
 Un thread non può chiamare `Thread.Sleep` su un altro thread. `Thread.Sleep` è un metodo statico che determina sempre il thread corrente da sospendere.
 Se si chiama `Thread.Sleep` con un valore di `Timeout.Infinite`, un thread rimarrà sospeso finché non verrà interrotto da un altro thread tramite una chiamata al metodo `Thread.Interrupt` nel thread sospeso. Si analizzi l'esempio seguente per comprendere la dinamica di questo modo di interazione con i thread:
 
-```cs showLineNumbers
+```cs 
 namespace SleepingDemo01
 {
     class Program
@@ -315,7 +315,7 @@ Thread 'Sleeping' finishing normal execution.
 
 Si può definire comunque un **approccio cooperativo** nel quale, il thread, che esegue un certo task, controlla se ha il permesso di eseguire una certa operazione, come nell’esempio seguente:
 
-```cs showLineNumbers
+```cs 
 namespace StopThread
 {
     namespace StopThread
@@ -368,7 +368,7 @@ Come abbiamo appreso nella sezione precedente, il thread si arresta dopo aver co
 `ThreadPool.QueueUserWorkItem` è un metodo statico che è usato per mettere in coda l'unità di lavoro dell'utente nel thread pool. Proprio come si passa un delegate a un costruttore di Thread per creare un thread, si deve passare un delegate a questo metodo per mettere in coda il proprio lavoro.
 Ecco un esempio:
 
-```cs showLineNumbers  
+```cs   
 namespace ThreadPoolDemo
 {
     class Program
@@ -408,7 +408,7 @@ QueueUserWorkItem(WaitCallback, Object)
 Qui il primo parametro è il nome del tuo metodo e il secondo parametro è l'oggetto che vuoi passare al tuo metodo.
 Ecco un esempio:  
 
-```cs showLineNumbers
+```cs 
 namespace ThreadPoolDemo
 {
     class Program
@@ -442,7 +442,7 @@ namespace ThreadPoolDemo
 
 Non tutte le risorse sono adatte all'uso concorrente. Risorse come interi e collezioni devono essere gestite con attenzione quando sono accessibili da più thread; le risorse che vengono lette e aggiornate da più thread sono dette risorse condivise. Esempio:
 
-```cs showLineNumbers
+```cs 
 namespace SharedResources01
 {
     class Program
@@ -491,7 +491,7 @@ Una race condition è uno scenario in cui l'esito del programma dipende dal timi
 **Una race condition si verifica quando due o più thread possono accedere a dati condivisi e cercano di modificarli allo stesso tempo. Poiché l'algoritmo di pianificazione dei thread può passare da un thread all'altro in qualsiasi momento, non si conosce l'ordine in cui i thread tenteranno di accedere ai dati condivisi. Pertanto, il risultato della modifica dei dati dipende dall'algoritmo di pianificazione dei thread, cioè entrambi i thread stanno "correndo" per accedere/modificare i dati.**  
 Nel nostro caso, la riga che causa la race condition è `sum++`, anche se questa riga sembra essere un'istruzione singola e non dovrebbe essere influenzata dalla concorrenza, a livello di esecuzione viene trasformata in più istruzioni da parte del JIT, ad esempio
 
-```asm showLineNumbers
+```asm 
 mov eax, dword ptr [sum]
 inc eax
 mov dword ptr [sum], eax
