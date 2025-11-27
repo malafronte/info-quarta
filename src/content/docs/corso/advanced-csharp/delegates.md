@@ -6,7 +6,6 @@ sidebar:
 
 ---
 <style>
-p {text-align: justify}
 img {display: block; margin: 0 auto;}
 </style>
 A function can have one or more parameters of different data types, but what if you want to pass a function itself as a parameter? How does C# handle the callback functions or event handler? The answer is - **delegate**.

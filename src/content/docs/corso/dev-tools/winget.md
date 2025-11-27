@@ -7,7 +7,6 @@ sidebar:
   order: 30
 ---
 <style>
-p {text-align: justify}
 img {display: block; margin: 0 auto;}
 </style>
 

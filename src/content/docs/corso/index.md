@@ -5,7 +5,7 @@ sidebar:
   label: "Panoramica del corso"
   order: 1
 ---
-<style>p {text-align: justify}</style>
+
 ## Guida di riferimento per il corso di Informatica nella classe quarta
 
 Il presente corso di Informatica, progettato per gli studenti del quarto anno dell'indirizzo informatico, si pone l'ambizioso obiettivo di consolidare ed espandere le competenze di programmazione maturate negli anni precedenti, introducendo paradigmi avanzati, metodologie di sviluppo professionale e tecnologie all'avanguardia. L'intento formativo primario è quello di plasmare figure tecniche dotate di una solida preparazione teorica e pratica, capaci di progettare, sviluppare e documentare sistemi software di elevata complessità, operando con piena consapevolezza sia in contesti di lavoro individuale che all'interno di team di sviluppo strutturati. Il percorso didattico si articola in moduli tematici interconnessi che spaziano dall'ingegneria del software alla programmazione di sistema, dallo sviluppo di servizi backend alla creazione di moderne interfacce per dispositivi mobili.

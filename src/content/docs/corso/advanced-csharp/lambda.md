@@ -5,7 +5,6 @@ sidebar:
   order: 20
 ---
 <style>
-p {text-align: justify}
 img {display: block; margin: 0 auto;}
 </style>
 Sometimes the whole signature of a method can be more code than the body

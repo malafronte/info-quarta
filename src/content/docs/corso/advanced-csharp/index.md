@@ -2,10 +2,9 @@
 title: "Programmazione avanzata in C#"
 description: "Programmazione avanzata in C#"
 sidebar:
-  label: "Generalità"
+  label: "Programmazione avanzata"
   order: 1
 ---
-<style>p {text-align: justify}</style>
 
 Questa sezione del corso è dedicata alla **Programmazione Avanzata in C#**.
 

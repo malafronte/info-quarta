@@ -24,7 +24,7 @@ export const headerNav: NavItem[] = [
     //         { label: "About Extensions", href: "/info-quarta/about-extensions", icon: "ℹ️" },
     //     ],
     // },
-    { label: "Tools", href: "/info-quarta/corso/dev-tools/", icon: "🛠️" },
-    { label: "C#", href: "/info-quarta/corso/advanced-csharp", icon: "💻" },
+    // { label: "Tools", href: "/info-quarta/corso/dev-tools/", icon: "🛠️" },
+    // { label: "C#", href: "/info-quarta/corso/advanced-csharp", icon: "💻" },
     
 ];

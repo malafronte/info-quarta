@@ -2,10 +2,9 @@
 title: "Programmazione concorrente in C#"
 description: "Programmazione concorrente in C#"
 sidebar:
-  label: "Generalità"
+  label: "Programmazione concorrente"
   order: 1
 ---
-<style>p {text-align: justify}</style>
 
 La programmazione concorrente costituisce un pilastro fondamentale dell'ingegneria del software moderna, permettendo la creazione di applicazioni reattive, efficienti e capaci di sfruttare appieno le potenzialità delle architetture hardware multi-core. Questa sezione del corso si propone di analizzare in dettaglio i meccanismi che regolano l'esecuzione simultanea di più sequenze di istruzioni, partendo dalle fondamenta gestite dal sistema operativo fino alle astrazioni di alto livello offerte dal framework .NET.
 

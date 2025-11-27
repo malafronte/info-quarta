@@ -2,11 +2,10 @@
 title: "Development Tools"
 description: "Development Environment Setup"
 sidebar:
-  label: "Generalità"
+  label: "Development Tools"
   order: 1
 ---
 <style>
-p {text-align: justify}
 img {display: block; margin: 0 auto;}
 </style>
 

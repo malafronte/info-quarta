@@ -23,6 +23,9 @@ export default defineConfig({
         it: "Informatica in quarta",
         en: "Computer Science in Year 4",
       },
+      logo: {
+        src: "./src/assets/images/brand-icon.png",
+      },
       plugins: [
         starlightThemeGalaxy(),
         starlightFullViewMode({
@@ -123,7 +126,7 @@ export default defineConfig({
       ],
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
       components: {
-        Header: "./src/components/CustomHeader.astro",
+        //Header: "./src/components/CustomHeader.astro",
         // Footer override example
         // Footer: "./src/components/Footer.astro",
       },
