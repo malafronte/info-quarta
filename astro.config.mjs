@@ -69,14 +69,6 @@ export default defineConfig({
               slug: "corso",
             },
             {
-              label: "🛠️ Dev tools",
-              collapsed: true,
-              translations: {
-                en: "🛠️ Dev tools",
-              },
-              autogenerate: { directory: "corso/dev-tools" },
-            },
-            {
               label: "💻 Advanced CSharp",
               collapsed: true,
               translations: {
@@ -105,6 +97,26 @@ export default defineConfig({
           ],
         },
         {
+          label: "🛠️ Dev tools",
+          collapsed: true,
+          translations: {
+            en: "🛠️ Dev tools",
+          },
+          items: [
+            { slug: "dev-tools" },
+            { slug: "dev-tools/shells" },
+            { slug: "dev-tools/winget" },
+            { slug: "dev-tools/win-utilities" },
+            { slug: "dev-tools/vs-code-installation" },
+            { slug: "dev-tools/vs-installation" },
+            {
+              label: "↗︎ Git",
+              autogenerate: { directory: "dev-tools/git" },
+              collapsed: true,
+            },
+          ],
+        },
+        {
           label: " 📚 Progetti",
           translations: { en: " 📚 Projects" },
           collapsed: true,
@@ -114,14 +126,7 @@ export default defineConfig({
           label: "📖 Guide",
           translations: { en: "📖 Guides" },
           collapsed: true,
-          items: [
-            // Each item here is one entry in the navigation menu.
-            {
-              label: "Guide",
-              translations: { en: "Guides" },
-              slug: "guides/example",
-            },
-          ],
+          autogenerate: { directory: "guides" },
         },
       ],
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },

@@ -419,7 +419,8 @@ La composizione di un'operazione asincrona, seguita da un lavoro sincrono è un'
 
 Il codice precedente ha mostrato che è possibile usare gli oggetti [Task](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task) o [Task<TResult>](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1) per attività in esecuzione. Si rimane in attesa (await) di ogni attività prima di usarne il risultato. Il passaggio successivo consiste nel creare metodi che rappresentano la combinazione di altre operazioni. Prima di servire la colazione, si vuole attendere l'attività che rappresenta la tostatura del pane prima dell'aggiunta del butto e della marmellata. È possibile rappresentare queste operazioni con il codice seguente:
 
-```csprivate static async Task<List<Toast>> MakeToastWithButterAndJamAsync(int v)
+```cs
+private static async Task<List<Toast>> MakeToastWithButterAndJamAsync(int v)
         {
             List<Toast> toast = await ToastBreadAsync(v);
             ApplyButter(toast);//attività sincrona
@@ -507,8 +508,6 @@ Il codice finale è asincrono. Riflette con maggior precisione il modo in cui vi
 <https://docs.microsoft.com/it-it/dotnet/standard/io/asynchronous-file-i-o>
 
 A partire da .NET Framework 4.5, i tipi di I/O includono metodi async per semplificare le operazioni asincrone. Un metodo asincrono contiene Async nel nome, ad esempio [ReadAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.readasync), [WriteAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.writeasync), [CopyToAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.copytoasync), [FlushAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.flushasync), [ReadLineAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.textreader.readlineasync) e [ReadToEndAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.textreader.readtoendasync). Questi metodi asincroni sono implementati nelle classi di flusso, come [Stream](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream), [FileStream](https://docs.microsoft.com/it-it/dotnet/api/system.io.filestream)e [MemoryStream](https://docs.microsoft.com/it-it/dotnet/api/system.io.memorystream), e nelle classi usate per la lettura o la scrittura nei flussi, come [TextReader](https://docs.microsoft.com/it-it/dotnet/api/system.io.textreader) e [TextWriter](https://docs.microsoft.com/it-it/dotnet/api/system.io.textwriter).
-
-In .NET Framework 4 e versioni precedenti è necessario usare metodi quali [BeginRead](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.beginread) e [EndRead](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.endread) per implementare operazioni di I/O asincrone. Questi metodi sono ancora disponibili in .NET Framework 4.5 per supportare il codice legacy basato sull'event-based asyncronous model (EAP). Tuttavia, i metodi async consentono di implementare più facilmente le operazioni di I/O asincrone.
 
 L'esempio seguente mostra come usare due oggetti [FileStream](https://docs.microsoft.com/it-it/dotnet/api/system.io.filestream) per copiare i file in modo asincrono da una directory a un'altra.
 

@@ -62,7 +62,6 @@ assegnato ad un processore
 
 ### Supporti per la gestione dei processi - PCB
 
-{{% bootstrap/clearfix %}}
 ![Process Control Block - PCB](./processes-vs-threads/PCB.png)
 Elementi presenti nel PCB:  
 Struttura dati del kernel che mantiene le informazioni sul processo  
@@ -73,7 +72,6 @@ Registri della CPU
 Info per la gestione della memoria centrale (limiti di memoria)  
 Info sullo stato dell’I/O (ad es.: file aperti)  
 Info per la schedulazione della CPU, etc.  
-{{% /bootstrap/clearfix %}}
 
 ### Le code di schedulazione dei processi
 

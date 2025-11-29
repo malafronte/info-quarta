@@ -9,18 +9,18 @@ sidebar:
 img {display: block; margin: 0 auto;}
 </style>
 
-## Thread synchronization techniques
+## Tecniche di sincronizzazione dei thread
 
-**Thread synchronization refers to the act of shielding against multithreading issues such as data races, deadlocks and starvation**. Se più thread sono in grado di effettuare chiamate alle proprietà e ai metodi di un singolo oggetto, è essenziale che tali chiamate siano sincronizzate. In caso contrario un thread potrebbe interrompere le operazioni eseguite da un altro thread e l'oggetto potrebbe rimanere in uno stato non valido. Una classe i cui membri sono protetti da tali interruzioni è detta thread-safe. .NET offre diverse strategie per sincronizzare l'accesso a membri statici e di istanza:  
+**La sincronizzazione dei thread si riferisce all'azione di proteggersi da problemi di multithreading come race condition, deadlock e starvation**. Se più thread possono effettuare chiamate alle proprietà e ai metodi di un singolo oggetto, è essenziale che tali chiamate siano sincronizzate. Altrimenti un thread potrebbe interrompere le operazioni di un altro thread e l'oggetto potrebbe rimanere in uno stato non valido. Una classe i cui membri sono protetti da tali interruzioni è detta thread-safe. .NET offre diverse strategie per sincronizzare l'accesso a membri statici e di istanza:
 
-* Aree di codice sincronizzate. È possibile usare la classe Monitor o il supporto del compilatore per questa classe per sincronizzare solo il codice di blocco necessario, migliorando le prestazioni.
+* Aree di codice sincronizzate. È possibile usare la classe Monitor o il supporto del compilatore per questa classe per sincronizzare solo il codice critico necessario, migliorando le prestazioni.
 * Sincronizzazione manuale. È possibile usare gli oggetti di sincronizzazione della libreria di classi .NET.
 
 ### C# Interlocked
 
-So as we saw in previous chapter processor increments the variable, written in a single line of C# code in three steps (three line of code) in processor-specific language, that is read, increment and update the variable. One way to tackle this problem is to carry out all this three operation in one single atomic operation. This can be done only on data that is word-sized. Here, by atomic I mean uninterruptable and word-sized means value that can fit in a register for the update, which is a single integer in our case. However, today's processors already provide lock feature to carry out an atomic update on word-sized data. However, we can't use this processor specific instruction directly in C# code but there is Interlocked Class in DotNet Framework that is a wrapper around this processor-level instruction that can be used to carry out atomic operations like increment and decrement on a word-sized data.
+Come visto nel capitolo precedente, l'incremento di una variabile scritto in una singola riga di C# viene effettivamente eseguito dal processore in tre passi (leggi, incrementa e scrivi). Un modo per affrontare questo problema consiste nell'eseguire queste tre operazioni come una singola operazione atomica. Ciò è possibile solo su dati di dimensione word (cioè valori che possono essere aggiornati con una singola istruzione di registro). I processori moderni forniscono istruzioni per aggiornamenti atomici sui dati word-sized; in C# la classe Interlocked è un wrapper per queste istruzioni a basso livello e consente di effettuare operazioni atomiche come increment e decrement su dati adeguati.
 
-Let's see an updated version of the buggy code we saw in the previous chapter:
+Di seguito una versione aggiornata del codice difettoso mostrato nel capitolo precedente:
 
 ```cs
 using System;
@@ -77,11 +77,9 @@ namespace AtomicUpdate01
 
 ```
 
-### Data Partitioning
+### Partizionamento dei dati
 
-Data Partitioning is actually kind of strategy where you decide to process data by partitioning it for multiples threads. Its kind of "you do that and I will do that" strategy.
-
-To use data partitioning you must have some domain-specific knowledge of data (such as an array or multiple files manipulation), where you decide that one thread will process just one slice of data while other thread will work on another slice. Let's see an example
+Il partizionamento dei dati è una strategia che consiste nel suddividere il dominio dei dati in porzioni assegnate a thread differenti (approccio "tu fai questa porzione, io faccio quella"). Per applicare il partizionamento è necessario disporre di conoscenze specifiche sul dominio dei dati (ad esempio nel caso di manipolazione di array o di più file), in modo da decidere quali slice possono essere elaborati indipendentemente. Esempio:
 
 ```cs
 using System;
@@ -158,62 +156,47 @@ namespace DataPartition01
 
 ```
 
-However, this technique can't be adapted for every scenario there may be a situation where one slice of data depends on the output of the previous slice of data; one example of this scenario is Fibonacci series where, data\[n\]=data\[n-1\]+data\[n-2\] in such a situation data partitioning can't be adopted.
+Questa tecnica non è sempre applicabile: ad esempio per serie in cui un elemento dipende dal precedente (come Fibonacci) non è adottabile facilmente.
 
-### Wait Based Synchronization
+### Sincronizzazione basata su attesa (Wait-Based Synchronization)
 
-Now, the third technique is a Wait-Based technique which is a very sophisticated way to handle the race condition, used in a situation where above two methods can't be adopted that easily. **In this technique, a thread is blocked until someone decides its safe for them to proceed.**
+La tecnica basata su attesa è un modo sofisticato per gestire race condition, utilizzata quando le due tecniche precedenti non sono applicabili. In questa tecnica, un thread rimane bloccato finché non è sicuro procedere.
 
-Suppose there are two threads namely X and Y and both want to access some resource R. Now to protect this resource we choose some lock primitive or synchronization primitive as LR (primitive here is some primitive type like int or array). Now when thread X want to access resource R it will first acquire the lock ownership of LR, once this thread got ownership of LR it can access the resource R safely. As long as thread X has this ownership no other thread can access the LR ownership
-
-While X has ownership if Y request to acquire the ownership of lock LR it requests will get block until thread X releases its ownership.
+Supponiamo due thread X e Y che vogliono accedere a una risorsa R. Si sceglie una primitiva di lock LR (ad esempio un oggetto). Quando X vuole accedere a R acquisisce l'ownership di LR; finché X detiene LR nessun altro thread può accedervi. Se Y tenta di acquisire LR mentre X lo possiede, Y verrà bloccato finché X non rilascia LR.
 
 #### Panoramica delle primitive di sincronizzazione in .NET
 
 <https://docs.microsoft.com/it-it/dotnet/standard/threading/overview-of-synchronization-primitives>
 
-.Net has following Wait Based Primitives that you can use to apply Wait-Based technique. They all share the same basic usage:
+.NET offre vari tipi per sincronizzare l'accesso a risorse condivise o coordinare l'interazione tra thread.
 
--         **Access the lock ownership**
+- Classe WaitHandle e primitive di sincronizzazione basate su handle del sistema operativo:
+  - System.Threading.Mutex: concede accesso esclusivo a una risorsa. Lo stato è segnalato se nessun thread lo possiede.
+  - System.Threading.Semaphore: limita il numero di thread che possono accedere simultaneamente a una risorsa o a un pool di risorse.
 
--         **Manipulate the protected resource**
+I tipi "lightweight" non si basano su handle del kernel e generalmente offrono prestazioni migliori, ma non supportano la sincronizzazione interprocesso. Usarli per sincronizzare thread all'interno della stessa applicazione.
 
--         **Release the lock ownership**
+I tipi leggeri illustrati in questa guida:
 
-.NET offre una gamma di tipi che è possibile usare per sincronizzare l'accesso a una risorsa condivisa o coordinare l'interazione tra thread.
-
--         **Classe WaitHandle e tipi di sincronizzazione leggeri**
-
-Più primitive di sincronizzazione .NET derivano dalla classe [System.Threading.WaitHandle](https://docs.microsoft.com/it-it/dotnet/api/system.threading.waithandle), che incapsula un handle di sincronizzazione del sistema operativo nativo e usa un meccanismo di segnalazione per l'interazione tra thread. Tali classi includono:
-
--         [System.Threading.Mutex](https://docs.microsoft.com/it-it/dotnet/api/system.threading.mutex), che concede l'accesso esclusivo a una risorsa condivisa. Lo stato di un mutex viene segnalato se nessun thread lo possiede.
-
--         [System.Threading.Semaphore](https://docs.microsoft.com/it-it/dotnet/api/system.threading.semaphore), che limita il numero di thread che possono accedere simultaneamente a una risorsa condivisa o a un pool di risorse. Lo stato di un semaforo denominato è impostato come segnalato quando il relativo conteggio è maggiore di zero e come non segnalato quando il relativo conteggio è zero.
-
-I tipi di sincronizzazione leggeri non si basano su handle del sistema operativo sottostanti e in genere offrono prestazioni migliori. Tuttavia, non possono essere usati per la sincronizzazione interprocesso. Usare tali tipi per la sincronizzazione dei thread all'interno di un'applicazione.
-
-I tipi di sincronizzazione leggera che verranno illustrati in questa guida sono:
-
--          [SemaphoreSlim](https://docs.microsoft.com/it-it/dotnet/api/system.threading.semaphoreslim) è un'alternativa leggera a [Semaphore](https://docs.microsoft.com/it-it/dotnet/api/system.threading.semaphore).
-
--         La classe [System.Threading.Monitor](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor) concede l'accesso con esclusione reciproca a una risorsa condivisa tramite l'acquisizione o il rilascio di un blocco sull'oggetto che identifica la risorsa. Mentre è attivo un blocco, il thread che contiene il blocco può ancora acquisire e rilasciare il blocco. Gli altri thread non possono acquisire il blocco e il metodo [Monitor.Enter](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor.enter) attende il rilascio del blocco. Il metodo [Enter](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor.enter) acquisisce un blocco rilasciato. È anche possibile usare il metodo [Monitor.TryEnter](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor.tryenter) per specificare l'intervallo di tempo durante il quale un thread cerca di acquisire un blocco. Poiché la classe [Monitor](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor) presenta affinità di thread, il thread che ha acquisito un blocco deve rilasciare il blocco chiamando il metodo [Monitor.Exit](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor.exit). È possibile coordinare l'interazione tra i thread che acquisiscono un blocco sullo stesso oggetto usando i metodi [Monitor.Wait](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor.wait), [Monitor.Pulse](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor.pulse) e [Monitor.PulseAll](https://docs.microsoft.com/it-it/dotnet/api/system.threading.monitor.pulseall).
+- SemaphoreSlim: alternativa leggera a Semaphore.
+- System.Threading.Monitor: fornisce esclusione reciproca tramite lock sull'oggetto identificativo della risorsa; include metodi Enter, TryEnter, Exit, Wait, Pulse, PulseAll.
 
 <http://www.albahari.com/threading/part2.aspx>
 
-**Comparison of Locking Constructs**
+**Confronto tra costrutti di locking:**
 
-| **Construct** | **Purpose** | **Cross-process?** | **Overhead\*** |
-| --- |  --- |  --- |  --- |
-| [lock](http://www.albahari.com/threading/part2.aspx#_Locking) (`**Monitor.Enter**` / `**Monitor.Exit**`) | Ensures just one thread can access a resource, or section of code at a time | \- | 20ns |
-| [Mutex](http://www.albahari.com/threading/part2.aspx#_Mutex) | Yes | 1000ns |
-| [SemaphoreSlim](http://www.albahari.com/threading/part2.aspx#_Semaphore) (introduced in Framework 4.0) | Ensures not more than a specified number of concurrent threads can access a resource, or section of code | \- | 200ns |
-| [Semaphore](http://www.albahari.com/threading/part2.aspx#_Semaphore) | Yes | 1000ns |
+| **Costrutto** | **Scopo** | **Cross-process?** | **Overhead\*** |
+| --- | --- | --- | --- |
+| [lock] (`Monitor.Enter` / `Monitor.Exit`) | Garantisce che un solo thread possa accedere a una risorsa o sezione di codice alla volta | - | 20ns |
+| [Mutex] | Accesso esclusivo, utilizzabile cross-process | Sì | 1000ns |
+| [SemaphoreSlim] (introdotto in Framework 4.0) | Limita il numero di thread concorrenti che possono accedere a una risorsa o sezione di codice | - | 200ns |
+| [Semaphore] | Versione utilizzabile cross-process | Sì | 1000ns |
 
-\*Time taken to lock and unlock the construct once on the same thread (assuming no blocking), as measured on an Intel Core i7 860.
+\*Tempo per acquisire e rilasciare il lock sullo stesso thread (assumendo nessun blocco), misurato su Intel Core i7 860.
 
 #### C# Lock Keyword
 
-Some high-level languages have syntactic sugar which reduces the amount of code that must be written in some common situation like above. C# has this lock syntax for the same code we wrote above. Here is the code
+Alcuni linguaggi di alto livello offrono una sintassi che riduce il codice necessario in situazioni comuni. C# fornisce la parola chiave lock per semplificare l'uso di Monitor. Si inserisce la sezione critica nel corpo di lock e il compilatore genera il codice Monitor appropriato.
 
 ```cs
 using System;
@@ -276,19 +259,15 @@ namespace LockKeyword
 
 ```
 
-So we simply use the lock keyword syntax and write critical section code in its body and compiler will generate the Exception Aware Monitor code for us. Sweet!
-
 #### Semafori
 
-<https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim>
+<https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim>
 
-Semaphores are of two types: local semaphores and named system semaphores. Local semaphores are local to an application, system semaphores are visible throughout the operating system and are suitable for inter-process synchronization. The [SemaphoreSlim](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-5.0) is a lightweight alternative to the [Semaphore](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphore?view=net-5.0) class that doesn't use Windows kernel semaphores. Unlike the [Semaphore](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphore?view=net-5.0) class, the [SemaphoreSlim](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-5.0) class doesn't support named system semaphores. You can use it as a local semaphore only. The [SemaphoreSlim](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-5.0) class is the recommended semaphore for synchronization within a single app.
+I semafori possono essere locali all'applicazione o denominati nel sistema (utili per sincronizzazione interprocesso). SemaphoreSlim è un'alternativa leggera a Semaphore che non usa i semafori del kernel di Windows; non supporta semafori denominati e quindi è utilizzabile solo localmente. È il semaforo raccomandato per la sincronizzazione all'interno di una singola app.
 
-A lightweight semaphore controls access to a pool of resources that is local to your application. When you instantiate a semaphore, you can specify the maximum number of threads that can enter the semaphore concurrently. You also specify the initial number of threads that can enter the semaphore concurrently. This defines the semaphore's count.
+Un semaforo leggero controlla l'accesso a un pool di risorse locale all'applicazione. Si specificano il numero massimo di thread che possono entrare contemporaneamente e il numero iniziale. Il conteggio viene decrementato a ogni entrata e incrementato a ogni rilascio. Le chiamate Wait/WaitAsync bloccano quando il conteggio è zero; Release incrementa il conteggio. Quando il conteggio raggiunge zero le chiamate successive attendono fino a che altri thread rilasciano il semaforo. Non è garantito l'ordine FIFO per i thread in attesa.
 
-The count is decremented each time a thread enters the semaphore, and incremented each time a thread releases the semaphore. To enter the semaphore, a thread calls one of the [Wait](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.wait?view=net-5.0) or [WaitAsync](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.waitasync?view=net-5.0) overloads. To release the semaphore, it calls one of the [Release](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.release?view=net-5.0) overloads. When the count reaches zero, subsequent calls to one of the Wait methods block until other threads release the semaphore. If multiple threads are blocked, there is no guaranteed order, such as FIFO or LIFO, that controls when threads enter the semaphore.
-
-The basic structure for code that uses a semaphore to protect resources is:
+Struttura di base per usare SemaphoreSlim:
 
 ```cs
 // Enter semaphore by calling one of the Wait or WaitAsync methods.  
@@ -297,18 +276,16 @@ SemaphoreSlim.Wait()
 SemaphoreSlim.Release()
 ```
 
-SemaphoreSlim.Release()
+La proprietà CurrentCount riporta il valore attuale del contatore del semaforo.
 
-When all threads have released the semaphore, the count is at the maximum value specified when the semaphore was created. The semaphore's count is available from the [CurrentCount](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.currentcount?view=net-5.0) property.
-
-| **CONSTRUCTORS** ||
+| **COSTRUTTORI** ||
 | --- | --- |
-| [SemaphoreSlim(Int32)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.-ctor?view=net-5.0#System_Threading_SemaphoreSlim__ctor_System_Int32_) | Initializes a new instance of the [SemaphoreSlim](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-5.0) class, specifying the initial number of requests that can be granted concurrently. |
-| [SemaphoreSlim(Int32, Int32)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.-ctor?view=net-5.0#System_Threading_SemaphoreSlim__ctor_System_Int32_System_Int32_) | Initializes a new instance of the [SemaphoreSlim](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-5.0) class, specifying the initial and maximum number of requests that can be granted concurrently. |
+| SemaphoreSlim(Int32) | Inizializza un SemaphoreSlim specificando il numero iniziale di ingressi consentiti. |
+| SemaphoreSlim(Int32, Int32) | Inizializza un SemaphoreSlim specificando il numero iniziale e il numero massimo di ingressi consentiti. |
 
-A thread can enter the semaphore multiple times by calling the [System.Threading.Semaphore](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphore) object's [WaitOne](https://docs.microsoft.com/en-us/dotnet/api/system.threading.waithandle.waitone) method or the [SemaphoreSlim](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim) object's [Wait](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.wait) method repeatedly. To release the semaphore, the thread can either call the [Semaphore.Release()](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphore.release#System_Threading_Semaphore_Release) or [SemaphoreSlim.Release()](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.release#System_Threading_SemaphoreSlim_Release) method overload the same number of times, or call the [Semaphore.Release(Int32)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphore.release#System_Threading_Semaphore_Release_System_Int32_) or [SemaphoreSlim.Release(Int32)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim.release#System_Threading_SemaphoreSlim_Release_System_Int32_) method overload and specify the number of entries to be released.
+Un thread può entrare più volte nel semaforo chiamando ripetutamente Wait; per rilasciarlo lo stesso thread deve chiamare Release lo stesso numero di volte o usare Release(Int32) per rilasciare più ingressi.
 
-Esempio con i thread:
+Esempio con thread:
 
 ```cs
 using System;
@@ -455,7 +432,7 @@ namespace SemaforoDemo01
 
 <https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim>
 
-#### Produttore consumatore
+#### Produttore-consumatore
 
 Prima versione: buffer a gestione LIFO (Stack)
 
@@ -631,19 +608,16 @@ Concetti ed esempi fondamentali:
 
 [https://en.wikipedia.org/wiki/Sleeping\_barber\_problem](https://en.wikipedia.org/wiki/Sleeping_barber_problem)
 
-Imagine a hypothetical barbershop with one barber, one barber chair, and a waiting room with *n* chairs (*n* may be 0) for waiting customers. The following rules apply:[^\[4\]^](https://en.wikipedia.org/wiki/Sleeping_barber_problem#cite_note-4)
+Si consideri un negozio di barbiere ipotetico con un solo barbiere, una sedia da barbiere e una sala d'attesa con n sedie (n può essere 0) per i clienti in attesa. Le regole sono:
 
--         If there are no customers, the barber falls asleep in the chair
+- Se non ci sono clienti, il barbiere si addormenta sulla sedia.
+- Un cliente deve svegliare il barbiere se è addormentato.
+- Se un cliente arriva mentre il barbiere sta lavorando e tutte le sedie della sala d'attesa sono occupate, il cliente se ne va; altrimenti si siede su una sedia libera.
+- Quando il barbiere termina un taglio, controlla la sala d'attesa: se non ci sono clienti si riaddormenta.
 
--         A customer must wake the barber if he is asleep
+Due complicazioni principali: il rischio di race condition (es. il barbiere si addormenta mentre un cliente sta tornando alla sala d'attesa) e la possibile contesa quando due clienti contemporanei cercano di occupare l'ultima sedia libera.
 
--         If a customer arrives while the barber is working, the customer leaves if all chairs are occupied and sits in an empty chair if it's available
-
--         When the barber finishes a haircut, he inspects the waiting room to see if there are any waiting customers and falls asleep if there are none[^\[3\]^](https://en.wikipedia.org/wiki/Sleeping_barber_problem#cite_note-ewd-3)[^\[5\]^](https://en.wikipedia.org/wiki/Sleeping_barber_problem#cite_note-5)
-
-There are two main complications. First, there is a risk that a [race condition](https://en.wikipedia.org/wiki/Race_condition "Race condition"), where the barber sleeps while a customer waits for the barber to get them for a haircut, arises because all of the actions---checking the waiting room, entering the shop, taking a waiting room chair---take a certain amount of time. Specifically, a customer may arrive to find the barber cutting hair so they return to the waiting room to take a seat but while walking back to the waiting room the barber finishes the haircut and goes to the waiting room, which he finds empty (because the customer walks slowly or went to the restroom) and thus goes to sleep in the barber chair. Second, another problem may occur when two customers arrive at the same time when there is only one empty seat in the waiting room and both try to sit in the single chair; only the first person to get to the chair will be able to sit.
-
-Prima versione -- per la gestione della sezione critica si utilizza un semaforo
+Prima versione -- sezione critica gestita con semaforo:
 
 ```cs
 using System;
@@ -732,7 +706,7 @@ namespace BarberShopV1
 
 ```
 
-Seconda versione - per la gestione della sezione critica si utilizza un Monitor (lock)
+Seconda versione -- sezione critica gestita con Monitor (lock):
 
 ```cs
 using System;
@@ -831,13 +805,12 @@ namespace BarberShopV2
 
 ```
 
-Qualche spunto:
+Note e riferimenti:
 
 <https://github.com/meysam81/Sleeping-Barber-Problem>
-
 <https://github.com/meysam81/Networked-Sleeping-Barber-Problem>
 
-###  Deadlock
+### Deadlock
 
 <http://www.diag.uniroma1.it/~salza/SO/SO-III-2p.pdf>
 
@@ -851,9 +824,9 @@ Qualche spunto:
 
 ![alt text](./concurrent-programming/image5.png)
 
-####  Un esempio di deadlock: il barbiere sbagliato
+#### Un esempio di deadlock: il barbiere sbagliato
 
-La seguente versione dell'Algoritmo del Barbiere va in deadlock. Si è introdotto appositamente un errore:
+La versione seguente dell'Algoritmo del Barbiere va in deadlock: è stato introdotto volontariamente un errore per mostrare il problema dell'attesa circolare.
 
 ```cs
 using System;
@@ -953,25 +926,23 @@ namespace BarberShopDeadLock
 
 ## Costrutti per la programmazione concorrente -- uso di thread
 
-Gli esempi in questa sezione sono tratti da: "ITT "Giacomo Fauser" -- Novara Tecnologia e progettazione di sistemi informatici e di telecomunicazioni prof. R. Fuligni"
+Gli esempi in questa sezione sono tratti da: "ITT 'Giacomo Fauser' -- Novara Tecnologia e progettazione di sistemi informatici e di telecomunicazioni prof. R. Fuligni"
 
 ### Costrutto fork/join
 
-Il costrutto fork permette a un processo/thread di creare un porcesso/thread figlio a cui far eseguire un'attività.
+Il costrutto fork permette a un processo/thread di creare un processo/thread figlio a cui assegnare un'attività. Il costrutto join permette a un processo/thread di attendere la fine di un processo/thread figlio.
 
-Il costrutto join permette a un processo/thread di attendere la fine di un processo/thread figlio.
+#### Esempio fork/join 1
 
-#### Costrutto fork/join: esempio 1
-
-Scrivere un programma concorrente che, utilizzando il costrutto *fork/join*, esegua le operazioni indicate di seguito esprimendo il massimo grado di parallelismo.
+Scrivere un programma concorrente che, usando fork/join, esegua le operazioni indicate esprimendo il massimo grado di parallelismo.
 
 ![alt text](./concurrent-programming/image6.png)
 
-Pesudocodifica
+Pseudocodifica
 
 ![alt text](./concurrent-programming/image7.png)
 
-Codifica con l’uso dei Thread
+Codifica con l’uso dei Thread:
 
 ```cs
 using System;
@@ -1018,15 +989,13 @@ namespace CostruttiProgrammazioneConcorrente
 
 ### Costrutto join(count)
 
-Riferimenti: *J. Albahari, Threading in C#* \- Part 2: Basic Synchronization -- CountdownEvent
+Riferimenti: J. Albahari, Threading in C# — Part 2: Basic Synchronization -- CountdownEvent
 
-Il costrutto *join(count)* è un particolare tipo di join che permette di attendere un numero prefissato di processi/thread mediante l'utilizzo di un contatore speciale.
+Il costrutto join(count) permette di attendere un numero prefissato di thread mediante un contatore speciale. In C# questo è realizzabile con CountdownEvent: inizializzato al valore count, viene decrementato (Signal) ogni volta che uno dei thread termina; quando il contatore raggiunge zero, chi attende prosegue.
 
-In C# il costrutto *join(count)* è realizzabile utilizzando uno speciale contatore costituito da un'istanza della classe *CountdownEvent*: esso è inizialmente impostato a un valore pari al numero di specificato da *count* ed è decrementato di un'unità ogni volta che uno dei thread da sincronizzare termina il proprio compito. Per decrementare il contatore si usa il metodo *Signal*.
+#### Esempio join(count) 1
 
-#### Costrutto join(count): esempio 1
-
-Scrivere, utilizzando il costrutto *join(count)*, un algoritmo concorrente per il seguente diagramma delle precedenze.
+Scrivere, usando join(count), l'algoritmo concorrente per il diagramma delle precedenze.
 
 ![alt text](./concurrent-programming/image8.png)
 
@@ -1081,17 +1050,13 @@ namespace JoinCountDemo
 
 ```
 
-### Costrutto cobegin/coend
+### Costrutto `cobegin`/`coend`
 
-Il costrutto cobegin si ha quando si fanno partire in parallelo più flussi di esecuzione mediante thread/processi.
+Il `cobegin` avvia in parallelo più flussi di esecuzione; il `coend` attende la loro conclusione. In C# si può realizzare con la classe Parallel.
 
-Il costrutto coend si ha quando si attende la fine di più flussi di esecuzione paralleli
+#### Esempio `cobegin`/`coend` 1
 
-In C# il costrutto cobegin/coend si può realizzare per mezzo della classe Parallel.
-
-#### Costrutto cobegin/coend: esempio 1
-
-Scrivere un programma concorrente a partire dal seguente diagramma, usando il costrutto *cobegin/coend*
+Scrivere un programma concorrente a partire dal diagramma, usando `cobegin`/`coend`.
 
 ![alt text](./concurrent-programming/image10.png)
 
