@@ -111,3 +111,11 @@
     z-index: 1;
     opacity: 0;
 }
+
+/* Fix: Make tables scrollable on mobile to prevent cutoff */
+.sl-markdown-content table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}

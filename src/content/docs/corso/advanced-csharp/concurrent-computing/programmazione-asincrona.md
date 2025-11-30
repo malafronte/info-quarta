@@ -14,7 +14,7 @@ img {display: block; margin: 0 auto;}
 
 <https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/>
 
-Il modello di programmazione asincrona Task (TAP) offre un'astrazione su codice asincrono. È possibile leggere il codice come se ogni istruzione venisse completata prima che venga iniziata quella successiva. Il compilatore esegue una serie di trasformazioni poiché alcune delle istruzioni potrebbero essere eseguite e restituire [Task](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task) che rappresenta il lavoro in corso.
+Il modello di programmazione asincrona Task (TAP) offre un'astrazione su codice asincrono. È possibile leggere il codice come se ogni istruzione venisse completata prima che venga iniziata quella successiva. Il compilatore esegue una serie di trasformazioni poiché alcune delle istruzioni potrebbero essere eseguite e restituire [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) che rappresenta il lavoro in corso.
 
 L'obiettivo di questa sintassi consiste nell'abilitare un codice che viene letto come una sequenza di istruzioni ma viene eseguito in un ordine più complesso in base all'allocazione delle risorse esterne e al completamento dell'attività. Si tratta di un funzionamento analogo a quello in cui gli utenti specificano istruzioni per i processi che includono attività asincrone. In questo articolo verrà usato un esempio di istruzioni per la preparazione di una colazione per osservare in che modo le parole chiave async e await consentono di motivare in modo più semplice un codice che include una serie di istruzioni asincrone. Si procederà a scrivere istruzioni come quelle dell'elenco seguente per descrivere come preparare una colazione:
 
@@ -403,9 +403,9 @@ Il thread impegnato nella preparazione della colazione non è bloccato in attesa
 
 In molti scenari si vuole iniziare immediatamente più attività indipendenti. Quindi, man mano che ogni attività viene terminata, è possibile passare ad altre operazioni da eseguire. Nell'analogia della colazione, questa modalità consente di preparare la colazione più rapidamente. Inoltre, tutte le operazioni vengono terminate quasi nello stesso momento. Si otterrà una colazione calda.
 
-[System.Threading.Tasks.Task](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task) e i tipi correlati sono classi che è possibile usare per gestire le attività in corso. In questo modo è possibile scrivere codice più simile al modo in cui effettivamente si prepara una colazione. Si inizia a cuocere uova, pancetta e pane contemporaneamente. Man mano che ogni attività richiederà un'azione, si porrà l'attenzione su quell'attività, quindi sull'azione successiva e infine si rimarrà in attesa di altra attività da eseguire.
+[System.Threading.Tasks.Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) e i tipi correlati sono classi che è possibile usare per gestire le attività in corso. In questo modo è possibile scrivere codice più simile al modo in cui effettivamente si prepara una colazione. Si inizia a cuocere uova, pancetta e pane contemporaneamente. Man mano che ogni attività richiederà un'azione, si porrà l'attenzione su quell'attività, quindi sull'azione successiva e infine si rimarrà in attesa di altra attività da eseguire.
 
-Si inizia un'attività e la si mantiene nell'oggetto [Task](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task) che rappresenta il lavoro. Si rimarrà in attesa (await) di ogni attività prima di utilizzarne il risultato.
+Si inizia un'attività e la si mantiene nell'oggetto [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) che rappresenta il lavoro. Si rimarrà in attesa (await) di ogni attività prima di utilizzarne il risultato.
 
 Il codice precedente ha un funzionamento migliore. Tutte le attività asincrone vengono iniziate contemporaneamente. Si rimane in attesa di ogni attività solo quando è necessario avere a disposizione il risultato dell'attività. Il codice precedente potrebbe essere simile al codice di un'applicazione Web che effettua le richieste di diversi microservizi, quindi unisce i risultati in una singola pagina. Si eseguiranno tutte le richieste immediatamente, quindi si rimarrà in attesa (await) di tutte le attività e si comporrà la pagina Web.
 
@@ -417,7 +417,7 @@ Tutti gli alimenti della colazione sono pronti contemporaneamente ad eccezione d
 La composizione di un'operazione asincrona, seguita da un lavoro sincrono è un'operazione asincrona. In altre parole, se una parte di un'operazione è asincrona, l'intera operazione è asincrona.
 :::
 
-Il codice precedente ha mostrato che è possibile usare gli oggetti [Task](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task) o [Task<TResult>](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1) per attività in esecuzione. Si rimane in attesa (await) di ogni attività prima di usarne il risultato. Il passaggio successivo consiste nel creare metodi che rappresentano la combinazione di altre operazioni. Prima di servire la colazione, si vuole attendere l'attività che rappresenta la tostatura del pane prima dell'aggiunta del butto e della marmellata. È possibile rappresentare queste operazioni con il codice seguente:
+Il codice precedente ha mostrato che è possibile usare gli oggetti [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) o [Task<TResult>](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) per attività in esecuzione. Si rimane in attesa (await) di ogni attività prima di usarne il risultato. Il passaggio successivo consiste nel creare metodi che rappresentano la combinazione di altre operazioni. Prima di servire la colazione, si vuole attendere l'attività che rappresenta la tostatura del pane prima dell'aggiunta del butto e della marmellata. È possibile rappresentare queste operazioni con il codice seguente:
 
 ```cs
 private static async Task<List<Toast>> MakeToastWithButterAndJamAsync(int v)
@@ -442,13 +442,13 @@ private static async Task<List<Toast>> ToastBreadAsync(int v)
         }
 ```
 
-Il metodo precedente include il modificatore async nella firma. Il modificatore segnala al compilatore che il metodo contiene un'istruzione await; contiene operazioni asincrone. Questo metodo rappresenta l'attività di tostatura del pane, quindi aggiunge il burro e la marmellata. Questo metodo restituisce [Task<TResult>](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1) che rappresenta la composizione di queste tre operazioni.
+Il metodo precedente include il modificatore async nella firma. Il modificatore segnala al compilatore che il metodo contiene un'istruzione await; contiene operazioni asincrone. Questo metodo rappresenta l'attività di tostatura del pane, quindi aggiunge il burro e la marmellata. Questo metodo restituisce [Task<TResult>](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) che rappresenta la composizione di queste tre operazioni.
 
 La modifica precedente ha illustrato una tecnica importante per l'uso di codice asincrono. Si compongono le attività separando le operazioni in un nuovo metodo che restituisce un'attività. È possibile scegliere quando rimanere in attesa dell'attività. È possibile iniziare altre attività contemporaneamente.
 
 ### Attendere le attività in modo efficiente
 
-La serie di istruzioni await alla fine del codice precedente può essere migliorata usando i metodi della classe Task. Una delle API è [WhenAll](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.whenall) che restituisce [Task](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task) che viene completata quando tutte le attività del relativo elenco di argomenti sono state completate, come illustrato nel codice seguente:
+La serie di istruzioni await alla fine del codice precedente può essere migliorata usando i metodi della classe Task. Una delle API è [WhenAll](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall) che restituisce [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) che viene completata quando tutte le attività del relativo elenco di argomenti sono state completate, come illustrato nel codice seguente:
 
 ```cs
 await Task.WhenAll(eggsTask, baconTask, toastTask);
@@ -458,7 +458,7 @@ Console.WriteLine("toast is ready");
 Console.WriteLine("Breakfast is ready!");
 ```
 
-Un'altra opzione consiste nell'usare [WhenAny](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.whenany) che restituisce Task<Task> che viene completata quando una delle attività fornite sarà completata. È possibile attendere l'attività restituita, sapendo che è già stata completata. Il codice seguente illustra come è possibile usare [WhenAny](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.whenany) per attendere il completamento della prima attività e quindi elaborarne il risultato. Dopo aver elaborato il risultato dell'attività completata, si rimuove l'attività completata dall'elenco delle attività passate a WhenAny.
+Un'altra opzione consiste nell'usare [WhenAny](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany) che restituisce Task<Task> che viene completata quando una delle attività fornite sarà completata. È possibile attendere l'attività restituita, sapendo che è già stata completata. Il codice seguente illustra come è possibile usare [WhenAny](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany) per attendere il completamento della prima attività e quindi elaborarne il risultato. Dopo aver elaborato il risultato dell'attività completata, si rimuove l'attività completata dall'elenco delle attività passate a WhenAny.
 
 ```cs
 private static async Task ColazioneAsincronaOttimizzata()
@@ -503,13 +503,13 @@ Il codice finale è asincrono. Riflette con maggior precisione il modo in cui vi
 
 ###  I/O di file asincrono
 
-<https://docs.microsoft.com/it-it/dotnet/standard/io/>
+<https://docs.microsoft.com/en-us/dotnet/standard/io/>
 
-<https://docs.microsoft.com/it-it/dotnet/standard/io/asynchronous-file-i-o>
+<https://docs.microsoft.com/en-us/dotnet/standard/io/asynchronous-file-i-o>
 
-A partire da .NET Framework 4.5, i tipi di I/O includono metodi async per semplificare le operazioni asincrone. Un metodo asincrono contiene Async nel nome, ad esempio [ReadAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.readasync), [WriteAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.writeasync), [CopyToAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.copytoasync), [FlushAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream.flushasync), [ReadLineAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.textreader.readlineasync) e [ReadToEndAsync](https://docs.microsoft.com/it-it/dotnet/api/system.io.textreader.readtoendasync). Questi metodi asincroni sono implementati nelle classi di flusso, come [Stream](https://docs.microsoft.com/it-it/dotnet/api/system.io.stream), [FileStream](https://docs.microsoft.com/it-it/dotnet/api/system.io.filestream)e [MemoryStream](https://docs.microsoft.com/it-it/dotnet/api/system.io.memorystream), e nelle classi usate per la lettura o la scrittura nei flussi, come [TextReader](https://docs.microsoft.com/it-it/dotnet/api/system.io.textreader) e [TextWriter](https://docs.microsoft.com/it-it/dotnet/api/system.io.textwriter).
+A partire da .NET Framework 4.5, i tipi di I/O includono metodi async per semplificare le operazioni asincrone. Un metodo asincrono contiene Async nel nome, ad esempio [ReadAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.readasync), [WriteAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.writeasync), [CopyToAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.copytoasync), [FlushAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.flushasync), [ReadLineAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.textreader.readlineasync) e [ReadToEndAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.textreader.readtoendasync). Questi metodi asincroni sono implementati nelle classi di flusso, come [Stream](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream), [FileStream](https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream)e [MemoryStream](https://docs.microsoft.com/en-us/dotnet/api/system.io.memorystream), e nelle classi usate per la lettura o la scrittura nei flussi, come [TextReader](https://docs.microsoft.com/en-us/dotnet/api/system.io.textreader) e [TextWriter](https://docs.microsoft.com/en-us/dotnet/api/system.io.textwriter).
 
-L'esempio seguente mostra come usare due oggetti [FileStream](https://docs.microsoft.com/it-it/dotnet/api/system.io.filestream) per copiare i file in modo asincrono da una directory a un'altra.
+L'esempio seguente mostra come usare due oggetti [FileStream](https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream) per copiare i file in modo asincrono da una directory a un'altra.
 
 Copiare file in modalità asincrona
 

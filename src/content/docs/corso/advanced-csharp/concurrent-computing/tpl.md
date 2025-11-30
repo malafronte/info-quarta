@@ -14,7 +14,7 @@ img {display: block; margin: 0 auto;}
 
 <https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-parallel-library-tpl>
 
-La libreria Task Parallel Library (TPL) è un insieme di tipi e API pubblici negli spazi dei nomi [System.Threading](https://docs.microsoft.com/it-it/dotnet/api/system.threading) e [System.Threading.Tasks](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks). Lo scopo di TPL è rendere gli sviluppatori più produttivi semplificando l'aggiunta di parallelismo e concorrenza alle applicazioni. La libreria TPL adatta dinamicamente il grado di concorrenza per sfruttare efficacemente tutti i processori disponibili. Inoltre gestisce il partizionamento del lavoro, la schedulazione dei thread nel [ThreadPool](https://docs.microsoft.com/it-it/dotnet/api/system.threading.threadpool), il supporto per l'annullamento, la gestione dello stato e altri dettagli di basso livello. Usando TPL è possibile ottimizzare le prestazioni concentrandosi sulle operazioni applicative rilevanti.
+La libreria Task Parallel Library (TPL) è un insieme di tipi e API pubblici negli spazi dei nomi [System.Threading](https://docs.microsoft.com/en-us/dotnet/api/system.threading) e [System.Threading.Tasks](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks). Lo scopo di TPL è rendere gli sviluppatori più produttivi semplificando l'aggiunta di parallelismo e concorrenza alle applicazioni. La libreria TPL adatta dinamicamente il grado di concorrenza per sfruttare efficacemente tutti i processori disponibili. Inoltre gestisce il partizionamento del lavoro, la schedulazione dei thread nel [ThreadPool](https://docs.microsoft.com/en-us/dotnet/api/system.threading.threadpool), il supporto per l'annullamento, la gestione dello stato e altri dettagli di basso livello. Usando TPL è possibile ottimizzare le prestazioni concentrandosi sulle operazioni applicative rilevanti.
 
 A partire da .NET Framework 4, TPL è la soluzione consigliata per scrivere codice multithreading e parallelo. Tuttavia non tutto il codice è adatto alla parallelizzazione; ad esempio, se un ciclo esegue poco lavoro per iterazione o non esegue molte iterazioni, l'overhead della parallelizzazione può rallentare l'esecuzione. La parallelizzazione introduce anche complessità (blocchi, deadlock, race condition): avere una comprensione di base di questi concetti aiuta a usare TPL efficacemente.
 
@@ -34,26 +34,26 @@ I Task possono rendere l'applicazione più reattiva: se il thread dell'interfacc
 
 ### C# Task: Programmazione asincrona e/o parallela basata su attività
 
-<https://docs.microsoft.com/it-it/dotnet/standard/parallel-programming/task-based-asynchronous-programming>
+<https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-based-asynchronous-programming>
 
-La libreria TPL si basa sul concetto di attività (task), che rappresenta un'operazione asincrona. In qualche modo un task è analogo a un thread o a un elemento di lavoro del [ThreadPool], ma a un livello di astrazione più elevato. Per "parallelismo delle attività" si intende l'esecuzione contemporanea di una o più attività indipendenti. I vantaggi principali delle attività sono:
+La libreria TPL si basa sul concetto di attività (task), che rappresenta un'operazione asincrona. In qualche modo un task è analogo a un thread o a un elemento di lavoro del `ThreadPool`, ma a un livello di astrazione più elevato. Per "parallelismo delle attività" si intende l'esecuzione contemporanea di una o più attività indipendenti. I vantaggi principali delle attività sono:
 
-- Leggerezza a livello di sistema: le attività vengono accodate nel [ThreadPool], che dispone di algoritmi migliorati per determinare e adattare il numero di thread, bilanciando il carico e rendendo le attività relativamente leggere; è possibile crearne molte per ottenere parallelismo efficiente.
+- Leggerezza a livello di sistema: le attività vengono accodate nel `ThreadPool`, che dispone di algoritmi migliorati per determinare e adattare il numero di thread, bilanciando il carico e rendendo le attività relativamente leggere; è possibile crearne molte per ottenere parallelismo efficiente.
 - Maggior controllo a livello applicativo: le API delle attività forniscono funzionalità di attesa, annullamento, continuazioni, gestione delle eccezioni, stato dettagliato e pianificazione personalizzata.
 
 Per questi motivi, TPL è l'API preferita in .NET per codice multithreading, asincrono e parallelo.
 
-Il metodo [Parallel.Invoke](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.parallel.invoke) consente di eseguire simultaneamente più azioni; si passano delegati Action, spesso come espressioni lambda. Esempio:
+Il metodo [Parallel.Invoke](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.invoke) consente di eseguire simultaneamente più azioni; si passano delegati Action, spesso come espressioni lambda. Esempio:
 
 ```cs
 Parallel.Invoke(() => DoSomeWork(), () => DoSomeOtherWork());
 ```
 
-Un'attività senza valore di ritorno è rappresentata da [System.Threading.Tasks.Task]. Un'attività che restituisce un valore è [System.Threading.Tasks.Task<TResult>] che eredita da Task.
+Un'attività senza valore di ritorno è rappresentata da `Task`. Un'attività che restituisce un valore è `Task<TResult>` che eredita da `Task`.
 
-L'oggetto Task gestisce i dettagli dell'infrastruttura e mette a disposizione metodi e proprietà (es. [Status]) per interrogare lo stato dell'attività (avviata, completata, annullata, faulted). Lo stato è rappresentato dall'enumerazione [TaskStatus].
+L'oggetto `Task` gestisce i dettagli dell'infrastruttura e mette a disposizione metodi e proprietà (es. `Status`) per interrogare lo stato dell'attività (avviata, completata, annullata, faulted). Lo stato è rappresentato dall'enumerazione `TaskStatus`.
 
-Quando si crea un task si assegna un delegato che incapsula il codice da eseguire: può essere un metodo nominato, un metodo anonimo o una lambda. Spesso si usa [Task.Wait] per assicurarsi che il task sia completato prima che termini l'applicazione console.
+Quando si crea un task si assegna un delegato che incapsula il codice da eseguire: può essere un metodo nominato, un metodo anonimo o una lambda. Spesso si usa `Task.Wait` per assicurarsi che il task sia completato prima che termini l'applicazione console.
 
 ```cs
 using System;
@@ -86,7 +86,7 @@ namespace TaskIntro
 //       Hello from taskA.
 ```
 
-È possibile usare [Task.Run] per creare e avviare un task in un'unica operazione; Run usa lo scheduler predefinito e rappresenta il modo preferito quando non serve un controllo avanzato sulla creazione/schedulazione.
+È possibile usare `Task.Run` per creare e avviare un task in un'unica operazione; Run usa lo scheduler predefinito e rappresenta il modo preferito quando non serve un controllo avanzato sulla creazione/schedulazione.
 
 ```cs
 using System;
@@ -118,7 +118,7 @@ namespace TaskRunDemo
 
 ```
 
-TaskFactory.StartNew è un'altra opzione per creare e avviare un task in un'unica operazione quando servono opzioni avanzate o uno scheduler personalizzato, oppure per passare uno stato aggiuntivo accessibile tramite Task.AsyncState.
+`TaskFactory.StartNew` è un'altra opzione per creare e avviare un task in un'unica operazione quando servono opzioni avanzate o uno scheduler personalizzato, oppure per passare uno stato aggiuntivo accessibile tramite Task.AsyncState.
 
 ```cs
 using System;
@@ -188,7 +188,7 @@ Nota di utilizzo: chiamare t.Wait(); è equivalente a chiamare Join su un thread
 
 ### Task C# che restituisce un valore
 
-.NET dispone di Task<TResult> per task che restituiscono valori. L'accesso alla proprietà Result forza l'attesa fino al completamento del task (comportamento equivalente a Join/Wait).
+.NET dispone di `Task<TResult>` per task che restituiscono valori. L'accesso alla proprietà Result forza l'attesa fino al completamento del task (comportamento equivalente a Join/Wait).
 
 ```cs
 using System;
@@ -236,7 +236,7 @@ Nella programmazione asincrona è comune che, dopo il completamento di un'operaz
 - concatenare continuazioni arbitrariamente;
 - gestire eccezioni dell'attività precedente.
 
-Per creare una continuazione chiamare Task.ContinueWith. Esempio base:
+Per creare una continuazione chiamare `Task.ContinueWith`. Esempio base:
 
 ```cs
 using System;
@@ -291,9 +291,9 @@ namespace TaskContinuation01
 }
 ```
 
-È possibile creare una continuazione che verrà eseguita al termine di una o tutte le attività di un gruppo di attività. Per eseguire una continuazione al termine di tutte le attività precedenti, chiamare il metodo statico [Task.WhenAll](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.whenall) o il metodo [TaskFactory.ContinueWhenAll](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.taskfactory.continuewhenall) dell'istanza. Per eseguire una continuazione al termine di almeno una delle attività precedenti, chiamare il metodo statico [Task.WhenAny](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.whenany) o il metodo [TaskFactory.ContinueWhenAny](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.taskfactory.continuewhenany) dell'istanza.
+È possibile creare una continuazione che verrà eseguita al termine di una o tutte le attività di un gruppo di attività. Per eseguire una continuazione al termine di tutte le attività precedenti, chiamare il metodo statico [Task.WhenAll](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall) o il metodo [TaskFactory.ContinueWhenAll](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.continuewhenall) dell'istanza. Per eseguire una continuazione al termine di almeno una delle attività precedenti, chiamare il metodo statico [Task.WhenAny](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany) o il metodo [TaskFactory.ContinueWhenAny](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.continuewhenany) dell'istanza.
 
-Nell'esempio seguente viene chiamato il metodo [Task.WhenAll(IEnumerable<Task>)](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.whenall#System_Threading_Tasks_Task_WhenAll_System_Collections_Generic_IEnumerable_System_Threading_Tasks_Task__) per creare un'attività di continuazione che riflette il risultato delle 10 attività precedenti. Ogni attività precedente eleva al quadrato un valore di indice compreso tra uno e 10. Se le attività precedenti vengono completate correttamente (ovvero la relativa proprietà [Task.Status](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.status) è [TaskStatus.RanToCompletion](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.taskstatus#System_Threading_Tasks_TaskStatus_RanToCompletion)), la proprietà [Task<TResult>.Result](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1.result) della continuazione è una vettore dei valori [Task<TResult>.Result](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1.result) restituiti da ogni attività precedente. L'esempio somma tali valori per calcolare la somma dei quadrati per tutti i numeri compresi tra uno e 10.
+Nell'esempio seguente viene chiamato il metodo [Task.WhenAll(IEnumerable<Task>)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall#System_Threading_Tasks_Task_WhenAll_System_Collections_Generic_IEnumerable_System_Threading_Tasks_Task__) per creare un'attività di continuazione che riflette il risultato delle 10 attività precedenti. Ogni attività precedente eleva al quadrato un valore di indice compreso tra uno e 10. Se le attività precedenti vengono completate correttamente (ovvero la relativa proprietà [Task.Status](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.status) è [TaskStatus.RanToCompletion](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskstatus#System_Threading_Tasks_TaskStatus_RanToCompletion)), la proprietà [Task<TResult>.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) della continuazione è una vettore dei valori [Task<TResult>.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) restituiti da ogni attività precedente. L'esempio somma tali valori per calcolare la somma dei quadrati per tutti i numeri compresi tra uno e 10.
 
 ```cs
 using System;
@@ -422,13 +422,13 @@ namespace DifferentContinuationTasks
 }
 ```
 
-Per l'esempio precedente, nel caso in cui viene sollevata un'eccezione Visual Studio blocca il programma nel punto in cui c'è l'eccezione non gestita. Se si fa partire l'applicazione direttamente dall'eseguibile il programma non si blocca e va direttamente nel continuation task che ha come impostazione TaskContinuationOptions.OnlyOnFaulted. Si può eventualmente andare nelle opzioni di gestione dell'eccezione di Visual Studio per modificarne il comportamento.
+Per l'esempio precedente, nel caso in cui viene sollevata un'eccezione Visual Studio blocca il programma nel punto in cui c'è l'eccezione non gestita. Se si fa partire l'applicazione direttamente dall'eseguibile il programma non si blocca e va direttamente nel continuation task che ha come impostazione `TaskContinuationOptions.OnlyOnFaulted`. Si può eventualmente andare nelle opzioni di gestione dell'eccezione di Visual Studio per modificarne il comportamento.
 
 ### Costrutti per la programmazione concorrente -- uso di Task
 
 ####  Costrutto fork/join
 
-Gli esempi di fork/join visti nella sezione thread possono essere realizzati con TPL, usando Task.Factory.StartNew e Wait/Task.WaitAll.
+Gli esempi di fork/join visti nella sezione thread possono essere realizzati con TPL, usando `  Task.Factory.StartNew` e `Wait/Task.WaitAll`.
 
 ```cs
 using System;
@@ -475,7 +475,7 @@ namespace CostruttiProgrammazioneConcorrenteTask
 
 #### Costrutto join(count)
 
-Anche join(count) è realizzabile con CountdownEvent e Task.Factory.StartNew; il codice è analogo all'implementazione con thread.
+Anche join(count) è realizzabile con `CountdownEvent` e `Task.Factory.StartNew`; il codice è analogo all'implementazione con thread.
 
 ```cs
 using System;
@@ -522,7 +522,7 @@ namespace JoinCountDemoTask
 
 #### Costrutto cobegin/coend
 
-Cobegin/coend possono essere implementati con Task e Task.WaitAll o con Parallel.Invoke.
+Cobegin/coend possono essere implementati con `Task` e `Task.WaitAll` o con `Parallel.Invoke`.
 
 ```cs
 using System;
@@ -652,7 +652,7 @@ namespace SemaforoDemo01
 
 <https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/data-parallelism-task-parallel-library>
 
-Con "parallelismo dei dati" si intende eseguire contemporaneamente la stessa operazione sugli elementi di una matrice o raccolta. La raccolta viene partizionata in segmenti eseguiti da thread diversi. TPL supporta il parallelismo dei dati tramite [System.Threading.Tasks.Parallel], che fornisce cicli paralleli Parallel.For e Parallel.ForEach. La scrittura della logica è simile ai cicli sequenziali; non è necessario creare thread o gestire manualmente il lavoro di basso livello.
+Con "parallelismo dei dati" si intende eseguire contemporaneamente la stessa operazione sugli elementi di una matrice o raccolta. La raccolta viene partizionata in segmenti eseguiti da thread diversi. TPL supporta il parallelismo dei dati tramite `System.Threading.Tasks.Parallel`, che fornisce cicli paralleli `Parallel.For` e `Parallel.ForEach`. La scrittura della logica è simile ai cicli sequenziali; non è necessario creare thread o gestire manualmente il lavoro di basso livello.
 
 #### Esempi Parallel.For e Parallel.ForEach
 
@@ -853,7 +853,7 @@ namespace ParallelMatricesMultiply
 
 ### Child task attachati e staccati
 
-Un child task (o nested task) è un Task creato all'interno del delegato di un altro Task (parent). Un child può essere detached o attached. Un detached child esegue indipendentemente dal parent; un attached child creato con TaskCreationOptions.AttachedToParent fa sì che il parent attenda il completamento dei figli e propaghi le eccezioni. Per la maggior parte degli scenari si raccomandano detached child perché relazioni meno complesse: i task creati dentro altri task sono detached per default.
+Un child task (o nested task) è un Task creato all'interno del delegato di un altro Task (parent). Un child può essere detached o attached. Un detached child esegue indipendentemente dal parent; un attached child creato con `TaskCreationOptions.AttachedToParent` fa sì che il parent attenda il completamento dei figli e propaghi le eccezioni. Per la maggior parte degli scenari si raccomandano detached child perché relazioni meno complesse: i task creati dentro altri task sono detached per default.
 
 ```cs
 using System;
@@ -885,7 +885,7 @@ public class Example
 //        Nested task completing.
 ```
 
-Se il child task è un oggetto [Task<TResult>](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1) invece di un [Task](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task), è possibile assicurarsi che il parent attenda il completamento del child accedendo alla proprietà [Task<TResult>.Result](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1.result) del child anche se è un detached child task. La proprietà [Result](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task-1.result) blocca fino al completamento del task, come nell'esempio seguente.
+Se il child task è un oggetto [Task<TResult>](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) invece di un [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task), è possibile assicurarsi che il parent attenda il completamento del child accedendo alla proprietà [Task<TResult>.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) del child anche se è un detached child task. La proprietà [Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) blocca fino al completamento del task, come nell'esempio seguente.
 
 ```cs
 using System;
@@ -922,7 +922,7 @@ class Example
 
 #### Attached child tasks
 
-A differenza dei detached child tasks, gli attached child tasks sono strettamente sincronizzati con il parent. È possibile modificare il detached child task nell'esempio precedente in un attached child task usando l'opzione [TaskCreationOptions.AttachedToParent](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.taskcreationoptions#System_Threading_Tasks_TaskCreationOptions_AttachedToParent) nella dichiarazione di creazione del task, come mostrato nel seguente esempio. In questo codice, l'attività figlia allegata viene completata prima del suo genitore. Di conseguenza, l'output dell'esempio è lo stesso ogni volta che si esegue il codice.
+A differenza dei detached child tasks, gli attached child tasks sono strettamente sincronizzati con il parent. È possibile modificare il detached child task nell'esempio precedente in un attached child task usando l'opzione [TaskCreationOptions.AttachedToParent](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskcreationoptions#System_Threading_Tasks_TaskCreationOptions_AttachedToParent) nella dichiarazione di creazione del task, come mostrato nel seguente esempio. In questo codice, l'attività figlia allegata viene completata prima del suo genitore. Di conseguenza, l'output dell'esempio è lo stesso ogni volta che si esegue il codice.
 
 ```cs
 using System;
@@ -954,7 +954,7 @@ public class Example
 
 È possibile utilizzare attached child tasks per creare grafi di operazioni asincrone strettamente sincronizzate.
 
-Tuttavia, un'attività figlia può attaccarsi al suo genitore solo se quest'ultimo non lo proibisce. I task genitore possono esplicitamente impedire l'attacco di task figli a loro specificando l'opzione [TaskCreationOptions.DenyChildAttach](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.taskcreationoptions#System_Threading_Tasks_TaskCreationOptions_DenyChildAttach) nel costruttore della classe del task genitore o nel metodo [TaskFactory.StartNew](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.taskfactory.startnew). I task genitore impediscono implicitamente l'attacco di task figli se vengono creati chiamando il metodo [Task.Run](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.run). L'esempio seguente illustra questo concetto. È identico al precedente, tranne per il fatto che il task genitore è creato chiamando il metodo [Task.Run(Action)](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.task.run#System_Threading_Tasks_Task_Run_System_Action_) invece del metodo [TaskFactory.StartNew(Action)](https://docs.microsoft.com/it-it/dotnet/api/system.threading.tasks.taskfactory.startnew#System_Threading_Tasks_TaskFactory_StartNew_System_Action_). Poiché il task figlio non può attaccarsi al suo genitore, l'output dell'esempio è imprevedibile. Questo esempio è funzionalmente equivalente al primo esempio nella sezione "Detached child tasks".
+Tuttavia, un'attività figlia può attaccarsi al suo genitore solo se quest'ultimo non lo proibisce. I task genitore possono esplicitamente impedire l'attacco di task figli a loro specificando l'opzione [TaskCreationOptions.DenyChildAttach](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskcreationoptions#System_Threading_Tasks_TaskCreationOptions_DenyChildAttach) nel costruttore della classe del task genitore o nel metodo [TaskFactory.StartNew](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.startnew). I task genitore impediscono implicitamente l'attacco di task figli se vengono creati chiamando il metodo [Task.Run](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.run). L'esempio seguente illustra questo concetto. È identico al precedente, tranne per il fatto che il task genitore è creato chiamando il metodo [Task.Run(Action)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.run#System_Threading_Tasks_Task_Run_System_Action_) invece del metodo [TaskFactory.StartNew(Action)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.startnew#System_Threading_Tasks_TaskFactory_StartNew_System_Action_). Poiché il task figlio non può attaccarsi al suo genitore, l'output dell'esempio è imprevedibile. Questo esempio è funzionalmente equivalente al primo esempio nella sezione "Detached child tasks".
 
 ```cs
 using System;
@@ -985,15 +985,15 @@ public class Example
 
 ### Cancellazione di un'attività
 
-<https://docs.microsoft.com/it-it/dotnet/standard/threading/cancellation-in-managed-threads>
+<https://docs.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads>
 
-A partire da .NET Framework 4 si usa un modello unificato per l'annullamento cooperativo basato su CancellationTokenSource e CancellationToken. Chi crea il token chiede l'annullamento; le operazioni che ricevono il token devono cooperare per osservare la richiesta e terminare in modo appropriato.
+A partire da .NET Framework 4 si usa un modello unificato per l'annullamento cooperativo basato su `CancellationTokenSource` e `CancellationToken`. Chi crea il token chiede l'annullamento; le operazioni che ricevono il token devono cooperare per osservare la richiesta e terminare in modo appropriato.
 
 Linee guida generali:
-- creare un'istanza di un oggetto [CancellationTokenSource](https://docs.microsoft.com/it-it/dotnet/api/system.threading.cancellationtokensource), che gestisce e invia la notifica di annullamento ai singoli token di annullamento.
-- passare il token restituito dalla proprietà [CancellationTokenSource.Token](https://docs.microsoft.com/it-it/dotnet/api/system.threading.cancellationtokensource.token) a ogni attività o thread in attesa di annullamento.
+- creare un'istanza di un oggetto [CancellationTokenSource](https://docs.microsoft.com/en-us/dotnet/api/system.threading.cancellationtokensource), che gestisce e invia la notifica di annullamento ai singoli token di annullamento.
+- passare il token restituito dalla proprietà [CancellationTokenSource.Token](https://docs.microsoft.com/en-us/dotnet/api/system.threading.cancellationtokensource.token) a ogni attività o thread in attesa di annullamento.
 - specificare un meccanismo per ogni attività o thread per rispondere all'annullamento.
-- chiamare il metodo [CancellationTokenSource.Cancel](https://docs.microsoft.com/it-it/dotnet/api/system.threading.cancellationtokensource.cancel) per fornire la notifica di annullamento.
+- chiamare il metodo [CancellationTokenSource.Cancel](https://docs.microsoft.com/en-us/dotnet/api/system.threading.cancellationtokensource.cancel) per fornire la notifica di annullamento.
 
 #### Esempi di cancellazione
 
@@ -1061,12 +1061,12 @@ namespace TaskCancellationDemo
 ```
 
 :::note
-Lanciare l'esempio precedente con CTRL+F5 (Avvia senza Debug), oppure se si lancia con F5 (Start Debug), Visual Studio si ferma sull'eccezione OperationCanceledException a meno che non si modifichi la configurazione di default di Visual Studio per le eccezioni.
+Lanciare l'esempio precedente con CTRL+F5 (Avvia senza Debug), oppure se si lancia con F5 (Start Debug), Visual Studio si ferma sull'eccezione `OperationCanceledException` a meno che non si modifichi la configurazione di default di Visual Studio per le eccezioni.
 :::
 
 #### Cancellare un task e i suoi figli
 
-È possibile creare task cancellabili passando il token al delegato e al metodo Task.Run; il delegato deve rilevare la richiesta e lanciare OperationCanceledException se opportuno. Se si usa Wait o WhenAll su task cancellati, è necessario gestire le eccezioni in try/catch (AggregateException/OperationCanceledException).
+È possibile creare task cancellabili passando il token al delegato e al metodo `Task.Run`; il delegato deve rilevare la richiesta e lanciare `OperationCanceledException` se opportuno. Se si usa `Wait` o `WhenAll` su task cancellati, è necessario gestire le eccezioni in try/catch (`AggregateException/OperationCanceledException`).
 
 ```cs
 using System.Collections.Concurrent;
@@ -1249,9 +1249,9 @@ namespace TaskAndSonsCancellationDemo
 **Quando "Just My Code" è abilitato, Visual Studio in alcuni casi si interrompe sulla riga che genera l'eccezione e visualizza un messaggio di errore che indica "eccezione non gestita dal codice utente."** **Questo errore è benigno. È possibile premere F5 per continuare e vedere il comportamento di gestione delle eccezioni dimostrato in questi esempi**. Per evitare che Visual Studio si fermi al primo errore, è sufficiente deselezionare la casella **Enable Just My Code** sotto **Tools, Options, Debugging, General**.
 :::
 
-#### Attached child tasks e AggregateExceptions annidate
+#### Attached child tasks e `AggregateException` annidate
 
-Se un task ha un attached child task che genera un'eccezione, tale eccezione viene incapsulata in un'AggregateException prima di essere propagata al task genitore, che a sua volta la incapsula in una propria AggregateException prima di propagarsi al chiamante. In questi casi, la proprietà InnerExceptions dell'eccezione AggregateException catturata contiene una o più istanze di AggregateException, non le eccezioni originali. Per evitare di dover iterare su AggregateException annidate, è possibile utilizzare il metodo Flatten per rimuovere tutte le AggregateException annidate, in modo che la proprietà InnerExceptions contenga le eccezioni originali. 
+Se un task ha un attached child task che genera un'eccezione, tale eccezione viene incapsulata in un'`AggregateException` prima di essere propagata al task genitore, che a sua volta la incapsula in una propria `AggregateException` prima di propagarsi al chiamante. In questi casi, la proprietà InnerExceptions dell'eccezione `AggregateException` catturata contiene una o più istanze di `AggregateException`, non le eccezioni originali. Per evitare di dover iterare su `AggregateException` annidate, è possibile utilizzare il metodo `Flatten` per rimuovere tutte le `AggregateException` annidate, in modo che la proprietà InnerExceptions contenga le eccezioni originali. 
 
 ```cs
 using System;
@@ -1370,7 +1370,7 @@ namespace TaskExceptionsDemos
 
 #### Eccezioni da detached child tasks
 
-Per default, i task figli sono creati come detached. Le eccezioni generate da task detached devono essere gestite o rilanciate nel task genitore immediato; non vengono propagate al chiamante allo stesso modo delle eccezioni generate da task attached. Il task genitore può rilanciare manualmente un'eccezione da un task detached per far sì che venga incapsulata in un'AggregateException e propagata al chiamante.
+Per default, i task figli sono creati come detached. Le eccezioni generate da task detached devono essere gestite o rilanciate nel task genitore immediato; non vengono propagate al chiamante allo stesso modo delle eccezioni generate da task attached. Il task genitore può rilanciare manualmente un'eccezione da un task detached per far sì che venga incapsulata in un'`AggregateException` e propagata al chiamante.
 
 ```cs
 using System;

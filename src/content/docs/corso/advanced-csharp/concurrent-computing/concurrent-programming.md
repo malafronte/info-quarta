@@ -166,7 +166,7 @@ Supponiamo due thread X e Y che vogliono accedere a una risorsa R. Si sceglie un
 
 #### Panoramica delle primitive di sincronizzazione in .NET
 
-<https://docs.microsoft.com/it-it/dotnet/standard/threading/overview-of-synchronization-primitives>
+<https://docs.microsoft.com/en-us/dotnet/standard/threading/overview-of-synchronization-primitives>
 
 .NET offre vari tipi per sincronizzare l'accesso a risorse condivise o coordinare l'interazione tra thread.
 

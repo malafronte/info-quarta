@@ -330,7 +330,7 @@ Se l'autolavaggio viene chiuso ma ci sono ancora auto in attesa, il sistema lava
 Il Main program fa partire il Task che simula il tunnel di lavaggio e 50 Task che simulano le auto che arrivano, quindi va in sleep per qualche secondo, poi chiude l' autolavaggio e aspetta che il sistema finisca.
 
 ### Riferimenti
-Questo esercizio introduce il pattern Producer-Consumer con semafori e la gestione di stato condiviso.
+Questo esercizio introduce il pattern Sleeping Barber (Barbiere che dorme) con semafori e la gestione di stato condiviso.
 
 - [Task Parallel Library](../tpl/)
 - [SemaphoreSlim](../concurrent-programming/#semafori)
@@ -539,15 +539,15 @@ namespace AutolavaggioTasks
 
 ### Riflessioni
 
-Questo esercizio introduce il pattern **Producer-Consumer** mediante semafori:
+Questo esercizio introduce il pattern **Sleeping Barber** (Barbiere che dorme) mediante semafori:
 
 1. **Due Semafori Complementari**:
-   - `tunnelReady`: Rappresenta il "servente" (tunnel disponibile). Inizializzato a 1.
-   - `carInParkingLotReady`: Rappresenta gli "utenti" (auto in attesa). Inizializzato a 0.
+   - `tunnelReady`: Rappresenta il **Barbiere** (tunnel disponibile). Inizializzato a 1.
+   - `carInParkingLotReady`: Rappresenta i **Clienti** (auto in attesa). Inizializzato a 0.
 
 2. **Flusso di Controllo**:
-   - Le auto (producer) entrano nel parcheggio e fanno `Release()` su `carInParkingLotReady`
-   - Il tunnel (consumer) fa `Wait()` su `carInParkingLotReady`, processa l'auto, poi fa `Release()` su `tunnelReady`
+   - Le auto (**Clienti**) entrano nel parcheggio e fanno `Release()` su `carInParkingLotReady`
+   - Il tunnel (**Barbiere**) fa `Wait()` su `carInParkingLotReady`, processa l'auto, poi fa `Release()` su `tunnelReady`
    - Le auto fanno `Wait()` su `tunnelReady` per entrare nel tunnel
 
 3. **Protezione con Lock**: Tre lock separati proteggono:
@@ -570,118 +570,218 @@ Modificare l'esercizio precedente in modo che ci siano **due o più tunnel** nel
 
 ### Svolgimento
 
-La modifica è minima: basta cambiare `NumberOfTunnels` e creare un array di task per i tunnel. Now available, we need just a couple minimal changes to support multiple tunnels:
+La modifica è minima: basta cambiare `NumberOfTunnels` e creare un array di task per i tunnel:
 
 ```csharp
-// In Program class - only showing changes
-const int NumberOfTunnels = 3; // CHANGED: ora 3 tunnel invece di 1
+using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
 
-// Nel Main, creiamo un array di tunnel tasks
-Task[] tunnels = new Task[NumberOf Tunnels];
-for(int i = 0; i < NumberOfTunnels; i++)
+namespace AutolavaggioTasksMultiTunnel
 {
-    int tunnelIndex = i; // Capture for closure
-    tunnels[i] = Task.Factory.StartNew(() => TunnelAction(tunnelIndex));
-}
-
-// Prima di chiudere
-Task.WaitAll(tunnels); // CHANGED: attendiamo tutti i tunnel
-
-// Modifichiamo TunnelAction per accettare un indice
-private static void TunnelAction(int tunnelIndex)
-{
-    // ... stesso codice, ma nei messaggi stampiamo anche il tunnelIndex
-    Console.WriteLine($"Il tunnel {tunnelIndex} sta lavando un'auto...");
-    // ...
-}
-```
-
-**Versione completa** con le modifiche integrate:
-
-```csharp
-// Solo le parti modificate rispetto alla versione precedente
-const int NumberOfTunnels = 3;
-
-static void Main(string[] args)
-{
-    lock (_lockCarWashOpen)
+    internal class Program
     {
-        Console.WriteLine($"L'autolavaggio è aperto");
-        carWashOpen = true;
-    }
-    
-    // Creo array di task per i tunnel
-    Task[] tunnels = new Task[NumberOfTunnels];
-    for(int i = 0; i < NumberOfTunnels; i++)
-    {
-        int index = i; // Importante: cattura della variabile per la closure
-        tunnels[i] = Task.Factory.StartNew(() => TunnelAction(index));
-    }
-
-    Random rand = new();
-    for (int i = 0; i < NumberOfCars; i++)
-    {
-        Task.Factory.StartNew(CarAction, new CarData() { Id = i, CreationTime = DateTime.Now.Ticks });
-        int timeInterval = rand.Next(MinCarArrivalIntervalMs, MaxCarArrivalIntervalMs + 1);
-        Task.Delay(timeInterval).Wait();
-    }
-    
-    Console.WriteLine("Non arrivano più auto");
-    Task.Delay(1000).Wait();
-    
-    lock (_lockCarWashOpen)
-    {
-        Console.WriteLine($"L'autolavaggio è chiuso");
-        carWashOpen = false;
-    }
-    
-    // Attendo che TUTTI i tunnel finiscano
-    Task.WaitAll(tunnels);
-}
-
-private static void TunnelAction(int tunnelIndex)
-{
-    bool carWashIsStillOpen;
-    lock (_lockCarWashOpen)
-    {
-        carWashIsStillOpen = carWashOpen;
-    }
-    
-    while (carWashIsStillOpen || carInParkingLotReady.CurrentCount > 0)
-    {
-        if (!carWashIsStillOpen && carInParkingLotReady.CurrentCount > 0)
+        const int NumberOfPlaces = 20;
+        const int NumberOfCars = 50;
+        const int NumberOfTunnels = 3; // 3 Tunnel (Barbieri)
+        
+        static int freePlaces = NumberOfPlaces;
+        static bool carWashOpen;
+        
+        const int TunnelWashingDurationMs = 400;
+        const int MinCarArrivalIntervalMs = 100;
+        const int MaxCarArrivalIntervalMs = 300;
+        
+        // Lock per proteggere variabili condivise
+        private static readonly object _lockFreePlaces = new();
+        private static readonly object _lockCarWashOpen = new();
+        
+        // Coda concorrente per passare i dati delle auto ai tunnel
+        static ConcurrentQueue<int> carsInParking = new();
+        
+        // Semafori per coordinare tunnel e auto
+        static readonly SemaphoreSlim tunnelReady = new(NumberOfTunnels, NumberOfTunnels); // Servente (Barbiere)
+        static readonly SemaphoreSlim carInParkingLotReady = new(0, NumberOfPlaces); // Utente (Cliente)
+        
+        static void Main(string[] args)
         {
-            Console.WriteLine($"L'autolavaggio è chiuso, ma ci sono ancora {carInParkingLotReady.CurrentCount} macchine da lavare");
+            // Apro l'autolavaggio
+            lock (_lockCarWashOpen)
+            {
+                Console.WriteLine("L'autolavaggio è aperto");
+                carWashOpen = true;
+            }
+            
+            // Faccio partire i task dei tunnel
+            Task[] tunnels = new Task[NumberOfTunnels];
+            for(int i = 0; i < NumberOfTunnels; i++)
+            {
+                int index = i;
+                tunnels[i] = Task.Factory.StartNew(() => TunnelAction(index));
+            }
+
+            // Faccio partire i task delle auto che arrivano
+            Random rand = new();
+            for (int i = 0; i < NumberOfCars; i++)
+            {
+                Task.Factory.StartNew(CarAction, new CarData() { Id = i, CreationTime = DateTime.Now.Ticks });
+                int timeInterval = rand.Next(MinCarArrivalIntervalMs, MaxCarArrivalIntervalMs + 1);
+                Task.Delay(timeInterval).Wait();
+            }
+            
+            Console.WriteLine("Non arrivano più auto");
+            
+            // Aspetto 1 secondo
+            Task.Delay(1000).Wait();
+            
+            // Chiudo l'autolavaggio
+            lock (_lockCarWashOpen)
+            {
+                var previousColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("L'autolavaggio è chiuso");
+                Console.ForegroundColor = previousColor;
+                carWashOpen = false;
+            }
+            
+            // Attendo che TUTTI i tunnel finiscano
+            Task.WaitAll(tunnels);
         }
-        
-        carInParkingLotReady.Wait();
-        
-        lock (_lockFreePlaces)
+
+        private static void CarAction(object? obj)
         {
-            freePlaces++;
-            Console.WriteLine($"Il tunnel {tunnelIndex} sta lavando un'auto. Si libera un posto nel parcheggio");
+            CarData? carData = obj as CarData;
+            
+            // Verifico se il parcheggio è aperto
+            bool isCarWashOpen;
+            lock (_lockCarWashOpen)
+            {
+                isCarWashOpen = carWashOpen;
+            }
+            
+            if (isCarWashOpen)
+            {
+                // Provo ad occupare un posto nel parcheggio
+                bool carEntersParkingLot = false;
+                int freePlacesFound = 0;
+                
+                lock (_lockFreePlaces)
+                {
+                    if (freePlaces > 0)
+                    {
+                        freePlacesFound = freePlaces;
+                        freePlaces--;
+                        carEntersParkingLot = true;
+                    }
+                }
+                
+                if (carEntersParkingLot)
+                {
+                    Console.WriteLine($"L'auto con indice = {carData?.Id} sul Task Id = {Task.CurrentId} trova posto e attende di essere lavata; posti liberi {freePlacesFound}");
+                    
+                    // Aggiungo l'auto alla coda e segnalo
+                    if (carData != null)
+                    {
+                        carsInParking.Enqueue(carData.Id);
+                    }
+                    carInParkingLotReady.Release();
+                    
+                    // Attendo che un tunnel sia disponibile
+                    tunnelReady.Wait();
+                    
+                    // Calcolo il tempo di attesa
+                    double tempoDiAttesa = 0;
+                    if (carData != null)
+                    {
+                        tempoDiAttesa = new TimeSpan(DateTime.Now.Ticks - carData.CreationTime).TotalMilliseconds;
+                    }
+                    
+                    lock (_lockFreePlaces)
+                    {
+                        Console.WriteLine($"Sono l'auto con indice = {carData?.Id} su Task Id = {Task.CurrentId}. " +
+                            $"sono entrata nel tunnel di lavaggio dopo {tempoDiAttesa:F2} ms di attesa. Posti disponibili = {freePlaces}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"L'auto con indice = {carData?.Id} sul Task Id = {Task.CurrentId} non ha trovato posto e se ne va");
+                }
+            }
         }
-        
-        Task.Delay(TunnelWashingDurationMs).Wait();
-        tunnelReady.Release();
-        
-        Console.WriteLine($"La macchina esce dal tunnel {tunnelIndex} pulita e va via");
-        
-        lock (_lockCarWashOpen)
+
+        private static void TunnelAction(int tunnelIndex)
         {
-            carWashIsStillOpen = carWashOpen;
+            // Finché l'autolavaggio è aperto o ci sono auto in attesa
+            bool carWashIsStillOpen;
+            
+            lock (_lockCarWashOpen)
+            {
+                carWashIsStillOpen = carWashOpen;
+            }
+            
+            while (carWashIsStillOpen || carInParkingLotReady.CurrentCount > 0)
+            {
+                if (!carWashIsStillOpen && carInParkingLotReady.CurrentCount > 0)
+                {
+                    var previousColor = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"L'autolavaggio è chiuso, ma ci sono ancora {carInParkingLotReady.CurrentCount} macchine da lavare");
+                    Console.ForegroundColor = previousColor;
+                }
+                
+                // Attendo che ci sia una macchina disponibile
+                carInParkingLotReady.Wait();
+                
+                // Prelevo l'auto dalla coda
+                int carId = -1;
+                if (carsInParking.TryDequeue(out int id))
+                {
+                    carId = id;
+                }
+
+                // La macchina entra nel tunnel e si libera un posto nel parcheggio
+                lock (_lockFreePlaces)
+                {
+                    freePlaces++;
+                    Console.WriteLine($"Il tunnel {tunnelIndex} sta lavando l'auto {carId}. Si libera un posto nel parcheggio");
+                }
+                
+                // Tempo di lavaggio
+                Task.Delay(TunnelWashingDurationMs).Wait();
+                
+                // Il tunnel ha finito ed è nuovamente pronto
+                tunnelReady.Release();
+                
+                Console.WriteLine($"La macchina {carId} esce dal tunnel {tunnelIndex} pulita e va via");
+                
+                // Controllo se l'autolavaggio è ancora aperto
+                lock (_lockCarWashOpen)
+                {
+                    carWashIsStillOpen = carWashOpen;
+                }
+            }
+            
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Il tunnel {tunnelIndex} si spegne");
+            Console.ForegroundColor = color;
+        }
+
+        class CarData
+        {
+            public int Id { get; set; }
+            public long CreationTime { get; set; }
         }
     }
-    
-    Console.WriteLine($"Il tunnel {tunnelIndex} si spegne");
 }
 ```
 
 ### Riflessioni
 
-Il passaggio da un tunnel a più tunnel dimostra la scalabilità del pattern Producer-Consumer:
+Il passaggio da un tunnel a più tunnel dimostra la scalabilità del pattern Sleeping Barber:
 
-1. **Semaforo con Contatore > 1**: `tunnelReady` ora è inizializzato con `NumberOfTunnels` invece di 1. Questo permette a più auto di entrare simultaneamente se ci sono tunnel disponibili.
+1. **Semaforo con Contatore > 1**: `tunnelReady` (Barbiere) ora è inizializzato con `NumberOfTunnels` invece di 1. Questo permette a più auto (Clienti) di entrare simultaneamente se ci sono tunnel (Barbieri) disponibili.
 
 2. **Array di Task**: Creando un array di task tunnel, ogni tunnel opera indipendentemente ma accede alle stesse code (semafori). Questo è il vero potere della concor renza: possiamo scalare semplicemente aumentando il numero di "worker".
 
@@ -750,7 +850,7 @@ namespace NegozioConcorrenteTask
             Task chiudiNegozio = Task.Factory.StartNew(ChiudiNegozio);
             
             // Attendo il completamento di tutti e tre i task
-            Task.Wait All(entraCliente, esceCliente, chiudiNegozio);
+            Task.WaitAll(entraCliente, esceCliente, chiudiNegozio);
 
             // Il main accede alla variabile condivisa del saldo
             lock (_lockSaldoNegozio)
@@ -901,27 +1001,36 @@ namespace SommaNumeriPrimi
         
         static void Main(string[] args)
         {
-            Console.WriteLine($"Calcolo della somma dei numeri primi da 1 a {MaxNumber:N0}\\n");
+            Console.WriteLine($"Calcolo della somma dei numeri primi da 1 a {MaxNumber:N0}\n");
             
             // 1. Calcolo Sequenziale
-            long sommaSeq = CalcoloSequenziale();
+            var (sommaSeq, tempoSeq) = CalcoloSequenziale();
             
             // 2. Calcolo Parallelo con ConcurrentBag
-            long sommaParConcurrent = CalcoloParalleloConcurrentBag();
+            var (sommaParConcurrent, tempoParConcurrent) = CalcoloParalleloConcurrentBag();
             
             // 3. Calcolo Parallelo con Thread Local Data
-            long sommaParLocal = CalcoloParalleloThreadLocal();
+            var (sommaParLocal, tempoParLocal) = CalcoloParalleloThreadLocal();
             
-            Console.WriteLine($"\\n=== RIEPILOGO ===");
+            // Calcolo speedup
+            double speedupConcurrent = (double)tempoSeq / tempoParConcurrent;
+            double speedupLocal = (double)tempoSeq / tempoParLocal;
+            
+            Console.WriteLine("\n=== RIEPILOGO ===");
             Console.WriteLine($"Somma (Sequenziale): {sommaSeq:N0}");
             Console.WriteLine($"Somma (Parallel + ConcurrentBag): {sommaParConcurrent:N0}");
             Console.WriteLine($"Somma (Parallel + Thread Local): {sommaParLocal:N0}");
+            
+            Console.WriteLine("\n=== PRESTAZIONI ===");
+            Console.WriteLine($"Tempo Sequenziale: {tempoSeq:N0} ms");
+            Console.WriteLine($"Tempo Parallel (ConcurrentBag): {tempoParConcurrent:N0} ms - Speedup: {speedupConcurrent:F2}x");
+            Console.WriteLine($"Tempo Parallel (Thread Local): {tempoParLocal:N0} ms - Speedup: {speedupLocal:F2}x");
         }
         
         /// <summary>
         /// Implementazione sequenziale - baseline per il confronto
         /// </summary>
-        static long CalcoloSequenziale()
+        static (long somma, long tempoMs) CalcoloSequenziale()
         {
             Console.WriteLine("=== CALCOLO SEQUENZIALE ===");
             Stopwatch sw = Stopwatch.StartNew();
@@ -937,15 +1046,15 @@ namespace SommaNumeriPrimi
             
             sw.Stop();
             Console.WriteLine($"Tempo: {sw.ElapsedMilliseconds:N0} ms");
-            Console.WriteLine($"Somma: {somma:N0}\\n");
+            Console.WriteLine($"Somma: {somma:N0}\n");
             
-            return somma;
+            return (somma, sw.ElapsedMilliseconds);
         }
         
         /// <summary>
         /// Calcolo parallelo con ConcurrentBag (thread-safe collection)
         /// </summary>
-        static long CalcoloParalleloConcurrentBag()
+        static (long somma, long tempoMs) CalcoloParalleloConcurrentBag()
         {
             Console.WriteLine("=== CALCOLO PARALLELO (ConcurrentBag) ===");
             Stopwatch sw = Stopwatch.StartNew();
@@ -953,7 +1062,7 @@ namespace SommaNumeriPrimi
             // ConcurrentBag è thread-safe, ma ogni Add() ha overhead di sincronizzazione
             ConcurrentBag<int> primi = new();
             
-            Parallel.ForEach(Enumerable.Range(1, MaxNumber), numero =>
+            Parallel.For(1, MaxNumber + 1, numero =>
             {
                 if (IsPrime(numero))
                 {
@@ -965,15 +1074,15 @@ namespace SommaNumeriPrimi
             
             sw.Stop();
             Console.WriteLine($"Tempo: {sw.ElapsedMilliseconds:N0} ms");
-            Console.WriteLine($"Somma: {somma:N0}\\n");
+            Console.WriteLine($"Somma: {somma:N0}\n");
             
-            return somma;
+            return (somma, sw.ElapsedMilliseconds);
         }
         
         /// <summary>
         /// Calcolo parallelo con Thread Local Data (approccio ottimizzato)
         /// </summary>
-        static long CalcoloParalleloThreadLocal()
+        static (long somma, long tempoMs) CalcoloParalleloThreadLocal()
         {
             Console.WriteLine("=== CALCOLO PARALLELO (Thread Local Data) ===");
             Stopwatch sw = Stopwatch.StartNew();
@@ -982,8 +1091,9 @@ namespace SommaNumeriPrimi
             object lockObj = new();
             long sommaGlobale = 0;
             
-            Parallel.ForEach(
-                Enumerable.Range(1, MaxNumber),
+            Parallel.For(
+                1,
+                MaxNumber + 1,
                 
                 // Inizializzatore thread-local: crea una variabile locale per ogni thread
                 () => 0L,
@@ -1010,9 +1120,9 @@ namespace SommaNumeriPrimi
             
             sw.Stop();
             Console.WriteLine($"Tempo: {sw.ElapsedMilliseconds:N0} ms");
-            Console.WriteLine($"Somma: {sommaGlobale:N0}\\n");
+            Console.WriteLine($"Somma: {sommaGlobale:N0}\n");
             
-            return sommaGlobale;
+            return (sommaGlobale, sw.ElapsedMilliseconds);
         }
         
         /// <summary>
@@ -1076,8 +1186,8 @@ Nel nostro caso, `IsPrime()` su numeri grandi è sufficientemente costoso da ben
 | Metodo | Tempo Relativo | Speedup | Note |
 |--------|----------------|---------|------|
 | Sequenziale | 100% | 1.0x | Baseline |
-| Parallel + ConcurrentBag | 35-40% | 2.5-3.0x | Overhead sincronizzazione |
-| Parallel + Thread Local | 25-30% | 3.3-4.0x | Minima contesa |
+| Parallel + ConcurrentBag | 120-140% | 0.7-0.9x | **Più lento!** Overhead sincronizzazione eccessivo |
+| Parallel + Thread Local | 15-25% | 4.0-6.0x | Ottimale - minima contesa |
 
 :::caution
 I risultati effettivi dipendono da:
@@ -1130,7 +1240,8 @@ class MatrixMultiplication
         Stopwatch sw = Stopwatch.StartNew();
         MultiplySequential(A, B, C, N);
         sw.Stop();
-        Console.WriteLine($"Sequenziale: {sw.ElapsedMilliseconds} ms");
+        long tempoSeq = sw.ElapsedMilliseconds;
+        Console.WriteLine($"Sequenziale: {tempoSeq} ms");
 
         // Reset matrice risultato
         Array.Clear(C, 0, C.Length);
@@ -1139,9 +1250,11 @@ class MatrixMultiplication
         sw.Restart();
         MultiplyParallel(A, B, C, N);
         sw.Stop();
-        Console.WriteLine($"Parallelo:   {sw.ElapsedMilliseconds} ms");
+        long tempoPar = sw.ElapsedMilliseconds;
+        Console.WriteLine($"Parallelo:   {tempoPar} ms");
         
-        Console.WriteLine($"Speedup: {(double)sw.ElapsedMilliseconds / sw.ElapsedMilliseconds:F2}x (Nota: ricalcolare manualmente)");
+        double speedup = (double)tempoSeq / tempoPar;
+        Console.WriteLine($"Speedup: {speedup:F2}x");
     }
 
     static void MultiplySequential(double[,] A, double[,] B, double[,] C, int N)
@@ -1162,8 +1275,13 @@ class MatrixMultiplication
 
     static void MultiplyParallel(double[,] A, double[,] B, double[,] C, int N)
     {
-        // Parallelizziamo il ciclo esterno (righe)
-        Parallel.For(0, N, i =>
+        // Parallelizziamo il ciclo esterno (righe) con chunk size ottimizzato
+        var options = new ParallelOptions 
+        { 
+            MaxDegreeOfParallelism = Environment.ProcessorCount 
+        };
+        
+        Parallel.For(0, N, options, i =>
         {
             for (int j = 0; j < N; j++)
             {
@@ -1199,6 +1317,25 @@ Questo è un esempio classico di **Data Parallelism**. Non stiamo eseguendo task
 In questo esempio parallelizziamo solo il ciclo esterno (`i`). Parallelizzare anche i cicli interni (`j` o `k`) creerebbe troppi task piccoli, introducendo un overhead di gestione che peggiorerebbe le prestazioni invece di migliorarle.
 :::
 
+:::warning[Cache Performance]
+**Attenzione**: Con matrici di dimensioni medio-piccole (N < 2000), la versione parallela potrebbe essere **più lenta** della sequenziale!
+
+Questo accade perché:
+1. **Cache Thrashing**: L'accesso alla matrice B non è cache-friendly. Ogni thread accede a colonne diverse di B, causando continui cache miss.
+2. **Overhead del Parallelismo**: Il costo di creare e sincronizzare i thread supera il beneficio della parallelizzazione.
+3. **Competizione per la Cache**: I core competono per gli stessi dati in cache L2/L3.
+
+**Soluzioni**:
+- Usare matrici più grandi (N >= 2000-3000) per vedere benefici
+- Implementare **loop tiling/blocking** per migliorare la località della cache
+- Usare librerie ottimizzate come **BLAS** per operazioni su matrici in produzione
+
+**Risultati tipici su quad-core** (con ottimizzazioni):
+- N=500: Speedup 2.0-3.0x
+- N=1000: Speedup 3.5-5.0x (o 6-8x su 8+ core!)
+- N=2000+: Speedup 4.0-7.0x (scala con i core disponibili)
+:::
+
 ---
 
 ## Esercizio 7: Elaborazione Immagini Reale (Multi-Filtro)
@@ -1219,6 +1356,34 @@ Realizzare un'applicazione console che applichi un filtro grafico a scelta a un'
 
 - [System.Drawing.Common (NuGet)](https://www.nuget.org/packages/System.Drawing.Common)
 - [Bitmap.LockBits Method](https://learn.microsoft.com/en-us/dotnet/api/system.drawing.bitmap.lockbits)
+
+### Prerequisiti
+
+:::important[Installazione Pacchetto NuGet]
+Da .NET 6 in poi, `System.Drawing.Common` non è più incluso di default. Devi installare il pacchetto NuGet:
+
+```bash
+dotnet add package System.Drawing.Common
+```
+
+Oppure tramite Package Manager Console in Visual Studio:
+```powershell
+Install-Package System.Drawing.Common
+```
+
+**Nota sul Platform Warning**: Poiché `System.Drawing.Common` funziona solo su Windows, dovrai modificare il file `.csproj` per indicare che il progetto è Windows-only:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+  </PropertyGroup>
+</Project>
+```
+
+Cambia `net8.0` in `net8.0-windows` (o la tua versione con `-windows` alla fine) per eliminare il warning.
+:::
 
 ### Svolgimento
 
@@ -1245,35 +1410,134 @@ class ImageProcessingReal
             return;
         }
 
-        Console.WriteLine("Scegli il filtro:");
-        Console.WriteLine("1. Negativo");
-        Console.WriteLine("2. Scala di Grigi");
-        Console.WriteLine("3. Aumento Contrasto");
-        Console.Write("Scelta: ");
-        
-        FilterType filter = Console.ReadLine() switch
-        {
-            "1" => FilterType.Negative,
-            "2" => FilterType.Grayscale,
-            "3" => FilterType.Contrast,
-            _ => FilterType.Negative
-        };
-
-        string outputPath = $@"C:\temp\output_{filter}.jpg";
-
         using (Bitmap originalImage = new Bitmap(inputPath))
         {
-            Console.WriteLine($"\nElaborazione {originalImage.Width}x{originalImage.Height} con filtro {filter}...");
-            Stopwatch sw = Stopwatch.StartNew();
-
-            Bitmap processedImage = ApplyFilterParallel(originalImage, filter);
-
-            sw.Stop();
-            Console.WriteLine($"Completato in {sw.ElapsedMilliseconds} ms");
+            Console.WriteLine($"Immagine caricata: {originalImage.Width}x{originalImage.Height}\n");
             
-            processedImage.Save(outputPath, ImageFormat.Jpeg);
-            Console.WriteLine($"Salvato in: {outputPath}");
+            bool continua = true;
+            while (continua)
+            {
+                Console.WriteLine("=== MENU FILTRI ===");
+                Console.WriteLine("1. Negativo");
+                Console.WriteLine("2. Scala di Grigi");
+                Console.WriteLine("3. Aumento Contrasto");
+                Console.WriteLine("0. Esci");
+                Console.Write("\nScelta: ");
+                
+                string scelta = Console.ReadLine();
+                
+                if (scelta == "0")
+                {
+                    Console.WriteLine("\nUscita dal programma...");
+                    continua = false;
+                    continue;
+                }
+                
+                FilterType filter = scelta switch
+                {
+                    "1" => FilterType.Negative,
+                    "2" => FilterType.Grayscale,
+                    "3" => FilterType.Contrast,
+                    _ => FilterType.Negative
+                };
+
+                string outputPathSeq = $@"C:\temp\output_{filter}_seq.jpg";
+                string outputPathPar = $@"C:\temp\output_{filter}_par.jpg";
+
+                Console.WriteLine($"\n=== Elaborazione con filtro {filter} ===\n");
+                
+                // Versione Sequenziale
+                Console.WriteLine("=== ELABORAZIONE SEQUENZIALE ===");
+                Stopwatch sw = Stopwatch.StartNew();
+                Bitmap processedImageSeq = ApplyFilterSequential(originalImage, filter);
+                sw.Stop();
+                long tempoSeq = sw.ElapsedMilliseconds;
+                Console.WriteLine($"Completato in {tempoSeq} ms");
+                processedImageSeq.Save(outputPathSeq, ImageFormat.Jpeg);
+                Console.WriteLine($"Salvato in: {outputPathSeq}\n");
+                processedImageSeq.Dispose();
+
+                // Versione Parallela
+                Console.WriteLine("=== ELABORAZIONE PARALLELA ===");
+                sw.Restart();
+                Bitmap processedImagePar = ApplyFilterParallel(originalImage, filter);
+                sw.Stop();
+                long tempoPar = sw.ElapsedMilliseconds;
+                Console.WriteLine($"Completato in {tempoPar} ms");
+                processedImagePar.Save(outputPathPar, ImageFormat.Jpeg);
+                Console.WriteLine($"Salvato in: {outputPathPar}\n");
+                processedImagePar.Dispose();
+                
+                // Calcolo Speedup
+                double speedup = (double)tempoSeq / tempoPar;
+                Console.WriteLine("=== CONFRONTO PRESTAZIONI ===");
+                Console.WriteLine($"Tempo Sequenziale: {tempoSeq} ms");
+                Console.WriteLine($"Tempo Parallelo: {tempoPar} ms");
+                Console.WriteLine($"Speedup: {speedup:F2}x\n");
+                
+                Console.WriteLine("Premi un tasto per continuare...");
+                Console.ReadKey();
+                Console.Clear();
+            }
         }
+    }
+
+    static Bitmap ApplyFilterSequential(Bitmap source, FilterType filterType)
+    {
+        int width = source.Width;
+        int height = source.Height;
+        Bitmap result = new Bitmap(source);
+
+        Rectangle rect = new Rectangle(0, 0, width, height);
+        BitmapData bmpData = result.LockBits(rect, ImageLockMode.ReadWrite, result.PixelFormat);
+
+        int bytesPerPixel = Image.GetPixelFormatSize(result.PixelFormat) / 8;
+        int byteCount = Math.Abs(bmpData.Stride) * height;
+        byte[] pixels = new byte[byteCount];
+
+        Marshal.Copy(bmpData.Scan0, pixels, 0, byteCount);
+
+        // Elaborazione sequenziale
+        for (int y = 0; y < height; y++)
+        {
+            int rowStart = y * bmpData.Stride;
+            
+            for (int x = 0; x < width; x++)
+            {
+                int i = rowStart + x * bytesPerPixel;
+                
+                byte b = pixels[i];
+                byte g = pixels[i + 1];
+                byte r = pixels[i + 2];
+
+                switch (filterType)
+                {
+                    case FilterType.Negative:
+                        pixels[i] = (byte)(255 - b);
+                        pixels[i + 1] = (byte)(255 - g);
+                        pixels[i + 2] = (byte)(255 - r);
+                        break;
+
+                    case FilterType.Grayscale:
+                        byte gray = (byte)(0.299 * r + 0.587 * g + 0.114 * b);
+                        pixels[i] = gray;
+                        pixels[i + 1] = gray;
+                        pixels[i + 2] = gray;
+                        break;
+
+                    case FilterType.Contrast:
+                        double threshold = 1.5; 
+                        pixels[i] = AdjustContrast(b, threshold);
+                        pixels[i + 1] = AdjustContrast(g, threshold);
+                        pixels[i + 2] = AdjustContrast(r, threshold);
+                        break;
+                }
+            }
+        }
+
+        Marshal.Copy(pixels, 0, bmpData.Scan0, byteCount);
+        result.UnlockBits(bmpData);
+        return result;
     }
 
     static Bitmap ApplyFilterParallel(Bitmap source, FilterType filterType)
@@ -1594,7 +1858,7 @@ Questo esercizio presenta **due approcci** per implementare il pattern Producer-
 |---------|-------------------------------|----------------------------------|
 | **Complessità** | Alta - gestione manuale | Bassa - gestione automatica |
 | **Semafori** | 2 (postiLiberi + pezziPronti) | Nessuno (integrati) |
-| **Lock** | Necessario per Queue\&lt;T\&gt; | Non necessario |
+| **Lock** | Necessario per `Queue<T>` | Non necessario |
 | **Linee di codice** | ~90 | ~60 |
 | **Controllo** | Massimo | Astratto |
 | **Didattica** | Mostra meccanismi interni | Mostra best practice .NET |
