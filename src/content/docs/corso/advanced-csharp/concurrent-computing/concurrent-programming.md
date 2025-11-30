@@ -185,12 +185,12 @@ I tipi leggeri illustrati in questa guida:
 
 **Confronto tra costrutti di locking:**
 
-| **Costrutto** | **Scopo** | **Cross-process?** | **Overhead\*** |
-| --- | --- | --- | --- |
-| [lock] (`Monitor.Enter` / `Monitor.Exit`) | Garantisce che un solo thread possa accedere a una risorsa o sezione di codice alla volta | - | 20ns |
-| [Mutex] | Accesso esclusivo, utilizzabile cross-process | Sì | 1000ns |
-| [SemaphoreSlim] (introdotto in Framework 4.0) | Limita il numero di thread concorrenti che possono accedere a una risorsa o sezione di codice | - | 200ns |
-| [Semaphore] | Versione utilizzabile cross-process | Sì | 1000ns |
+| **Costrutto**                                 | **Scopo**                                                                                     | **Cross-process?** | **Overhead\*** |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------ | -------------- |
+| [lock] (`Monitor.Enter` / `Monitor.Exit`)     | Garantisce che un solo thread possa accedere a una risorsa o sezione di codice alla volta     | -                  | 20ns           |
+| [Mutex]                                       | Accesso esclusivo, utilizzabile cross-process                                                 | Sì                 | 1000ns         |
+| [SemaphoreSlim] (introdotto in Framework 4.0) | Limita il numero di thread concorrenti che possono accedere a una risorsa o sezione di codice | -                  | 200ns          |
+| [Semaphore]                                   | Versione utilizzabile cross-process                                                           | Sì                 | 1000ns         |
 
 \*Tempo per acquisire e rilasciare il lock sullo stesso thread (assumendo nessun blocco), misurato su Intel Core i7 860.
 
@@ -259,6 +259,62 @@ namespace LockKeyword
 
 ```
 
+#### ReaderWriterLockSlim
+
+Quando si ha una risorsa che viene letta frequentemente ma scritta raramente, l'uso di un semplice `lock` (Monitor) può creare un collo di bottiglia, poiché blocca anche i lettori tra di loro. In questi scenari, la classe `ReaderWriterLockSlim` offre prestazioni migliori permettendo a più thread di leggere contemporaneamente, garantendo l'accesso esclusivo solo quando un thread deve scrivere.
+
+**Caratteristiche principali:**
+- **Modalità Lettura**: Più thread possono acquisire il lock in lettura (`EnterReadLock`).
+- **Modalità Scrittura**: Solo un thread può acquisire il lock in scrittura (`EnterWriteLock`), bloccando tutti gli altri lettori e scrittori.
+- **Prevenzione Deadlock**: Progettato per evitare i problemi di ricorsione della vecchia classe `ReaderWriterLock`.
+
+Esempio di utilizzo:
+
+```csharp
+using System;
+using System.Threading;
+
+public class Cache
+{
+    private ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
+    private Dictionary<int, string> innerCache = new Dictionary<int, string>();
+
+    public string Read(int key)
+    {
+        cacheLock.EnterReadLock();
+        try
+        {
+            return innerCache.ContainsKey(key) ? innerCache[key] : null;
+        }
+        finally
+        {
+            cacheLock.ExitReadLock();
+        }
+    }
+
+    public void Add(int key, string value)
+    {
+        cacheLock.EnterWriteLock();
+        try
+        {
+            innerCache[key] = value;
+        }
+        finally
+        {
+            cacheLock.ExitWriteLock();
+        }
+    }
+    
+    // Non dimenticare di disporre il lock quando non serve più
+    public void Dispose()
+    {
+        cacheLock.Dispose();
+    }
+}
+```
+
+Per approfondire: [ReaderWriterLockSlim Class (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=net-8.0)
+
 #### Semafori
 
 <https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim>
@@ -278,9 +334,9 @@ SemaphoreSlim.Release()
 
 La proprietà CurrentCount riporta il valore attuale del contatore del semaforo.
 
-| **COSTRUTTORI** ||
-| --- | --- |
-| SemaphoreSlim(Int32) | Inizializza un SemaphoreSlim specificando il numero iniziale di ingressi consentiti. |
+| **COSTRUTTORI**             |                                                                                                          |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| SemaphoreSlim(Int32)        | Inizializza un SemaphoreSlim specificando il numero iniziale di ingressi consentiti.                     |
 | SemaphoreSlim(Int32, Int32) | Inizializza un SemaphoreSlim specificando il numero iniziale e il numero massimo di ingressi consentiti. |
 
 Un thread può entrare più volte nel semaforo chiamando ripetutamente Wait; per rilasciarlo lo stesso thread deve chiamare Release lo stesso numero di volte o usare Release(Int32) per rilasciare più ingressi.
@@ -356,76 +412,6 @@ namespace ThreadGym
 
     }
 
-}
-
-```
-
-Esempio con in task (i task saranno introdotti nei prossimi paragrafi):
-
-```cs
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace SemaforoDemo01
-{
-    class Program
-    {
-        private static SemaphoreSlim semaphore;
-        // A padding interval to make the output more orderly.
-        private static int padding;
-
-        public static void Main()
-        {
-            // Create the semaphore.
-            semaphore = new SemaphoreSlim(0, 3);
-            Console.WriteLine("{0} tasks can enter the semaphore.",
-                              semaphore.CurrentCount);
-            Task[] tasks = new Task[5];
-
-            // Create and start five numbered tasks.
-            for (int i = 0; i <= 4; i++)
-            {
-                tasks[i] = Task.Run(() => {
-                    // Each task begins by requesting the semaphore.
-                    Console.WriteLine("Task {0} begins and waits for the semaphore.",
-                                      Task.CurrentId);
-                    
-                    //blocca il thread/task corrente in attesa di entrare nel semaforo
-                    semaphore.Wait();
-                    //https://docs.microsoft.com/en-us/dotnet/api/system.threading.interlocked?view=netframework-4.8
-                    //Adds two integers and replaces the first integer with the sum, as an atomic operation.
-                    Interlocked.Add(ref padding, 100);
-
-                    Console.WriteLine("Task {0} enters the semaphore.", Task.CurrentId);
-
-                    // The task just sleeps for 1+ seconds.
-                    Thread.Sleep(1000 + padding);
-
-                    Console.WriteLine("Task {0} releases the semaphore; previous count: {1}.",
-                                      Task.CurrentId, semaphore.Release());//rilascio il semaforo e incrementa il contatore
-                });
-            }
-
-            // Wait for half a second, to allow all the tasks to start and block.
-            Thread.Sleep(500);
-
-            // Restore the semaphore count to its maximum value.
-            Console.Write("Main thread calls Release(3) --> ");
-            //rilascia il semaforo del numero specificato di valori
-            semaphore.Release(3);
-            Console.WriteLine("{0} tasks can enter the semaphore.",
-                              semaphore.CurrentCount);
-            // Main thread waits for the tasks to complete.
-            Task.WaitAll(tasks);
-
-            Console.WriteLine("Main thread exits.");
-            Console.ReadLine();
-        }
-    }
 }
 
 ```

@@ -660,3 +660,382 @@ namespace ProcessAsyncFile
     }
 }
 ```
+
+## Esercizi
+
+Di seguito vengono proposti tre esercizi completi per mettere in pratica i concetti di programmazione asincrona. Ogni esempio è fornito come un programma console completo che può essere copiato e incollato direttamente in Visual Studio o VS Code.
+
+### Esercizio 1: Analizzatore di Log Multiplo
+
+**Obiettivo**: Leggere contemporaneamente più file di testo (log simulati) e contare le occorrenze di una specifica parola chiave (es. "ERROR") in modo asincrono.
+
+**Concetti chiave**: `File.WriteAllTextAsync`, `File.ReadAllTextAsync`, `Task.WhenAll`, `ConcurrentBag` o `Interlocked`.
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace AsyncLogAnalyzer
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            Console.WriteLine("=== Analizzatore di Log Asincrono ===");
+            string directoryPath = "logs_temp";
+            string keyword = "ERROR";
+
+            // 1. Preparazione: Creiamo dei file di log simulati
+            Console.WriteLine("Generazione file di log simulati...");
+            if (Directory.Exists(directoryPath)) Directory.Delete(directoryPath, true);
+            Directory.CreateDirectory(directoryPath);
+            
+            var generationTasks = new List<Task>();
+            for (int i = 0; i < 10; i++)
+            {
+                generationTasks.Add(GenerateLogFileAsync(Path.Combine(directoryPath, $"log_{i}.txt"), i));
+            }
+            await Task.WhenAll(generationTasks);
+            Console.WriteLine("File generati.");
+
+            // 2. Elaborazione: Leggiamo e analizziamo i file in parallelo/asincrono
+            Stopwatch sw = Stopwatch.StartNew();
+            string[] files = Directory.GetFiles(directoryPath);
+            
+            // Usiamo un contatore thread-safe
+            int totalErrors = 0;
+
+            var analysisTasks = files.Select(async file =>
+            {
+                // Leggiamo il file in modo asincrono senza bloccare il thread
+                string content = await File.ReadAllTextAsync(file);
+                
+                // Elaborazione CPU-bound (conteggio parole)
+                // Nota: per file molto grandi, potremmo voler fare questo in un Task.Run,
+                // ma per I/O asincrono puro, questo approccio va bene.
+                int count = CountOccurrences(content, keyword);
+                
+                // Aggiornamento sicuro del contatore condiviso
+                Interlocked.Add(ref totalErrors, count);
+                
+                Console.WriteLine($"Analizzato {Path.GetFileName(file)}: trovati {count} '{keyword}'");
+            });
+
+            await Task.WhenAll(analysisTasks);
+
+            sw.Stop();
+            Console.WriteLine($"\nAnalisi completata in {sw.ElapsedMilliseconds} ms.");
+            Console.WriteLine($"Totale occorrenze di '{keyword}': {totalErrors}");
+
+            // Pulizia
+            if (Directory.Exists(directoryPath)) Directory.Delete(directoryPath, true);
+        }
+
+        static async Task GenerateLogFileAsync(string path, int seed)
+        {
+            var random = new Random(seed);
+            var lines = new List<string>();
+            for (int i = 0; i < 1000; i++)
+            {
+                // Inseriamo "ERROR" casualmente circa il 10% delle volte
+                string level = random.Next(10) == 0 ? "ERROR" : "INFO";
+                lines.Add($"{DateTime.Now:O} [{level}] Messaggio di log numero {i}");
+            }
+            await File.WriteAllLinesAsync(path, lines);
+        }
+
+        static int CountOccurrences(string text, string term)
+        {
+            int count = 0;
+            int index = 0;
+            while ((index = text.IndexOf(term, index, StringComparison.OrdinalIgnoreCase)) != -1)
+            {
+                count++;
+                index += term.Length;
+            }
+            return count;
+        }
+    }
+}
+```
+
+#### Analisi dell'Esercizio 1
+
+**1. Obiettivo dell'esempio:** dimostrare come l'I/O asincrono permetta di avviare più operazioni di lettura file contemporaneamente senza bloccare il thread principale e senza dover creare un thread dedicato per ogni file. Questo è fondamentale in scenari server o cloud dove le risorse sono limitate.
+
+**2. Come viene utilizzata la programmazione asincrona**
+
+- **`File.ReadAllTextAsync`**: Questa è la chiave. Invece di bloccare il thread in attesa che il disco legga i dati, il metodo restituisce immediatamente un `Task`. Il sistema operativo gestisce l'operazione di I/O e notifica il completamento.
+- **`Task.WhenAll`**: Permette di attendere che *tutte* le operazioni di lettura e analisi siano completate prima di procedere, ma nel frattempo le operazioni vengono eseguite in parallelo (o meglio, in concorrenza I/O).
+- **`Interlocked.Add`**: Poiché i callback dei task possono essere eseguiti su thread diversi del ThreadPool al termine dell'I/O, l'accesso alla variabile condivisa `totalErrors` deve essere atomico per evitare race conditions.
+
+**3. Confronto con programmazione sincrona bloccante**
+
+In un approccio sincrono tradizionale, leggeremmo i file uno dopo l'altro.
+
+```csharp
+// Approccio Sincrono (Bloccante)
+Stopwatch sw = Stopwatch.StartNew();
+foreach (var file in files)
+{
+    // Il thread si blocca qui per ogni file!
+    string content = File.ReadAllText(file); 
+    int count = CountOccurrences(content, keyword);
+    totalErrors += count;
+}
+sw.Stop();
+```
+
+**Analisi delle prestazioni**:
+
+- **Sincrono**: Il tempo totale è la **somma** dei tempi di lettura di ogni file. Se leggere un file impiega 1 secondo e ne abbiamo 10, ci vorranno 10 secondi.
+- **Asincrono**: Il tempo totale è approssimativamente pari al tempo dell'operazione **più lenta** (più un piccolo overhead), poiché avvengono quasi contemporaneamente. Se abbiamo 10 file da 1 secondo, ci vorrà poco più di 1 secondo.
+
+### Esercizio 2: Monitoraggio Risorse con Report Asincrono
+
+**Obiettivo**: Simulare un'operazione di monitoraggio in background che continua a funzionare mentre l'applicazione principale rimane reattiva all'input dell'utente.
+
+**Concetti chiave**: `Task.Run`, `CancellationTokenSource`, `Task.Delay`.
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace AsyncResourceMonitor
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            Console.WriteLine("=== Monitoraggio Risorse Background ===");
+            Console.WriteLine("Premi 's' per stoppare il monitoraggio, 'c' per controllare lo stato manualmente.");
+
+            // Token per cancellare il task di background
+            using var cts = new CancellationTokenSource();
+            
+            // Avviamo il monitoraggio in un thread separato (Task.Run)
+            // Questo simula un lavoro CPU-bound o di lunga durata
+            Task monitorTask = StartMonitoringAsync(cts.Token);
+
+            bool running = true;
+            while (running)
+            {
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true).KeyChar;
+                    if (key == 's')
+                    {
+                        Console.WriteLine("\nRichiesta di stop inviata...");
+                        cts.Cancel();
+                        running = false;
+                    }
+                    else if (key == 'c')
+                    {
+                        Console.WriteLine($"\n[Main] Controllo manuale: Il sistema è attivo alle {DateTime.Now:T}");
+                    }
+                }
+                
+                // Piccolo delay nel loop principale per non consumare 100% CPU in attesa di input
+                await Task.Delay(100);
+            }
+
+            try
+            {
+                // Attendiamo che il task finisca graziosamente
+                await monitorTask;
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Monitoraggio cancellato correttamente.");
+            }
+
+            Console.WriteLine("Programma terminato.");
+        }
+
+        static async Task StartMonitoringAsync(CancellationToken token)
+        {
+            var random = new Random();
+            Console.WriteLine("[Monitor] Avvio servizio di monitoraggio...");
+
+            while (!token.IsCancellationRequested)
+            {
+                // Simuliamo lettura sensori / utilizzo CPU
+                int cpuUsage = random.Next(0, 100);
+                int memoryUsage = random.Next(100, 2000);
+
+                Console.WriteLine($"[Monitor] CPU: {cpuUsage}% | RAM: {memoryUsage}MB");
+
+                if (cpuUsage > 90)
+                {
+                    Console.WriteLine("[Monitor] ALLARME: Utilizzo CPU elevato!");
+                }
+
+                // Attendiamo 2 secondi prima della prossima lettura
+                // Passiamo il token al Delay così se viene cancellato, il delay si interrompe subito
+                try 
+                {
+                    await Task.Delay(2000, token);
+                }
+                catch (TaskCanceledException)
+                {
+                    // Ignoriamo l'eccezione qui per uscire puliti dal loop
+                    break;
+                }
+            }
+            Console.WriteLine("[Monitor] Servizio arrestato.");
+        }
+    }
+}
+```
+
+#### Analisi dell'Esercizio 2
+
+**1. Obiettivo dell'esempio:** dimostrare come mantenere un'applicazione responsiva (che risponde all'input utente) mentre esegue lavori in background. Questo è un requisito base per qualsiasi interfaccia utente (GUI, Web, o Console interattiva).
+
+**2. Come viene utilizzata la programmazione asincrona**
+
+- **`Task.Run`**: Sposta l'esecuzione del metodo `StartMonitoringAsync` su un thread del ThreadPool, liberando immediatamente il thread principale per gestire l'input utente.
+- **`await Task.Delay`**: A differenza di `Thread.Sleep`, `Task.Delay` non blocca il thread. Crea un timer e rilascia il thread finché il tempo non è scaduto. Questo permette al sistema di utilizzare quel thread per altro lavoro nel frattempo.
+- **`CancellationToken`**: Fornisce un meccanismo standard e sicuro per arrestare cooperativamente le operazioni asincrone.
+
+**3. Confronto con programmazione sincrona bloccante**
+
+Se tentassimo di fare tutto nel thread principale senza asincronia:
+
+```csharp
+// Approccio Sincrono (Errato)
+while (running)
+{
+    // Monitoraggio (Bloccante)
+    Console.WriteLine($"[Monitor] CPU: {GetCpuUsage()}%");
+    Thread.Sleep(2000); // Il programma è "congelato" per 2 secondi!
+    
+    // Input Utente
+    // L'utente può premere tasti solo nell'istante tra lo Sleep e il ciclo successivo.
+    // L'esperienza utente è terribile.
+    if (Console.KeyAvailable) { ... } 
+}
+```
+
+**Analisi**:
+
+- **Sincrono**: L'applicazione è "sorda" per la maggior parte del tempo (durante il `Thread.Sleep`). L'utente preme 's' ma non succede nulla finché lo sleep non finisce.
+- **Asincrono**: Il thread principale è sempre libero di ciclare nel `while(running)` e controllare `Console.KeyAvailable`. La reattività è immediata.
+
+### Esercizio 3: Elaborazione Batch di Immagini (Simulata)
+
+**Obiettivo**: Simulare l'elaborazione di una coda di immagini con tempi diversi, limitando il numero di elaborazioni simultanee (throttling) per non sovraccaricare il sistema.
+
+**Concetti chiave**: `SemaphoreSlim`, `Task.WhenAll`, `Task.Delay` (simulazione lavoro).
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace AsyncImageBatch
+{
+    class Program
+    {
+        // Semaforo per limitare la concorrenza a max 3 task simultanei
+        static SemaphoreSlim _semaphore = new SemaphoreSlim(3);
+
+        static async Task Main(string[] args)
+        {
+            Console.WriteLine("=== Elaborazione Batch Immagini (Throttling) ===");
+            
+            // Simuliamo una lista di file da elaborare
+            List<string> images = Enumerable.Range(1, 15).Select(i => $"img_{i}.jpg").ToList();
+            
+            Console.WriteLine($"Trovate {images.Count} immagini da elaborare.");
+            Console.WriteLine("Inizio elaborazione (max 3 simultanee)...");
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            // Creiamo un task per ogni immagine
+            var tasks = images.Select(img => ProcessImageAsync(img));
+
+            // Attendiamo che TUTTI siano completati
+            await Task.WhenAll(tasks);
+
+            sw.Stop();
+            Console.WriteLine($"\nTutte le immagini elaborate in {sw.Elapsed.TotalSeconds:F2} secondi.");
+        }
+
+        static async Task ProcessImageAsync(string imageName)
+        {
+            // Attendiamo il nostro turno per entrare nel semaforo
+            await _semaphore.WaitAsync();
+            
+            try
+            {
+                Console.WriteLine($"--> Inizio elaborazione: {imageName}");
+                
+                // Simuliamo un tempo di elaborazione variabile (es. resize, filtro)
+                // tra 1 e 3 secondi
+                var rnd = new Random();
+                int processingTime = rnd.Next(1000, 3000);
+                
+                await Task.Delay(processingTime);
+                
+                Console.WriteLine($"<-- Fine elaborazione: {imageName} ({processingTime}ms)");
+            }
+            finally
+            {
+                // Rilasciamo sempre il semaforo, anche in caso di errori
+                _semaphore.Release();
+            }
+        }
+    }
+}
+```
+
+#### Analisi dell'Esercizio 3
+
+**1. Obiettivo dell'esempio:** gestire il "backpressure" o il controllo di flusso. Lanciare 1000 task contemporaneamente potrebbe esaurire la memoria o le connessioni di rete. È necessario limitare quante operazioni avvengono simultaneamente.
+
+**2. Come viene utilizzata la programmazione asincrona**
+
+- **`SemaphoreSlim`**: Agisce come un buttafuori. Solo N task possono entrare nella sezione critica (tra `WaitAsync` e `Release`). Gli altri task attendono in modo asincrono (senza consumare thread) il loro turno.
+- **`Task.WhenAll`**: Attende la fine di tutto il batch, ma i singoli task partono e finiscono in tempi diversi, gestiti dal semaforo.
+
+**3. Confronto con programmazione sincrona bloccante**
+
+Un approccio ingenuo potrebbe essere processare tutto sequenzialmente o usare thread manuali.
+
+```csharp
+// Approccio Sequenziale
+foreach (var img in images)
+{
+    ProcessImage(img); // Aspetta 3 secondi per ogni immagine
+}
+// Tempo totale: 15 immagini * 3 secondi = 45 secondi.
+```
+
+Oppure usando `Parallel.ForEach` (che è ottimo per CPU-bound, ma diverso da async):
+
+```csharp
+// Approccio Parallelo (Bloccante)
+Parallel.ForEach(images, new ParallelOptions { MaxDegreeOfParallelism = 3 }, img =>
+{
+    // Questo blocca 3 thread del ThreadPool fisicamente
+    Thread.Sleep(ProcessingTime(img)); 
+});
+// Il metodo chiamante (Main) è bloccato finché TUTTO non finisce.
+```
+
+**Analisi**:
+- **Sequenziale**: Troppo lento (somma dei tempi).
+- **Parallel.ForEach**: Veloce, ma blocca il thread chiamante fino alla fine. Se siamo in una UI, l'interfaccia si blocca.
+- **Asincrono (`SemaphoreSlim` + `WhenAll`)**: Veloce (tempo parallelo) E non blocca il thread chiamante. Possiamo aggiornare una barra di progresso o rispondere all'utente mentre le immagini vengono elaborate.
+

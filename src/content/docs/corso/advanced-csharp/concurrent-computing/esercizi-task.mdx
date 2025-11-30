@@ -1,0 +1,1700 @@
+---
+title: Esercizi sui Task
+description: Esercizi svolti e commentati sulla programmazione con Task in C#
+sidebar:
+  label: "Esercizi sui Task"
+  order: 70
+---
+
+<style>{`
+  img {display: block; margin: 0 auto;}
+`}</style>
+
+In questa pagina vengono proposti alcuni esercizi svolti sulla programmazione con i Task in C#. L'obiettivo è quello di mettere in pratica i concetti appresi riguardo alla Task Parallel Library (TPL), la gestione asincrona, la sincronizzazione e i pattern avanzati di concorrenza.
+
+## Esercizio 1: Palleggio tra Quattro Ragazzi
+
+### Traccia
+Quattro ragazzi (Giovanni, Mattia, Alessandro, Roberto) giocano a volley. Stanno facendo un esercizio di riscaldamento nel quale si passano la palla a turno: Giovanni passa a Mattia, Mattia passa ad Alessandro, Alessandro la passa a Roberto, Roberto la passa nuovamente a Giovanni e il ciclo si ripete.
+
+Ogni ragazzo quando riceve la palla dice la frase: **"Sono \{proprio nome\} e passo la palla a \{nome del ragazzo che riceverà la palla\}"**.
+
+L'attività di palleggio (tempo in cui un ragazzo tiene la palla prima di passarla) varia da 0,1 a 0,3 secondi in maniera random. Simulare un ciclo indefinito di palleggio che viene terminato quando si riceve il fischio dell'allenatore.
+
+Utilizzare i **Task** per gestire l'attività di ciascun ragazzo.
+
+### Riferimenti
+Questo esercizio introduce l'uso di Task per attività concorrenti coordinate, utilizzando semafori per il passaggio del controllo tra task.
+
+- [Task Parallel Library (TPL)](../tpl/)
+- [Task.Factory.StartNew (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.startnew)
+- [SemaphoreSlim (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim)
+- [Cancellazione Task (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/task-cancellation)
+
+### Svolgimento
+
+Di seguito vengono presentate due versioni della soluzione: una versione base con gestione della terminazione tramite variabile booleana condivisa, e una versione avanzata con `CancellationToken`.
+
+#### Versione 1: Gestione con Flag Booleano
+
+In questa prima versione, si utilizza una variabile `bool` condivisa protetta da lock per gestire la terminazione.
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace VolleyWarmUp
+{
+    class GiocatoreData
+    {
+        public string? MyName { get; set; }
+        public string? ToName { get; set; }
+        public SemaphoreSlim? CanIPlay { get; set; }
+        public SemaphoreSlim? PassToNext { get; set; }
+    }
+    
+    internal class Program
+    {
+        // Semafori per coordinare i turni di gioco
+        static SemaphoreSlim giocaGiovanni = new(1, 1); // Giovanni inizia il gioco
+        static SemaphoreSlim giocaMattia = new(0, 1);
+        static SemaphoreSlim giocaAlessandro = new(0, 1);
+        static SemaphoreSlim giocaRoberto = new(0, 1);
+        
+        // Flag per terminare il gioco
+        static bool fischioAllenatore = false;
+        private static readonly object _lockFischioAllenatore = new();
+        
+        static void Main(string[] args)
+        {
+            // Il main fa partire l'attività di palleggio per ogni giocatore
+            Task giovanni = Task.Factory.StartNew(WarmUp, 
+                new GiocatoreData() { 
+                    MyName = "Giovanni", 
+                    ToName = "Mattia",
+                    CanIPlay = giocaGiovanni, 
+                    PassToNext = giocaMattia 
+                });
+            
+            Task mattia = Task.Factory.StartNew(WarmUp, 
+                new GiocatoreData() { 
+                    MyName = "Mattia", 
+                    ToName = "Alessandro", 
+                    CanIPlay = giocaMattia, 
+                    PassToNext = giocaAlessandro 
+                });
+            
+            Task alessandro = Task.Factory.StartNew(WarmUp, 
+                new GiocatoreData() { 
+                    MyName = "Alessandro", 
+                    ToName = "Roberto", 
+                    CanIPlay = giocaAlessandro, 
+                    PassToNext = giocaRoberto 
+                });
+            
+            Task roberto = Task.Factory.StartNew(WarmUp, 
+                new GiocatoreData() { 
+                    MyName = "Roberto", 
+                    ToName = "Giovanni", 
+                    CanIPlay = giocaRoberto, 
+                    PassToNext = giocaGiovanni 
+                });
+            
+            // Attendo 10 secondi per il riscaldamento
+            Task.Delay(10000).Wait();
+            Console.WriteLine("Riscaldamento terminato, fischio di fine gioco");
+            
+            // Segnalo la fine del gioco
+            lock (_lockFischioAllenatore)
+            {
+                fischioAllenatore = true;
+            }
+            
+            // Attendo che tutti i task terminino
+            Task.WaitAll(giovanni, mattia, alessandro, roberto);
+        }
+
+        private static void WarmUp(object? obj)
+        {
+            if (obj is GiocatoreData data)
+            {
+                Random gen = new();
+                bool haFischiato;
+                
+                // Verifico se l'allenatore ha già fischiato
+                lock (_lockFischioAllenatore)
+                {
+                    haFischiato = fischioAllenatore;
+                }
+                
+                while (!haFischiato)
+                {
+                    // Attendo il mio turno
+                    data?.CanIPlay?.Wait();
+                    
+                    // Simulo il tempo di palleggio
+                    Task.Delay(gen.Next(100, 301)).Wait();
+                    Console.WriteLine($"Sono {data?.MyName} e passo la palla a {data?.ToName}");
+                    
+                    // Segnalo al prossimo giocatore che può giocare
+                    data?.PassToNext?.Release();
+                    
+                    // Verifico se l'allenatore ha fischiato
+                    lock(_lockFischioAllenatore)
+                    { 
+                        haFischiato = fischioAllenatore; 
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+#### Versione 2: Gestione con CancellationToken
+
+La versione avanzata utilizza `CancellationToken` per una cancellazione cooperativa più robusta e idiomatica in .NET.
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace VolleyWarmUpCancellationToken
+{
+    class GiocatoreData
+    {
+        public string? MyName { get; set; }
+        public string? ToName { get; set; }
+        public SemaphoreSlim? CanIPlay { get; set; }
+        public SemaphoreSlim? PassToNext { get; set; }
+    }
+    
+    internal class Program
+    {
+        static SemaphoreSlim giocaGiovanni = new(1, 1);
+        static SemaphoreSlim giocaMattia = new(0, 1);
+        static SemaphoreSlim giocaAlessandro = new(0, 1);
+        static SemaphoreSlim giocaRoberto = new(0, 1);
+       
+        static void Main(string[] args)
+        {
+            // Creo il cancellation token a partire da un cancellation token source
+            CancellationTokenSource cts = new();
+            CancellationToken ct = cts.Token;
+            
+            // Faccio partire le attività di palleggio
+            Task giovanni = Task.Factory.StartNew((object? obj) => WarmUp(obj, ct), 
+                new GiocatoreData() { 
+                    MyName = "Giovanni", 
+                    ToName = "Mattia", 
+                    CanIPlay = giocaGiovanni, 
+                    PassToNext = giocaMattia 
+                }, ct);
+            
+            Task mattia = Task.Factory.StartNew((object? obj) => WarmUp(obj, ct), 
+                new GiocatoreData() { 
+                    MyName = "Mattia", 
+                    ToName = "Alessandro", 
+                    CanIPlay = giocaMattia, 
+                    PassToNext = giocaAlessandro 
+                }, ct);
+            
+            Task alessandro = Task.Factory.StartNew((object? obj) => WarmUp(obj, ct), 
+                new GiocatoreData() { 
+                    MyName = "Alessandro", 
+                    ToName = "Roberto", 
+                    CanIPlay = giocaAlessandro, 
+                    PassToNext = giocaRoberto 
+                }, ct);
+            
+            Task roberto = Task.Factory.StartNew((object? obj) => WarmUp(obj, ct), 
+                new GiocatoreData() { 
+                    MyName = "Roberto", 
+                    ToName = "Giovanni", 
+                    CanIPlay = giocaRoberto, 
+                    PassToNext = giocaGiovanni 
+                }, ct);
+            
+            // Attendo 10 secondi
+            Task.Delay(10000).Wait();
+            Console.WriteLine("Riscaldamento terminato, fischio di fine gioco");
+            
+            // Richiedo la cancellazione dei task
+            cts.Cancel();
+            
+            try
+            {
+                Task allPlayers = Task.WhenAll(giovanni, mattia, alessandro, roberto);
+                allPlayers.Wait();
+            }
+            catch(AggregateException ae)
+            {
+                foreach(var e in ae.Flatten().InnerExceptions)
+                {
+                    if(e is TaskCanceledException)
+                    {
+                        Console.WriteLine($"\n{nameof(TaskCanceledException)} catturato correttamente\n");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Eccezione inaspettata");
+                        throw;
+                    }
+                }
+            }
+            finally
+            {
+                cts.Dispose();
+            }
+        }
+
+        private static void WarmUp(object? obj, CancellationToken ct)
+        {
+            if (obj is GiocatoreData data)
+            {
+                Random gen = new();
+                
+                // Controllo se la cancellazione è già stata richiesta prima di iniziare
+                if(ct.IsCancellationRequested)
+                {
+                    Console.WriteLine($"L'attività del giocatore {data?.MyName} è stata fermata prima di iniziare");
+                    ct.ThrowIfCancellationRequested();
+                }
+                
+                while (true)
+                {
+                    // Attendo il turno (può lanciare OperationCanceledException se cancellato)
+                    data?.CanIPlay?.Wait(ct);
+                    
+                    // Passo la palla con delay cancellabile
+                    Task.Delay(gen.Next(100, 301), ct).Wait(ct);
+                    Console.WriteLine($"Sono {data?.MyName} e passo la palla a {data?.ToName}");
+                    
+                    // Segnalo al prossimo che può giocare
+                    data?.PassToNext?.Release();
+                    
+                    // Verifico se l'allenatore ha fischiato
+                    if (ct.IsCancellationRequested)
+                    {
+                        Console.WriteLine($"L'attività del giocatore {data?.MyName} è stata terminata");
+                        ct.ThrowIfCancellationRequested();
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+### Riflessioni
+
+Questo esercizio introduce concetti fondamentali della programmazione con Task:
+
+1. **Task.Factory.StartNew**: Permette di creare e avviare un task passando un delegato e opzionalmente uno stato (in questo caso `GiocatoreData`). È più flessibile di `Task.Run` quando serve passare parametri o configurare opzioni avanzate.
+
+2. **Coordinazione con Semafori**: I quattro semafori implementano un pattern di "token passing" dove solo un giocatore alla volta può "giocare" (avere la palla). Quando un giocatore termina, rilascia il semaforo del prossimo giocatore.
+
+3. **Gestione della Terminazione**:
+   - **Versione 1**: Usa una variabile booleana protetta da lock. Semplice ma richiede controlli manuali periodici.
+   - **Versione 2**: Usa `CancellationToken`, che è il metodo raccomandato in .NET. Il token può interrompere operazioni di attesa (`Wait`, `Delay`) immediatamente senza dover aspettare che il codice controlli manualmente.
+
+4. **Exception Handling con AggregateException**: Quando i task vengono cancellati lanciano `TaskCanceledException`. Poiché `Task.WaitAll` può ricevere eccezioni da più task, queste vengono incapsulate in un `AggregateException`. Si usa `Flatten()` per semplificare la gestione di eccezioni annidate.
+
+:::tip
+`CancellationToken` è preferibile a flag booleani per la cancellazione perché:
+- Può essere osservato da metodi come `Wait()`, `Delay()`, eliminando la necessità di controlli manuali
+- Fornisce un meccanismo standard riconosciuto in tutto il framework .NET
+- Permette di propagare la richiesta di cancellazione attraverso catene di operazioni asincrone
+:::
+
+---
+
+## Esercizio 2: Autolavaggio Concorrente (Singolo Tunnel)
+
+### Traccia
+Scrivere un programma multithreading console C# che simuli il funzionamento di un autolavaggio mediante Task.
+
+L'autolavaggio è costituito da **un tunnel** nel quale possono entrare le macchine una alla volta. Davanti al tunnel c'è un parcheggio nel quale possono entrare al massimo 20 macchine.
+
+- Se una macchina arriva, c'è posto nel parcheggio ed è aperto, entra e aspetta di entrare nel tunnel
+- Se una macchina arriva e l'autolavaggio è chiuso, oppure è aperto ma non c'è posto nel parcheggio, va via
+- Le macchine arrivano con un intervallo di tempo variabile casualmente tra 0,1 e 0,3 secondi
+- Quando una macchina entra nel tunnel, il programma stampa: "la macchina con indice i su Task id = TaskId entra nel tunnel di lavaggio, ho atteso x ms da quando sono entrata"
+- Il tempo di permanenza nel tunnel è di 400 ms
+- Quando esce, il programma stampa: "la macchina i-ma esce dal tunnel pulita e va via"
+
+Se l'autolavaggio viene chiuso ma ci sono ancora auto in attesa, il sistema lava tutte le auto nel parcheggio. Quando non ci sono più macchine in attesa e il parcheggio è chiuso, il sistema termina.
+
+Il Main program fa partire il Task che simula il tunnel di lavaggio e 50 Task che simulano le auto che arrivano, quindi va in sleep per qualche secondo, poi chiude l' autolavaggio e aspetta che il sistema finisca.
+
+### Riferimenti
+Questo esercizio introduce il pattern Producer-Consumer con semafori e la gestione di stato condiviso.
+
+- [Task Parallel Library](../tpl/)
+- [SemaphoreSlim](../concurrent-programming/#semafori)
+- [Producer-Consumer Pattern (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/blockingcollection-overview)
+
+### Svolgimento
+
+Questa soluzione utilizza due semafori:
+- `tunnelReady`: semaforo "servente" (il tunnel disponibile)
+- `carInParkingLotReady`: semaforo "utente" (auto in attesa)
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace AutolavaggioTasks
+{
+    internal class Program
+    {
+        const int NumberOfPlaces = 20;
+        const int NumberOfCars = 50;
+        const int NumberOfTunnels = 1; // Un solo tunnel
+        static int freePlaces = NumberOfPlaces;
+        static bool carWashOpen;
+        static int currentCarInTunnelIndex; // Indice della macchina nel tunnel
+        
+        const int TunnelWashingDurationMs = 400;
+        const int MinCarArrivalIntervalMs = 100;
+        const int MaxCarArrivalIntervalMs = 300;
+        
+        // Lock per proteggere variabili condivise
+        private static readonly object _lockCurrentCarInTunnelIndex = new();
+        private static readonly object _lockFreePlaces = new();
+        private static readonly object _lockCarWashOpen = new();
+        
+        // Semafori per coordinare tunnel e auto
+        static readonly SemaphoreSlim tunnelReady = new(NumberOfTunnels, NumberOfTunnels); // Servente
+        static readonly SemaphoreSlim carInParkingLotReady = new(0, NumberOfPlaces); // Utente
+        
+        static void Main(string[] args)
+        {
+            // Apro l'autolavaggio
+            lock (_lockCarWashOpen)
+            {
+                Console.WriteLine("L'autolavaggio è aperto");
+                carWashOpen = true;
+            }
+            
+            // Faccio partire il task del tunnel
+            var tunnel = Task.Factory.StartNew(TunnelAction);
+
+            // Faccio partire i task delle auto che arrivano
+            Random rand = new();
+            for (int i = 0; i < NumberOfCars; i++)
+            {
+                Task.Factory.StartNew(CarAction, new CarData() { Id = i, CreationTime = DateTime.Now.Ticks });
+                int timeInterval = rand.Next(MinCarArrivalIntervalMs, MaxCarArrivalIntervalMs + 1);
+                Task.Delay(timeInterval).Wait();
+            }
+            
+            Console.WriteLine("Non arrivano più auto");
+            
+            // Aspetto 1 secondo
+            Task.Delay(1000).Wait();
+            
+            // Chiudo l'autolavaggio
+            lock (_lockCarWashOpen)
+            {
+                var previousColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("L'autolavaggio è chiuso");
+                Console.ForegroundColor = previousColor;
+                carWashOpen = false;
+            }
+            
+            // Attendo che il tunnel finisca il suo lavoro
+            tunnel.Wait();
+        }
+
+        private static void CarAction(object? obj)
+        {
+            CarData? carData = obj as CarData;
+            
+            // Verifico se il parcheggio è aperto
+            bool isCarWashOpen;
+            lock (_lockCarWashOpen)
+            {
+                isCarWashOpen = carWashOpen;
+            }
+            
+            if (isCarWashOpen)
+            {
+                // Provo ad occupare un posto nel parcheggio
+                bool carEntersParkingLot = false;
+                int freePlacesFound = 0;
+                
+                lock (_lockFreePlaces)
+                {
+                    if (freePlaces > 0)
+                    {
+                        freePlacesFound = freePlaces;
+                        freePlaces--;
+                        carEntersParkingLot = true;
+                    }
+                }
+                
+                if (carEntersParkingLot)
+                {
+                    Console.WriteLine($"L'auto con indice = {carData?.Id} sul Task Id = {Task.CurrentId} trova posto e attende di essere lavata; posti liberi {freePlacesFound}");
+                    
+                    // Segnalo che c'è un'auto in attesa
+                    carInParkingLotReady.Release();
+                    
+                    // Attendo che il tunnel sia disponibile
+                    tunnelReady.Wait();
+                    
+                    // Scrivo nella variabile condivisa l'indice della macchina che entra nel tunnel
+                    lock (_lockCurrentCarInTunnelIndex)
+                    {
+                        currentCarInTunnelIndex = carData?.Id ?? -1;
+                    }
+                    
+                    // Calcolo il tempo di attesa
+                    double tempoDiAttesa = 0;
+                    if (carData != null)
+                    {
+                        tempoDiAttesa = new TimeSpan(DateTime.Now.Ticks - carData.CreationTime).TotalMilliseconds;
+                    }
+                    
+                    lock (_lockFreePlaces)
+                    {
+                        Console.WriteLine($"Sono l'auto con indice = {carData?.Id} su Task Id = {Task.CurrentId}. " +
+                            $"sono entrata nel tunnel di lavaggio dopo {tempoDiAttesa:F2} ms di attesa. Posti disponibili = {freePlaces}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"L'auto con indice = {carData?.Id} sul Task Id = {Task.CurrentId} non ha trovato posto e se ne va");
+                }
+            }
+        }
+
+        private static void TunnelAction()
+        {
+            // Finché l'autolavaggio è aperto o ci sono auto in attesa
+            bool carWashIsStillOpen;
+            
+            lock (_lockCarWashOpen)
+            {
+                carWashIsStillOpen = carWashOpen;
+            }
+            
+            while (carWashIsStillOpen || carInParkingLotReady.CurrentCount > 0)
+            {
+                if (!carWashIsStillOpen && carInParkingLotReady.CurrentCount > 0)
+                {
+                    var previousColor = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"L'autolavaggio è chiuso, ma ci sono ancora {carInParkingLotReady.CurrentCount} macchine da lavare");
+                    Console.ForegroundColor = previousColor;
+                }
+                
+                // Attendo che ci sia una macchina disponibile
+                carInParkingLotReady.Wait();
+                
+                // La macchina entra nel tunnel e si libera un posto nel parcheggio
+                lock (_lockFreePlaces)
+                {
+                    freePlaces++;
+                    Console.WriteLine("Il tunnel sta lavando un'auto. Si libera un posto nel parcheggio");
+                }
+                
+                // Tempo di lavaggio
+                Task.Delay(TunnelWashingDurationMs).Wait();
+                
+                // Il tunnel ha finito ed è nuovamente pronto
+                tunnelReady.Release();
+                
+                lock (_lockCurrentCarInTunnelIndex)
+                {
+                    Console.WriteLine($"La macchina {currentCarInTunnelIndex}-ma esce dal tunnel pulita e va via");
+                }
+                
+                // Controllo se l'autolavaggio è ancora aperto
+                lock (_lockCarWashOpen)
+                {
+                    carWashIsStillOpen = carWashOpen;
+                }
+            }
+            
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Il tunnel si spegne");
+            Console.ForegroundColor = color;
+        }
+
+        class CarData
+        {
+            public int Id { get; set; }
+            public long CreationTime { get; set; }
+        }
+    }
+}
+```
+
+### Riflessioni
+
+Questo esercizio introduce il pattern **Producer-Consumer** mediante semafori:
+
+1. **Due Semafori Complementari**:
+   - `tunnelReady`: Rappresenta il "servente" (tunnel disponibile). Inizializzato a 1.
+   - `carInParkingLotReady`: Rappresenta gli "utenti" (auto in attesa). Inizializzato a 0.
+
+2. **Flusso di Controllo**:
+   - Le auto (producer) entrano nel parcheggio e fanno `Release()` su `carInParkingLotReady`
+   - Il tunnel (consumer) fa `Wait()` su `carInParkingLotReady`, processa l'auto, poi fa `Release()` su `tunnelReady`
+   - Le auto fanno `Wait()` su `tunnelReady` per entrare nel tunnel
+
+3. **Protezione con Lock**: Tre lock separati proteggono:
+   - `_lockFreePlaces`: posti liberi nel parcheggio
+   - `_lockCarWashOpen`: stato aperto/chiuso
+   - `_lockCurrentCarInTunnelIndex`: indice dell'auto corrente
+
+4. **Terminazione Graduale**: Anche dopo la chiusura, il tunnel continua a servire le auto già in attesa, garantendo che nessuna venga persa.
+
+:::caution
+Attenzione all'uso di `CurrentCount` sul semaforo nella condizione del while. In scenari con alta concorrenza, `CurrentCount` potrebbe non essere completamente affidabile. In questo caso funziona perché c'è un solo consumer (il tunnel).
+:::
+
+---
+
+## Esercizio 3: Autolavaggio Concorrente (Tunnel Multipli)
+
+### Traccia
+Modificare l'esercizio precedente in modo che ci siano **due o più tunnel** nello stesso autolavaggio, permettendo di lavare più auto contemporaneamente.
+
+### Svolgimento
+
+La modifica è minima: basta cambiare `NumberOfTunnels` e creare un array di task per i tunnel. Now available, we need just a couple minimal changes to support multiple tunnels:
+
+```csharp
+// In Program class - only showing changes
+const int NumberOfTunnels = 3; // CHANGED: ora 3 tunnel invece di 1
+
+// Nel Main, creiamo un array di tunnel tasks
+Task[] tunnels = new Task[NumberOf Tunnels];
+for(int i = 0; i < NumberOfTunnels; i++)
+{
+    int tunnelIndex = i; // Capture for closure
+    tunnels[i] = Task.Factory.StartNew(() => TunnelAction(tunnelIndex));
+}
+
+// Prima di chiudere
+Task.WaitAll(tunnels); // CHANGED: attendiamo tutti i tunnel
+
+// Modifichiamo TunnelAction per accettare un indice
+private static void TunnelAction(int tunnelIndex)
+{
+    // ... stesso codice, ma nei messaggi stampiamo anche il tunnelIndex
+    Console.WriteLine($"Il tunnel {tunnelIndex} sta lavando un'auto...");
+    // ...
+}
+```
+
+**Versione completa** con le modifiche integrate:
+
+```csharp
+// Solo le parti modificate rispetto alla versione precedente
+const int NumberOfTunnels = 3;
+
+static void Main(string[] args)
+{
+    lock (_lockCarWashOpen)
+    {
+        Console.WriteLine($"L'autolavaggio è aperto");
+        carWashOpen = true;
+    }
+    
+    // Creo array di task per i tunnel
+    Task[] tunnels = new Task[NumberOfTunnels];
+    for(int i = 0; i < NumberOfTunnels; i++)
+    {
+        int index = i; // Importante: cattura della variabile per la closure
+        tunnels[i] = Task.Factory.StartNew(() => TunnelAction(index));
+    }
+
+    Random rand = new();
+    for (int i = 0; i < NumberOfCars; i++)
+    {
+        Task.Factory.StartNew(CarAction, new CarData() { Id = i, CreationTime = DateTime.Now.Ticks });
+        int timeInterval = rand.Next(MinCarArrivalIntervalMs, MaxCarArrivalIntervalMs + 1);
+        Task.Delay(timeInterval).Wait();
+    }
+    
+    Console.WriteLine("Non arrivano più auto");
+    Task.Delay(1000).Wait();
+    
+    lock (_lockCarWashOpen)
+    {
+        Console.WriteLine($"L'autolavaggio è chiuso");
+        carWashOpen = false;
+    }
+    
+    // Attendo che TUTTI i tunnel finiscano
+    Task.WaitAll(tunnels);
+}
+
+private static void TunnelAction(int tunnelIndex)
+{
+    bool carWashIsStillOpen;
+    lock (_lockCarWashOpen)
+    {
+        carWashIsStillOpen = carWashOpen;
+    }
+    
+    while (carWashIsStillOpen || carInParkingLotReady.CurrentCount > 0)
+    {
+        if (!carWashIsStillOpen && carInParkingLotReady.CurrentCount > 0)
+        {
+            Console.WriteLine($"L'autolavaggio è chiuso, ma ci sono ancora {carInParkingLotReady.CurrentCount} macchine da lavare");
+        }
+        
+        carInParkingLotReady.Wait();
+        
+        lock (_lockFreePlaces)
+        {
+            freePlaces++;
+            Console.WriteLine($"Il tunnel {tunnelIndex} sta lavando un'auto. Si libera un posto nel parcheggio");
+        }
+        
+        Task.Delay(TunnelWashingDurationMs).Wait();
+        tunnelReady.Release();
+        
+        Console.WriteLine($"La macchina esce dal tunnel {tunnelIndex} pulita e va via");
+        
+        lock (_lockCarWashOpen)
+        {
+            carWashIsStillOpen = carWashOpen;
+        }
+    }
+    
+    Console.WriteLine($"Il tunnel {tunnelIndex} si spegne");
+}
+```
+
+### Riflessioni
+
+Il passaggio da un tunnel a più tunnel dimostra la scalabilità del pattern Producer-Consumer:
+
+1. **Semaforo con Contatore > 1**: `tunnelReady` ora è inizializzato con `NumberOfTunnels` invece di 1. Questo permette a più auto di entrare simultaneamente se ci sono tunnel disponibili.
+
+2. **Array di Task**: Creando un array di task tunnel, ogni tunnel opera indipendentemente ma accede alle stesse code (semafori). Questo è il vero potere della concor renza: possiamo scalare semplicemente aumentando il numero di "worker".
+
+3. **Closure e Capture di Variabili**: È fondamentale catturare l'indice del loop in una variabile locale (`int index = i`) prima di passarlo alla lambda. Altrimenti, tutti i task potrebbero vedere lo stesso valore finale di `i`.
+
+4. **Throughput Migliorato**: Con 3 tunnel invece di 1, il throughput teorico triplica, riducendo drasticamente i tempi di attesa delle auto.
+
+:::tip
+Questo pattern di "multiple workers" è molto comune in sistemi concorrenti:
+- Web server con pool di thread
+- Database connection pooling
+- Task queues in distributed systems
+
+Il semaforo con count > 1 rappresenta esattamente il numero di "risorse" (tunnel, connessioni, worker) disponibili.
+:::
+
+---
+
+## Esercizio 4: Negozio Concorrente (Task Version)
+
+### Traccia
+Riscrivere l'esercizio del Negozio Concorrente (visto nella sezione Thread) utilizzando i **Task** invece dei Thread.
+
+Recall: Il negozio ha tre attività concurrent i:
+- **EntraCliente**: ogni 1,5s tenta di far entrare un cliente (max 5)
+- **EsceCliente**: ogni 5,5s fa uscire un cliente che paga 20 euro
+- **ChiudiNegozio**: dopo 15s chiude il negozio
+
+Il programma stampa il ricavo giornaliero alla fine.
+
+### Riferimenti
+- [Negozio Concorrente (Thread)](../esercizi-thread/#esercizio-5-negozio-concorrente)
+- [Task.Factory.StartNew (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.startnew)
+- [Task.WaitAll (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.waitall)
+
+### Svolgimento
+
+La conversione da Thread a Task richiede modifiche minime:
+
+```csharp
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace NegozioConcorrenteTask
+{
+    internal class Program
+    {
+        // Variabili condivise
+        static decimal saldoNegozio = 0;
+        static int clientiInNegozio = 0;
+        static bool negozioAperto = true;
+        
+        // Lock per proteggere le variabili condivise
+        static readonly object _lockClientiInNegozio = new();
+        static readonly object _lockSaldoNegozio = new();
+        static readonly object _lockNegozioAperto = new();
+        
+        const int NumeroMassimoClientiNegozio = 5;
+        
+        static void Main(string[] args)
+        {
+            // VERSIONE CON TASK - differenza principale rispetto alla versione Thread
+            Task entraCliente = Task.Factory.StartNew(EntraCliente);
+            Task esceCliente = Task.Factory.StartNew(EsceCliente);
+            Task chiudiNegozio = Task.Factory.StartNew(ChiudiNegozio);
+            
+            // Attendo il completamento di tutti e tre i task
+            Task.Wait All(entraCliente, esceCliente, chiudiNegozio);
+
+            // Il main accede alla variabile condivisa del saldo
+            lock (_lockSaldoNegozio)
+            {
+                Console.WriteLine($"Ricavo giornaliero: {saldoNegozio} Euro");
+            }
+        }
+        
+        private static void ChiudiNegozio()
+        {
+            Console.WriteLine("Negozio aperto");
+            Thread.Sleep(15000);
+            
+            lock (_lockNegozioAperto)
+            {
+                negozioAperto = false;
+                Console.WriteLine("Negozio chiuso");
+            }
+        }
+
+        private static void EsceCliente()
+        {
+            bool possoAncoraUscire = false;
+            int clientiLetti;
+            
+            do
+            {
+                Thread.Sleep(5500);
+
+                lock (_lockClientiInNegozio)
+                {
+                    if (clientiInNegozio > 0)
+                    {
+                        clientiInNegozio--;
+                        possoAncoraUscire = true;
+                    }
+                    else
+                    {
+                        possoAncoraUscire = false;
+                    }
+                    clientiLetti = clientiInNegozio;
+                }
+                
+                if (possoAncoraUscire)
+                {
+                    lock (_lockSaldoNegozio)
+                    {
+                        saldoNegozio += 20.0m;
+                        Console.WriteLine($"Un cliente esce e paga. Ora i clienti sono {clientiLetti} e il ricavo è di {saldoNegozio} Euro");
+                    }
+                }
+            } while (possoAncoraUscire);
+        }
+
+        private static void EntraCliente()
+        {
+            bool hoTrovatoAperto;
+            
+            do
+            {
+                Thread.Sleep(1500);
+                
+                lock (_lockNegozioAperto)
+                {
+                    hoTrovatoAperto = negozioAperto;
+                }
+                
+                lock (_lockClientiInNegozio)
+                {
+                    if (clientiInNegozio < NumeroMassimoClientiNegozio)
+                    {
+                        clientiInNegozio++;
+                        Console.WriteLine($"Un nuovo cliente entra in negozio. Ora i clienti sono {clientiInNegozio}");
+                    }
+                    else if (hoTrovatoAperto)
+                    {
+                        Console.WriteLine($"Negozio affollato, impossibile entrare. Ora i clienti in negozio sono {clientiInNegozio}");
+                    }
+                }
+            } while (hoTrovatoAperto);
+        }
+    }
+}
+```
+
+### Riflessioni
+
+La transizione da Thread a Task evidenzia i vantaggi dell'astrazione offerta da TPL:
+
+1. **Sintassi Più Pulita**:
+   ```csharp
+   // Thread approach
+   Thread t = new Thread(Method);
+   t.Start();
+   t.Join();
+   
+   // Task approach
+   Task t = Task.Factory.StartNew(Method);
+   t.Wait();
+   ```
+
+2. **Task.WaitAll vs Multiple Join**: `Task.WaitAll(t1, t2, t3)` è più conciso di chiamare `Join()` su tre thread separati.
+
+3. **Stesso Comportamento, Diversa Implementazione**: La logica di business rimane identica. I Task vengono eseguiti sul ThreadPool invece che su thread dedicati, risparmiando risorse di sistema.
+
+4. **Pronto per Async/Await**: Questa versione con Task è facilmente convertibile a `async/await` se necessario, mentre la versione Thread richiederebbe una riscrittura completa.
+
+:::note
+Confrontando questa versione con la versione Thread in [Esercizi sui Thread](/corso/advanced-csharp/concurrent-computing/esercizi-thread#esercizio-5-negozio-concorrente), si nota che:
+- La versione Thread usa `Parallel.Invoke` (che internamente usa TaskPooling
+- La versione Task usa esplicitamente `Task.Factory.StartNew`
+- Entrambe hanno lo stesso comportamento, ma Task offre più flessibilità per scenari avanzati
+:::
+
+---
+
+## Esercizio 5: Somma dei Numeri Primi
+
+### Traccia
+Calcolare la somma dei numeri primi compresi tra 1 e 100.000 utilizzando:
+1. Il calcolo **sequenziale**
+2. Il calcolo **parallelo** con `Parallel.ForEach` e `ConcurrentBag`
+3. Il calcolo **parallelo** con `Parallel.ForEach` e **thread-local data**
+
+Calcolare il **fattore di speedup** nei due casi di calcolo parallelo (con e senza thread local data) rispetto al calcolo sequenziale.
+
+### Riferimenti
+- [Data Parallelism (TPL)](../tpl/#parallelismo-dei-dati-task-parallel-library)
+- [Parallel.ForEach (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.foreach)
+- [ConcurrentBag (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentbag-1)
+
+### Svolgimento
+
+Di seguito le tre implementazioni con confronto delle prestazioni.
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace SommaNumeriPrimi
+{
+    internal class Program
+    {
+        const int MaxNumber = 100_000;
+        
+        static void Main(string[] args)
+        {
+            Console.WriteLine($"Calcolo della somma dei numeri primi da 1 a {MaxNumber:N0}\\n");
+            
+            // 1. Calcolo Sequenziale
+            long sommaSeq = CalcoloSequenziale();
+            
+            // 2. Calcolo Parallelo con ConcurrentBag
+            long sommaParConcurrent = CalcoloParalleloConcurrentBag();
+            
+            // 3. Calcolo Parallelo con Thread Local Data
+            long sommaParLocal = CalcoloParalleloThreadLocal();
+            
+            Console.WriteLine($"\\n=== RIEPILOGO ===");
+            Console.WriteLine($"Somma (Sequenziale): {sommaSeq:N0}");
+            Console.WriteLine($"Somma (Parallel + ConcurrentBag): {sommaParConcurrent:N0}");
+            Console.WriteLine($"Somma (Parallel + Thread Local): {sommaParLocal:N0}");
+        }
+        
+        /// <summary>
+        /// Implementazione sequenziale - baseline per il confronto
+        /// </summary>
+        static long CalcoloSequenziale()
+        {
+            Console.WriteLine("=== CALCOLO SEQUENZIALE ===");
+            Stopwatch sw = Stopwatch.StartNew();
+            
+            long somma = 0;
+            for (int i = 1; i <= MaxNumber; i++)
+            {
+                if (IsPrime(i))
+                {
+                    somma += i;
+                }
+            }
+            
+            sw.Stop();
+            Console.WriteLine($"Tempo: {sw.ElapsedMilliseconds:N0} ms");
+            Console.WriteLine($"Somma: {somma:N0}\\n");
+            
+            return somma;
+        }
+        
+        /// <summary>
+        /// Calcolo parallelo con ConcurrentBag (thread-safe collection)
+        /// </summary>
+        static long CalcoloParalleloConcurrentBag()
+        {
+            Console.WriteLine("=== CALCOLO PARALLELO (ConcurrentBag) ===");
+            Stopwatch sw = Stopwatch.StartNew();
+            
+            // ConcurrentBag è thread-safe, ma ogni Add() ha overhead di sincronizzazione
+            ConcurrentBag<int> primi = new();
+            
+            Parallel.ForEach(Enumerable.Range(1, MaxNumber), numero =>
+            {
+                if (IsPrime(numero))
+                {
+                    primi.Add(numero);
+                }
+            });
+            
+            long somma = primi.Sum(x => (long)x);
+            
+            sw.Stop();
+            Console.WriteLine($"Tempo: {sw.ElapsedMilliseconds:N0} ms");
+            Console.WriteLine($"Somma: {somma:N0}\\n");
+            
+            return somma;
+        }
+        
+        /// <summary>
+        /// Calcolo parallelo con Thread Local Data (approccio ottimizzato)
+        /// </summary>
+        static long CalcoloParalleloThreadLocal()
+        {
+            Console.WriteLine("=== CALCOLO PARALLELO (Thread Local Data) ===");
+            Stopwatch sw = Stopwatch.StartNew();
+            
+            // Ogni thread accumula in una variabile locale, riducendo la contesa
+            object lockObj = new();
+            long sommaGlobale = 0;
+            
+            Parallel.ForEach(
+                Enumerable.Range(1, MaxNumber),
+                
+                // Inizializzatore thread-local: crea una variabile locale per ogni thread
+                () => 0L,
+                
+                // Body: opera sulla variabile locale del thread
+                (numero, loopState, sommaLocale) =>
+                {
+                    if (IsPrime(numero))
+                    {
+                        sommaLocale += numero;
+                    }
+                    return sommaLocale;
+                },
+                
+                // Finalizer: combina i risultati locali in quello globale
+                (sommaLocale) =>
+                {
+                    lock (lockObj)
+                    {
+                        sommaGlobale += sommaLocale;
+                    }
+                }
+            );
+            
+            sw.Stop();
+            Console.WriteLine($"Tempo: {sw.ElapsedMilliseconds:N0} ms");
+            Console.WriteLine($"Somma: {sommaGlobale:N0}\\n");
+            
+            return sommaGlobale;
+        }
+        
+        /// <summary>
+        /// Verifica se un numero è primo
+        /// </summary>
+        private static bool IsPrime(int number)
+        {
+            if (number <= 2)
+            {
+                return number == 2;
+            }
+
+            for (int divisor = 2; divisor <= Math.Sqrt(number); divisor++)
+            {
+                if (number % divisor == 0)
+                {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+    }
+}
+```
+
+### Riflessioni
+
+Questo esercizio dimostra concetti chiave del parallelismo dei dati:
+
+1. **Speedup Atteso**: Con un processore multi-core, ci si aspetta uno speedup significativo. Su un sistema quad-core, uno speedup di 3-3.5x è realistico (non 4x a causa dell'overhead di sincronizzazione e Amdahl's Law).
+
+2. **ConcurrentBag vs Thread Local Data**:
+   - **ConcurrentBag**: Più semplice da usare, ma ogni `Add()` richiede sincronizzazione interna, creando contesa tra thread.
+   - **Thread Local Data**: Ogni thread accumula in una variabile locale privata, riducendo drasticamente la contesa. Solo il "finalizer" richiede un lock, che viene chiamato una volta per thread (non per ogni numero primo).
+
+3. **Struttura di Parallel.ForEach con Thread-Local**:
+   ```csharp
+   Parallel.ForEach(
+       source,           // Sorgente dati da processare
+       () => initialValue, // Inizializzatore: valore iniziale per ogni thread
+       (item, state, local) => { /* processa item, aggiorna local */ return local; },
+       (local) => { /* combina local in risultato globale */ }
+   );
+   ```
+
+4. **Quando Usare il Parallelismo**:
+   - ✅ Buono per: Operazioni CPU-intensive su dati indipendenti (come questo calcolo)
+   - ❌ Less effective per: Operazioni I/O-bound, dataset molto piccoli (overhead > beneficio)
+
+:::tip
+**Regola pratica per il parallelismo dei dati:**
+- Se ogni iterazione è **fast** (< 1ms) e il dataset è piccolo → considera se il parallelismo vale l'overhead
+- Se ogni iterazione è **slow** (> 10ms) e le iterazioni sono indipendenti → il parallelismo porterà enormi benefici
+
+Nel nostro caso, `IsPrime()` su numeri grandi è sufficientemente costoso da beneficiare del parallelismo.
+:::
+
+**Tabella di Confronto Prestazioni Tipiche** (su quad-core):
+
+| Metodo | Tempo Relativo | Speedup | Note |
+|--------|----------------|---------|------|
+| Sequenziale | 100% | 1.0x | Baseline |
+| Parallel + ConcurrentBag | 35-40% | 2.5-3.0x | Overhead sincronizzazione |
+| Parallel + Thread Local | 25-30% | 3.3-4.0x | Minima contesa |
+
+:::caution
+I risultati effettivi dipendono da:
+- Numero di core disponibili
+- Carico del sistema
+- Implementazione della JIT
+- Architettura della cache
+
+Eseguire test multipli e calcolare la media per risultati affidabili.
+:::
+
+---
+
+## Esercizio 6: Moltiplicazione di Matrici
+
+### Traccia
+
+La moltiplicazione di matrici è un'operazione computazionalmente intensiva che si presta perfettamente alla parallelizzazione, poiché ogni cella della matrice risultante può essere calcolata indipendentemente dalle altre.
+
+Scrivere un programma che:
+1. Generi due matrici quadrate $A$ e $B$ di dimensione $N \times N$ (es. $N=1000$) con valori casuali.
+2. Implementi la moltiplicazione $C = A \times B$ in modo **sequenziale**.
+3. Implementi la moltiplicazione $C = A \times B$ in modo **parallelo** utilizzando `Parallel.For`.
+4. Misuri e confronti i tempi di esecuzione per diverse dimensioni di $N$ (es. 500, 1000, 1500).
+
+### Riferimenti
+
+- [Parallel.For (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.for)
+- [Data Parallelism](https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/data-parallelism-task-parallel-library)
+
+### Svolgimento
+
+```csharp
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+
+class MatrixMultiplication
+{
+    static void Main()
+    {
+        int N = 1000; // Dimensione matrice
+        Console.WriteLine($"Generazione matrici {N}x{N}...");
+        
+        double[,] A = GenerateMatrix(N);
+        double[,] B = GenerateMatrix(N);
+        double[,] C = new double[N, N];
+
+        // --- Sequenziale ---
+        Stopwatch sw = Stopwatch.StartNew();
+        MultiplySequential(A, B, C, N);
+        sw.Stop();
+        Console.WriteLine($"Sequenziale: {sw.ElapsedMilliseconds} ms");
+
+        // Reset matrice risultato
+        Array.Clear(C, 0, C.Length);
+
+        // --- Parallelo ---
+        sw.Restart();
+        MultiplyParallel(A, B, C, N);
+        sw.Stop();
+        Console.WriteLine($"Parallelo:   {sw.ElapsedMilliseconds} ms");
+        
+        Console.WriteLine($"Speedup: {(double)sw.ElapsedMilliseconds / sw.ElapsedMilliseconds:F2}x (Nota: ricalcolare manualmente)");
+    }
+
+    static void MultiplySequential(double[,] A, double[,] B, double[,] C, int N)
+    {
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = 0; j < N; j++)
+            {
+                double sum = 0;
+                for (int k = 0; k < N; k++)
+                {
+                    sum += A[i, k] * B[k, j];
+                }
+                C[i, j] = sum;
+            }
+        }
+    }
+
+    static void MultiplyParallel(double[,] A, double[,] B, double[,] C, int N)
+    {
+        // Parallelizziamo il ciclo esterno (righe)
+        Parallel.For(0, N, i =>
+        {
+            for (int j = 0; j < N; j++)
+            {
+                double sum = 0;
+                for (int k = 0; k < N; k++)
+                {
+                    sum += A[i, k] * B[k, j];
+                }
+                C[i, j] = sum;
+            }
+        });
+    }
+
+    static double[,] GenerateMatrix(int N)
+    {
+        var matrix = new double[N, N];
+        var rand = new Random();
+        for (int i = 0; i < N; i++)
+            for (int j = 0; j < N; j++)
+                matrix[i, j] = rand.NextDouble();
+        return matrix;
+    }
+}
+```
+
+### Riflessioni
+
+:::tip[Parallelismo sui Dati]
+Questo è un esempio classico di **Data Parallelism**. Non stiamo eseguendo task diversi (come nel Producer-Consumer), ma stiamo eseguendo **la stessa operazione su dati diversi** (le righe della matrice).
+:::
+
+:::note[Granularità]
+In questo esempio parallelizziamo solo il ciclo esterno (`i`). Parallelizzare anche i cicli interni (`j` o `k`) creerebbe troppi task piccoli, introducendo un overhead di gestione che peggiorerebbe le prestazioni invece di migliorarle.
+:::
+
+---
+
+## Esercizio 7: Elaborazione Immagini Reale (Multi-Filtro)
+
+### Traccia
+
+Realizzare un'applicazione console che applichi un filtro grafico a scelta a un'immagine reale caricata da disco. L'elaborazione deve avvenire in parallelo per sfruttare tutti i core disponibili.
+
+1.  L'utente fornisce il percorso di un'immagine.
+2.  L'utente sceglie il filtro da applicare tra:
+    - **Negativo**: Inverte i colori.
+    - **Scala di Grigi**: Converte l'immagine in bianco e nero usando la formula della luminanza.
+    - **Aumento Contrasto**: Aumenta il contrasto dei colori.
+3.  Il programma elabora l'immagine in parallelo accedendo direttamente ai byte in memoria.
+4.  Salvare l'immagine elaborata su disco.
+
+### Riferimenti
+
+- [System.Drawing.Common (NuGet)](https://www.nuget.org/packages/System.Drawing.Common)
+- [Bitmap.LockBits Method](https://learn.microsoft.com/en-us/dotnet/api/system.drawing.bitmap.lockbits)
+
+### Svolgimento
+
+```csharp
+using System;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+
+class ImageProcessingReal
+{
+    enum FilterType { Negative, Grayscale, Contrast }
+
+    static void Main(string[] args)
+    {
+        string inputPath = @"C:\temp\input.jpg"; 
+        
+        if (!File.Exists(inputPath))
+        {
+            Console.WriteLine($"File non trovato: {inputPath}");
+            return;
+        }
+
+        Console.WriteLine("Scegli il filtro:");
+        Console.WriteLine("1. Negativo");
+        Console.WriteLine("2. Scala di Grigi");
+        Console.WriteLine("3. Aumento Contrasto");
+        Console.Write("Scelta: ");
+        
+        FilterType filter = Console.ReadLine() switch
+        {
+            "1" => FilterType.Negative,
+            "2" => FilterType.Grayscale,
+            "3" => FilterType.Contrast,
+            _ => FilterType.Negative
+        };
+
+        string outputPath = $@"C:\temp\output_{filter}.jpg";
+
+        using (Bitmap originalImage = new Bitmap(inputPath))
+        {
+            Console.WriteLine($"\nElaborazione {originalImage.Width}x{originalImage.Height} con filtro {filter}...");
+            Stopwatch sw = Stopwatch.StartNew();
+
+            Bitmap processedImage = ApplyFilterParallel(originalImage, filter);
+
+            sw.Stop();
+            Console.WriteLine($"Completato in {sw.ElapsedMilliseconds} ms");
+            
+            processedImage.Save(outputPath, ImageFormat.Jpeg);
+            Console.WriteLine($"Salvato in: {outputPath}");
+        }
+    }
+
+    static Bitmap ApplyFilterParallel(Bitmap source, FilterType filterType)
+    {
+        int width = source.Width;
+        int height = source.Height;
+        Bitmap result = new Bitmap(source);
+
+        Rectangle rect = new Rectangle(0, 0, width, height);
+        BitmapData bmpData = result.LockBits(rect, ImageLockMode.ReadWrite, result.PixelFormat);
+
+        int bytesPerPixel = Image.GetPixelFormatSize(result.PixelFormat) / 8;
+        int byteCount = Math.Abs(bmpData.Stride) * height;
+        byte[] pixels = new byte[byteCount];
+
+        Marshal.Copy(bmpData.Scan0, pixels, 0, byteCount);
+
+        // Parallelizziamo sulle righe
+        Parallel.For(0, height, y =>
+        {
+            int rowStart = y * bmpData.Stride;
+            
+            for (int x = 0; x < width; x++)
+            {
+                int i = rowStart + x * bytesPerPixel;
+                
+                // Leggiamo i componenti (ordine BGR)
+                byte b = pixels[i];
+                byte g = pixels[i + 1];
+                byte r = pixels[i + 2];
+
+                // Applichiamo il filtro scelto
+                switch (filterType)
+                {
+                    case FilterType.Negative:
+                        pixels[i] = (byte)(255 - b);
+                        pixels[i + 1] = (byte)(255 - g);
+                        pixels[i + 2] = (byte)(255 - r);
+                        break;
+
+                    case FilterType.Grayscale:
+                        // Formula luminanza: 0.299R + 0.587G + 0.114B
+                        byte gray = (byte)(0.299 * r + 0.587 * g + 0.114 * b);
+                        pixels[i] = gray;     // Blue
+                        pixels[i + 1] = gray; // Green
+                        pixels[i + 2] = gray; // Red
+                        break;
+
+                    case FilterType.Contrast:
+                        // Fattore contrasto (es. 1.5 aumenta il contrasto)
+                        double threshold = 1.5; 
+                        pixels[i] = AdjustContrast(b, threshold);
+                        pixels[i + 1] = AdjustContrast(g, threshold);
+                        pixels[i + 2] = AdjustContrast(r, threshold);
+                        break;
+                }
+            }
+        });
+
+        Marshal.Copy(pixels, 0, bmpData.Scan0, byteCount);
+        result.UnlockBits(bmpData);
+        return result;
+    }
+
+    // Helper per il contrasto
+    static byte AdjustContrast(byte colorComponent, double factor)
+    {
+        double pixel = colorComponent / 255.0;
+        pixel -= 0.5;
+        pixel *= factor;
+        pixel += 0.5;
+        pixel *= 255;
+        return (byte)Math.Clamp(pixel, 0, 255);
+    }
+}
+```
+
+### Riflessioni
+
+:::caution[Bitmap e Thread-Safety]
+La classe `Bitmap` di GDI+ **non è thread-safe**. Tentare di usare `GetPixel()` e `SetPixel()` da più thread contemporaneamente causerà eccezioni o corruzione della memoria. Inoltre, questi metodi sono estremamente lenti.
+:::
+
+:::tip[Accesso Diretto alla Memoria]
+La soluzione corretta per le performance è usare `LockBits`. Questo metodo ci dà accesso diretto all'area di memoria dove risiedono i pixel.
+1. Copiamo i dati in un array `byte[]` (Managed).
+2. Elaboriamo l'array in parallelo (sicuro e velocissimo).
+3. Ricopiamo i dati nell'immagine.
+
+Questo approccio è standard per l'elaborazione immagini ad alte prestazioni in C#.
+:::
+
+
+:::note[Parallelismo sulle Righe]
+Nel `Parallel.For`, iteriamo sulle **righe** (`y`) invece che sui singoli pixel. Questo riduce l'overhead della creazione dei task e migliora la **cache locality** (i pixel di una riga sono contigui in memoria).
+:::
+
+---
+
+## Esercizio 8: Processo Produttivo con Pressa e Verniciatrice
+
+### Traccia
+
+Si vuole simulare un processo produttivo di pezzi meccanici per automobili con due macchine collegate tra loro da un nastro trasportatore:
+
+- La **prima macchina** è una **pressa**, che produce pezzi di lamiera e li mette su un nastro trasportatore
+- La **seconda macchina** è una **verniciatrice** che preleva i pezzi dal nastro, li vernicia e li passa al processo di montaggio
+- Il **nastro trasportatore** può essere simulato con una coda FIFO con un numero massimo di pezzi trasportati pari a 10
+
+Scrivere un programma .NET Core Console che simuli il processo produttivo costituito da pressa, verniciatrice e nastro trasportatore, mediante Task.
+
+**Specifiche:**
+- La pressa impiega **0,5 secondi** per pressare la lamiera
+- La verniciatrice impiega **0,7 secondi** per verniciare un pezzo
+- Simulare la produzione di **25 pezzi**
+- Quando una macchina lavora il pezzo, stampa a console:
+  - Pressa: `"Pressa: prodotto il pezzo i-mo"`
+  - Verniciatrice: `"Verniciatrice: verniciato il pezzo i-mo"`
+
+### Riferimenti
+
+Questo è un classico problema **Producer-Consumer** con buffer limitato (nastro trasportatore). Richiede:
+- Un buffer FIFO (coda) per il nastro trasportatore
+- Sincronizzazione tra produttore (pressa) e consumatore (verniciatrice)
+- Gestione della capacità massima del nastro
+
+- [Task Parallel Library](../tpl/)
+- [Producer-Consumer Pattern](../concurrent-programming/#produttore-consumatore)
+- [SemaphoreSlim (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim)
+- [Queue\<T\> (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.queue-1)
+
+### Svolgimento
+
+La soluzione utilizza due semafori complementari e una coda FIFO per implementare il buffer del nastro trasportatore:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ProcessoProduttivo
+{
+    internal class Program
+    {
+        const int CapacitaNastro = 10;  // Capacità massima del nastro trasportatore
+        const int NumeroPezzi = 25;     // Numero totale di pezzi da produrre
+        const int TempoPressa = 500;    // Tempo pressa in millisecondi
+        const int TempoVerniciatrice = 700; // Tempo verniciatrice in millisecondi
+        
+        // Semafori per gestire il nastro trasportatore
+        static readonly SemaphoreSlim postiLiberi = new(CapacitaNastro, CapacitaNastro); // Posti disponibili
+        static readonly SemaphoreSlim pezziPronti = new(0, CapacitaNastro); // Pezzi sul nastro
+        
+        // Coda FIFO per il nastro trasportatore
+        static readonly Queue<int> nastroTrasportatore = new();
+        static readonly object lockNastro = new(); // Lock per proteggere l'accesso alla coda
+        
+        static void Main(string[] args)
+        {
+            Console.WriteLine("=== AVVIO PROCESSO PRODUTTIVO ===\n");
+            
+            // Creo i task per pressa e verniciatrice
+            Task pressa = Task.Factory.StartNew(Pressa);
+            Task verniciatrice = Task.Factory.StartNew(Verniciatrice);
+            
+            // Attendo il completamento di entrambi i task
+            Task.WaitAll(pressa, verniciatrice);
+            
+            Console.WriteLine("\n=== PROCESSO PRODUTTIVO COMPLETATO ===");
+            Console.WriteLine($"Totale pezzi prodotti e verniciati: {NumeroPezzi}");
+        }
+        
+        /// <summary>
+        /// Task che simula la pressa (produttore)
+        /// </summary>
+        static void Pressa()
+        {
+            for (int i = 1; i <= NumeroPezzi; i++)
+            {
+                // Attendo che ci sia spazio disponibile sul nastro
+                postiLiberi.Wait();
+                
+                // Simulo il tempo di pressatura
+                Task.Delay(TempoPressa).Wait();
+                
+                // Metto il pezzo sul nastro trasportatore (sezione critica)
+                lock (lockNastro)
+                {
+                    nastroTrasportatore.Enqueue(i);
+                    Console.WriteLine($"Pressa: prodotto il pezzo {i}-mo (sul nastro: {nastroTrasportatore.Count})");
+                }
+                
+                // Segnalo che c'è un nuovo pezzo pronto sul nastro
+                pezziPronti.Release();
+            }
+            
+            Console.WriteLine("\n[Pressa] Produzione completata");
+        }
+        
+        /// <summary>
+        /// Task che simula la verniciatrice (consumatore)
+        /// </summary>
+        static void Verniciatrice()
+        {
+            for (int i = 1; i <= NumeroPezzi; i++)
+            {
+                // Attendo che ci sia un pezzo disponibile sul nastro
+                pezziPronti.Wait();
+                
+                // Prelevo il pezzo dal nastro trasportatore (sezione critica)
+                int numeroPezzo;
+                lock (lockNastro)
+                {
+                    numeroPezzo = nastroTrasportatore.Dequeue();
+                }
+                
+                // Simulo il tempo di verniciatura
+                Task.Delay(TempoVerniciatrice).Wait();
+                
+                Console.WriteLine($"Verniciatrice: verniciato il pezzo {numeroPezzo}-mo");
+                
+                // Segnalo che si è liberato un posto sul nastro
+                postiLiberi.Release();
+            }
+            
+            Console.WriteLine("\n[Verniciatrice] Verniciatura completata");
+        }
+    }
+}
+```
+
+### Versione 2: Con BlockingCollection (Thread-Safe)
+
+.NET fornisce `BlockingCollection<T>`, una collezione thread-safe **specifica per scenari Producer-Consumer** che semplifica enormemente il codice eliminando la necessità di gestire manualmente semafori e lock:
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ProcessoProduttivoBlockingCollection
+{
+    internal class Program
+    {
+        const int CapacitaNastro = 10;
+        const int NumeroPezzi = 25;
+        const int TempoPressa = 500;
+        const int TempoVerniciatrice = 700;
+        
+        // BlockingCollection gestisce automaticamente la sincronizzazione
+        // Il parametro boundedCapacity limita la capacità massima
+        static readonly BlockingCollection<int> nastroTrasportatore = new(boundedCapacity: CapacitaNastro);
+        
+        static void Main(string[] args)
+        {
+            Console.WriteLine("=== AVVIO PROCESSO PRODUTTIVO (BlockingCollection) ===\n");
+            
+            // Creo i task per pressa e verniciatrice
+            Task pressa = Task.Factory.StartNew(Pressa);
+            Task verniciatrice = Task.Factory.StartNew(Verniciatrice);
+            
+            // Attendo il completamento di entrambi i task
+            Task.WaitAll(pressa, verniciatrice);
+            
+            Console.WriteLine("\n=== PROCESSO PRODUTTIVO COMPLETATO ===");
+            Console.WriteLine($"Totale pezzi prodotti e verniciati: {NumeroPezzi}");
+        }
+        
+        /// <summary>
+        /// Task che simula la pressa (produttore)
+        /// </summary>
+        static void Pressa()
+        {
+            for (int i = 1; i <= NumeroPezzi; i++)
+            {
+                // Simulo il tempo di pressatura
+                Task.Delay(TempoPressa).Wait();
+                
+                // Add() blocca automaticamente se la collezione è piena
+                nastroTrasportatore.Add(i);
+                Console.WriteLine($"Pressa: prodotto il pezzo {i}-mo (sul nastro: {nastroTrasportatore.Count})");
+            }
+            
+            // Segnalo che non verranno aggiunti altri elementi
+            nastroTrasportatore.CompleteAdding();
+            Console.WriteLine("\n[Pressa] Produzione completata");
+        }
+        
+        /// <summary>
+        /// Task che simula la verniciatrice (consumatore)
+        /// </summary>
+        static void Verniciatrice()
+        {
+            // GetConsumingEnumerable() blocca finché ci sono elementi o finché CompleteAdding() viene chiamato
+            foreach (int numeroPezzo in nastroTrasportatore.GetConsumingEnumerable())
+            {
+                // Simulo il tempo di verniciatura
+                Task.Delay(TempoVerniciatrice).Wait();
+                
+                Console.WriteLine($"Verniciatrice: verniciato il pezzo {numeroPezzo}-mo");
+            }
+            
+            Console.WriteLine("\n[Verniciatrice] Verniciatura completata");
+        }
+    }
+}
+```
+
+### Riflessioni
+
+Questo esercizio presenta **due approcci** per implementare il pattern Producer-Consumer con buffer limitato:
+
+:::note[Confronto tra le Due Versioni]
+
+| Aspetto | Versione 1 (Queue + Semafori) | Versione 2 (BlockingCollection) |
+|---------|-------------------------------|----------------------------------|
+| **Complessità** | Alta - gestione manuale | Bassa - gestione automatica |
+| **Semafori** | 2 (postiLiberi + pezziPronti) | Nessuno (integrati) |
+| **Lock** | Necessario per Queue\&lt;T\&gt; | Non necessario |
+| **Linee di codice** | ~90 | ~60 |
+| **Controllo** | Massimo | Astratto |
+| **Didattica** | Mostra meccanismi interni | Mostra best practice .NET |
+
+:::
+
+#### Versione 1: Queue\<T\> + Semafori Manuali
+
+Questo esercizio dimostra un'implementazione completa del pattern Producer-Consumer con buffer limitato:
+
+:::tip[Buffer FIFO con Queue\<T\>]
+L'uso di `Queue<int>` per il nastro trasportatore garantisce l'ordine FIFO (First-In-First-Out): i pezzi vengono verniciati nello stesso ordine in cui sono stati prodotti. Questo è fondamentale in molti processi produttivi reali.
+
+Operazioni:
+- `Enqueue()` aggiunge un elemento in coda
+- `Dequeue()` rimuove e restituisce il primo elemento
+- `Count` restituisce il numero di elementi presenti
+:::
+
+:::note[Sincronizzazione con Due Semafori]
+I due semafori lavorano in modo complementare:
+
+| Semaforo | Inizializzazione | Scopo | Wait da | Release da |
+|----------|-----------------|-------|---------|------------|
+| `postiLiberi` | CapacitaNastro (10) | Controlla spazio disponibile | Pressa | Verniciatrice |
+| `pezziPronti` | 0 | Controlla pezzi da processare | Verniciatrice | Pressa |
+
+La somma `postiLiberi.CurrentCount + pezziPronti.CurrentCount` è sempre uguale a `CapacitaNastro`.
+:::
+
+:::caution[Protezione della Coda]
+Anche se i semafori garantiscono che solo un thread alla volta possa aggiungere (`Enqueue`) o rimuovere (`Dequeue`) elementi, è necessario il `lock` perché:
+1. `Queue<T>` **non è thread-safe**
+2. Vogliamo rendere atomica l'operazione di enqueue/dequeue insieme alla stampa del count
+3. Preveniamo race condition tra le operazioni sulla coda
+:::
+
+#### Versione 2: BlockingCollection\<T\>
+
+:::tip[BlockingCollection - La Soluzione Moderna]
+`BlockingCollection<T>` è la collezione **raccomandata da Microsoft** per scenari Producer-Consumer. Vantaggi:
+
+**Semplicità:**
+- Nessun semaforo da gestire manualmente
+- Nessun lock necessario
+- Codice più pulito e manutenibile
+
+**Funzionalità integrate:**
+- `Add()` blocca automaticamente se piena (come `Wait()` sul semaforo postiLiberi)
+- `Take()` o `GetConsumingEnumerable()` bloccano se vuota (come `Wait()` sul semaforo pezziPronti)
+- `CompleteAdding()` segnala la fine della produzione, permettendo al consumatore di terminare elegantemente
+
+**Thread-safety:**
+- Internamente usa `ConcurrentQueue<T>` (thread-safe)
+- Gestione ottimizzata dei lock interni
+:::
+
+:::note[GetConsumingEnumerable()]
+Il metodo `GetConsumingEnumerable()` è particolarmente elegante:
+```csharp
+foreach (int item in collection.GetConsumingEnumerable())
+{
+    // Processa item
+}
+```
+
+Questo pattern:
+- Blocca automaticamente quando la collezione è vuota
+- Termina automaticamente quando `CompleteAdding()` è stato chiamato e la collezione è vuota
+- Elimina la necessità di contatori manuali
+:::
+
+**Confronto Pressa (Produttore):**
+```csharp
+// Versione 1: Manuale
+postiLiberi.Wait();              // Attendo spazio
+lock(lockNastro) {
+    nastroTrasportatore.Enqueue(i);
+}
+pezziPronti.Release();           // Segnalo disponibilità
+
+// Versione 2: BlockingCollection
+nastroTrasportatore.Add(i);      // Tutto in una chiamata!
+```
+
+**Differenze rispetto all'Esercizio Fast Food:**
+- **Con Queue/BlockingCollection**: Mantiene l'ordine FIFO dei pezzi (importante per tracciabilità)
+- **Senza Queue** (Fast Food): Non serviva tracciare quale hamburger specifico veniva consumato
+
+**Tempo di esecuzione:**
+- Pressa più veloce (0,5s) della verniciatrice (0,7s)
+- Il nastro inizialmente si riempie perché la pressa produce più velocemente
+- Verso la fine, il nastro si svuota aspettando che la verniciatrice finisca
+
+:::tip[Osservazione sul Performance]
+In questo scenario, la **verniciatrice è il collo di bottiglia** (0,7s > 0,5s). Il sistema non può produrre più velocemente di quanto possa verniciare. Il nastro trasportatore serve da **buffer** per compensare le variazioni temporanee, ma non può migliorare il throughput oltre la capacità del processo più lento.
+:::
+
+:::note[Quale Versione Usare?]
+- **Versione 1 (Manuale)**: Utile per **scopi didattici** per comprendere i meccanismi sottostanti
+- **Versione 2 (BlockingCollection)**: Da preferire in **codice di produzione** per semplicità, manutenibilità e minori errori
+:::
+

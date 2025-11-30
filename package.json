@@ -11,11 +11,11 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.5",
-    "@astrojs/starlight": "^0.36.2",
+    "@astrojs/check": "^0.9.6",
+    "@astrojs/starlight": "^0.37.0",
     "@expressive-code/plugin-collapsible-sections": "^0.41.3",
     "@expressive-code/plugin-line-numbers": "^0.41.3",
-    "astro": "^5.15.9",
+    "astro": "^5.16.3",
     "astro-mermaid": "^1.1.0",
     "astro-plantuml": "^0.1.4",
     "katex": "^0.16.25",

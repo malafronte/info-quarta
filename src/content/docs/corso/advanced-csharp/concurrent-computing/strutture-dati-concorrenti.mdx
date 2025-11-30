@@ -1,0 +1,926 @@
+---
+title: Strutture Dati Concorrenti
+description: Principali strutture dati thread-safe e confronto con le strutture non thread-safe in C#.
+sidebar:
+  label: "Strutture Dati Concorrenti"
+  order: 80
+---
+
+<style>{`
+  img {display: block; margin: 0 auto;}
+`}</style>
+
+## Introduzione
+
+In ambienti multithreading, l'accesso concorrente alle strutture dati può causare **race condition**, **corruzione dei dati** e **comportamenti non deterministici**. .NET fornisce un insieme di collezioni thread-safe nel namespace `System.Collections.Concurrent`, progettate specificamente per scenari in cui più thread accedono simultaneamente alla stessa struttura dati.
+
+Questa pagina presenta le principali strutture dati utilizzate in programmazione, confrontando le versioni standard (non thread-safe) con le loro controparti thread-safe, analizzando prestazioni e casi d'uso.
+
+:::note[Namespace Rilevanti]
+
+- **Collezioni Standard**: `System.Collections.Generic` (List, Queue, Stack, Dictionary)
+- **Collezioni Concorrenti**: `System.Collections.Concurrent` (ConcurrentBag, ConcurrentQueue, ConcurrentStack, ConcurrentDictionary, BlockingCollection)
+  :::
+
+---
+
+## 1. Liste e Collezioni Non Ordinate
+
+### Funzionalità Principale
+
+Le liste sono collezioni dinamiche che permettono l'aggiunta, la rimozione e l'accesso casuale agli elementi. In scenari concorrenti, quando l'ordine di inserimento non è rilevante, le "bag" (sacche) rappresentano un'alternativa più efficiente.
+
+### Versioni Disponibili
+
+| Tipo               | Versione Non Thread-Safe | Versione Thread-Safe    |
+| ------------------ | ------------------------ | ----------------------- |
+| Lista generica     | `List<T>`                | `ConcurrentBag<T>`      |
+| Lista non generica | `ArrayList`              | `ConcurrentBag<object>` |
+
+:::caution[`List<T>` Non è Thread-Safe]
+`List<T>` non offre alcuna protezione contro l'accesso concorrente. Operazioni come `Add()`, `Remove()` o l'accesso tramite indice possono corrompere lo stato interno della lista se eseguite simultaneamente da più thread.
+:::
+
+### Esempio: Versione Non Thread-Safe con Lock
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+class ListNonThreadSafe
+{
+    static List<int> lista = new();
+    static readonly object lockLista = new();
+
+    static void Main()
+    {
+        // Lancio 10 task che aggiungono elementi
+        Task[] tasks = new Task[10];
+        for (int i = 0; i < 10; i++)
+        {
+            int taskId = i;
+            tasks[i] = Task.Run(() => AggiungiElementi(taskId));
+        }
+
+        Task.WaitAll(tasks);
+
+        Console.WriteLine($"Elementi totali nella lista: {lista.Count}");
+    }
+
+    static void AggiungiElementi(int taskId)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            // LOCK NECESSARIO per evitare race condition
+            lock (lockLista)
+            {
+                lista.Add(taskId * 100 + i);
+            }
+        }
+    }
+}
+```
+
+### Esempio: Versione Thread-Safe con ConcurrentBag
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+
+class ConcurrentBagExample
+{
+    static ConcurrentBag<int> bag = new();
+
+    static void Main()
+    {
+        // Lancio 10 task che aggiungono elementi
+        Task[] tasks = new Task[10];
+        for (int i = 0; i < 10; i++)
+        {
+            int taskId = i;
+            tasks[i] = Task.Run(() => AggiungiElementi(taskId));
+        }
+
+        Task.WaitAll(tasks);
+
+        Console.WriteLine($"Elementi totali nel bag: {bag.Count}");
+
+        // Consumo elementi in modo thread-safe
+        while (bag.TryTake(out int valore))
+        {
+            Console.WriteLine($"Estratto: {valore}");
+        }
+    }
+
+    static void AggiungiElementi(int taskId)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            // NESSUN LOCK NECESSARIO - thread-safe internamente
+            bag.Add(taskId * 100 + i);
+        }
+    }
+}
+```
+
+### Analisi e Confronto Prestazioni
+
+:::tip[Quando Usare ConcurrentBag]
+`ConcurrentBag<T>` è ottimizzato per scenari in cui:
+
+- Lo stesso thread che aggiunge elementi è anche quello che li rimuove (pattern **thread-local**)
+- L'ordine degli elementi non è importante
+- Si ha alta contesa tra thread
+
+**Vantaggi:**
+
+- Operazioni `Add()` e `TryTake()` sono lock-free nella maggior parte dei casi
+- Minima contesa quando ogni thread lavora sui propri elementi
+
+**Svantaggi:**
+
+- Nessun accesso per indice (non supporta `bag[i]`)
+- Ordine di estrazione non garantito (LIFO locale, ma non globale)
+  :::
+
+**Confronto Prestazioni:**
+
+| Operazione          | `List<T>` + lock      | `ConcurrentBag<T>`           |
+| ------------------- | --------------------- | ---------------------------- |
+| Add (bassa contesa) | ⚡ Molto veloce       | ⚡ Molto veloce              |
+| Add (alta contesa)  | 🐌 Rallentato da lock | ✅ Scalabile                 |
+| Accesso per indice  | ✅ O(1)               | ❌ Non supportato            |
+| Iterazione ordinata | ✅ Mantiene ordine    | ❌ Ordine non garantito      |
+| Memory overhead     | 💚 Basso              | 💛 Medio (strutture interne) |
+
+---
+
+## 2. Code FIFO (First-In-First-Out)
+
+### Funzionalità Principale
+
+Le code implementano il paradigma FIFO: il primo elemento inserito è il primo ad essere estratto. Sono fondamentali per implementare buffer, scheduling di task e pattern Producer-Consumer.
+
+### Versioni Disponibili
+
+| Tipo           | Versione Non Thread-Safe | Versione Thread-Safe    |
+| -------------- | ------------------------ | ----------------------- |
+| Coda generica  | `Queue<T>`               | `ConcurrentQueue<T>`    |
+| Coda bloccante | N/A                      | `BlockingCollection<T>` |
+
+### Esempio: Versione Non Thread-Safe con Lock
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+class QueueNonThreadSafe
+{
+    static Queue<string> coda = new();
+    static readonly object lockCoda = new();
+
+    static void Main()
+    {
+        // Producer task
+        Task producer = Task.Run(() => Produce());
+
+        // Consumer task
+        Task consumer = Task.Run(() => Consuma());
+
+        Task.WaitAll(producer, consumer);
+    }
+
+    static void Produce()
+    {
+        for (int i = 0; i < 50; i++)
+        {
+            lock (lockCoda)
+            {
+                coda.Enqueue($"Messaggio {i}");
+                Console.WriteLine($"[Producer] Prodotto: Messaggio {i}");
+            }
+            Task.Delay(50).Wait();
+        }
+    }
+
+    static void Consuma()
+    {
+        int consumati = 0;
+        while (consumati < 50)
+        {
+            lock (lockCoda)
+            {
+                if (coda.Count > 0)
+                {
+                    string messaggio = coda.Dequeue();
+                    Console.WriteLine($"[Consumer] Consumato: {messaggio}");
+                    consumati++;
+                }
+            }
+            Task.Delay(70).Wait();
+        }
+    }
+}
+```
+
+### Esempio: Versione Thread-Safe con ConcurrentQueue
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+
+class ConcurrentQueueExample
+{
+    static ConcurrentQueue<string> coda = new();
+
+    static void Main()
+    {
+        // Producer task
+        Task producer = Task.Run(() => Produce());
+
+        // Consumer task
+        Task consumer = Task.Run(() => Consuma());
+
+        Task.WaitAll(producer, consumer);
+    }
+
+    static void Produce()
+    {
+        for (int i = 0; i < 50; i++)
+        {
+            // NESSUN LOCK - thread-safe per design
+            coda.Enqueue($"Messaggio {i}");
+            Console.WriteLine($"[Producer] Prodotto: Messaggio {i}");
+            Task.Delay(50).Wait();
+        }
+    }
+
+    static void Consuma()
+    {
+        int consumati = 0;
+        while (consumati < 50)
+        {
+            // TryDequeue è atomica e non bloccante
+            if (coda.TryDequeue(out string messaggio))
+            {
+                Console.WriteLine($"[Consumer] Consumato: {messaggio}");
+                consumati++;
+            }
+            Task.Delay(70).Wait();
+        }
+    }
+}
+```
+
+### Analisi e Confronto Prestazioni
+
+:::tip[ConcurrentQueue - Lock-Free Implementation]
+`ConcurrentQueue<T>` utilizza algoritmi **lock-free** basati su **Compare-And-Swap (CAS)** atomico, offrendo:
+
+**Vantaggi:**
+
+- Operazioni `Enqueue` e `TryDequeue` non bloccano mai
+- Eccellente scalabilità con molti thread
+- Nessun rischio di deadlock
+- Garanzia FIFO rigorosa
+
+**Svantaggi:**
+
+- Overhead leggermente superiore in scenari single-threaded
+- Non blocca il consumer se vuota (richiede polling o `BlockingCollection`)
+  :::
+
+:::note[BlockingCollection per Producer-Consumer]
+Per scenari Producer-Consumer dove il consumer deve attendere elementi, `BlockingCollection<T>` (che internamente può usare `ConcurrentQueue<T>`) offre metodi bloccanti come `Take()` e `Add()`, eliminando la necessità di polling.
+
+Vedere [Esercizio 6](/corso/advanced-csharp/concurrent-computing/esercizi-task#esercizio-6-processo-produttivo-con-pressa-e-verniciatrice) per un esempio completo.
+:::
+
+**Confronto Prestazioni:**
+
+| Aspetto                | `Queue<T>` + lock | `ConcurrentQueue<T>` |
+| ---------------------- | ----------------- | -------------------- |
+| Throughput (1 thread)  | ✅ Ottimo         | ✅ Buono             |
+| Throughput (8+ thread) | 🐌 Si degrada     | ✅ Scala linearmente |
+| Latency per operazione | 💚 Bassa          | 💚 Bassa             |
+| Implementazione        | Lock-based        | Lock-free (CAS)      |
+| Allocazioni memory     | 💚 Minime         | 💛 Moderate          |
+
+---
+
+## 3. Stack LIFO (Last-In-First-Out)
+
+### Funzionalità Principale
+
+Gli stack implementano il paradigma LIFO: l'ultimo elemento inserito è il primo ad essere estratto. Utilizzati per gestione di scope, undo/redo, e algoritmi ricorsivi.
+
+### Versioni Disponibili
+
+| Tipo           | Versione Non Thread-Safe | Versione Thread-Safe |
+| -------------- | ------------------------ | -------------------- |
+| Stack generica | `Stack<T>`               | `ConcurrentStack<T>` |
+
+### Esempio: Versione Non Thread-Safe con Lock
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+class StackNonThreadSafe
+{
+    static Stack<int> stack = new();
+    static readonly object lockStack = new();
+
+    static void Main()
+    {
+        // Task che effettuano push
+        Task[] pushers = new Task[5];
+        for (int i = 0; i < 5; i++)
+        {
+            int taskId = i;
+            pushers[i] = Task.Run(() => PushElements(taskId));
+        }
+
+        Task.WaitAll(pushers);
+
+        // Task che effettuano pop
+        Task[] poppers = new Task[5];
+        for (int i = 0; i < 5; i++)
+        {
+            poppers[i] = Task.Run(() => PopElements());
+        }
+
+        Task.WaitAll(poppers);
+
+        lock (lockStack)
+        {
+            Console.WriteLine($"Elementi rimanenti: {stack.Count}");
+        }
+    }
+
+    static void PushElements(int taskId)
+    {
+        for (int i = 0; i < 20; i++)
+        {
+            lock (lockStack)
+            {
+                stack.Push(taskId * 100 + i);
+            }
+        }
+    }
+
+    static void PopElements()
+    {
+        for (int i = 0; i < 20; i++)
+        {
+            lock (lockStack)
+            {
+                if (stack.Count > 0)
+                {
+                    int value = stack.Pop();
+                    Console.WriteLine($"Thread {Task.CurrentId}: Pop {value}");
+                }
+            }
+            Task.Delay(10).Wait();
+        }
+    }
+}
+```
+
+### Esempio: Versione Thread-Safe con ConcurrentStack
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+
+class ConcurrentStackExample
+{
+    static ConcurrentStack<int> stack = new();
+
+    static void Main()
+    {
+        // Task che effettuano push
+        Task[] pushers = new Task[5];
+        for (int i = 0; i < 5; i++)
+        {
+            int taskId = i;
+            pushers[i] = Task.Run(() => PushElements(taskId));
+        }
+
+        Task.WaitAll(pushers);
+
+        // Task che effettuano pop
+        Task[] poppers = new Task[5];
+        for (int i = 0; i < 5; i++)
+        {
+            poppers[i] = Task.Run(() => PopElements());
+        }
+
+        Task.WaitAll(poppers);
+
+        Console.WriteLine($"Elementi rimanenti: {stack.Count}");
+    }
+
+    static void PushElements(int taskId)
+    {
+        for (int i = 0; i < 20; i++)
+        {
+            // NESSUN LOCK - operazione atomica
+            stack.Push(taskId * 100 + i);
+        }
+    }
+
+    static void PopElements()
+    {
+        for (int i = 0; i < 20; i++)
+        {
+            // TryPop è atomica e safe
+            if (stack.TryPop(out int value))
+            {
+                Console.WriteLine($"Thread {Task.CurrentId}: Pop {value}");
+            }
+            Task.Delay(10).Wait();
+        }
+    }
+}
+```
+
+### Analisi e Confronto Prestazioni
+
+:::tip[ConcurrentStack - Lock-Free con Linked List]
+`ConcurrentStack<T>` è implementato come **linked list lock-free**:
+
+**Vantaggi:**
+
+- Operazioni `Push` e `TryPop` sono lock-free
+- Nessuna allocazione array (usa nodi linked)
+- Eccellente per alta contesa
+
+**Caratteristica Unica - PushRange/TryPopRange:**
+
+```csharp
+// Push multiplo atomico
+int[] values = { 1, 2, 3, 4, 5 };
+stack.PushRange(values);
+
+// Pop multiplo atomico
+int[] buffer = new int[3];
+int popped = stack.TryPopRange(buffer);
+```
+
+Queste operazioni sono più efficienti di loop multipli.
+:::
+
+**Confronto Prestazioni:**
+
+| Aspetto                 | `Stack<T>` + lock  | `ConcurrentStack<T>`              |
+| ----------------------- | ------------------ | --------------------------------- |
+| Push singolo            | ✅ Veloce          | ✅ Veloce                         |
+| Push/Pop (alta contesa) | 🐌 Serializzato    | ✅ Scalabile                      |
+| PushRange/PopRange      | ❌ Non disponibile | ✅ Ottimizzato                    |
+| Memory overhead         | 💚 Array-based     | 💛 Linked list (overhead pointer) |
+
+---
+
+## 4. Dizionari (Key-Value Maps)
+
+### Funzionalità Principale
+
+I dizionari mappano chiavi univoche a valori, permettendo ricerca, inserimento e rimozione con complessità O(1) media. Sono la struttura dati più critica negli scenari concorrenti multi-lettura/scrittura.
+
+### Versioni Disponibili
+
+| Tipo                | Versione Non Thread-Safe   | Versione Thread-Safe                   |
+| ------------------- | -------------------------- | -------------------------------------- |
+| Dizionario generico | `Dictionary<TKey, TValue>` | `ConcurrentDictionary<TKey, TValue>`   |
+| Hashtable           | `Hashtable`                | `ConcurrentDictionary<object, object>` |
+
+:::caution[`Dictionary<TKey,TValue>` e Concorrenza]
+`Dictionary<TKey, TValue>` può corrompere la sua struttura interna (hash table) se modificato concorrentemente. Anche solo **leggere** durante una scrittura può causare eccezioni o loop infiniti.
+:::
+
+### Esempio: Versione Non Thread-Safe con ReaderWriterLockSlim
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+class DictionaryNonThreadSafe
+{
+    static Dictionary<int, string> dizionario = new();
+    static ReaderWriterLockSlim rwLock = new();
+
+    static void Main()
+    {
+        // Writer tasks
+        Task[] writers = new Task[3];
+        for (int i = 0; i < 3; i++)
+        {
+            int writerId = i;
+            writers[i] = Task.Run(() => ScriveChiavi(writerId));
+        }
+
+        // Reader tasks
+        Task[] readers = new Task[10];
+        for (int i = 0; i < 10; i++)
+        {
+            readers[i] = Task.Run(() => LeggiChiavi());
+        }
+
+        Task.WaitAll(writers.Concat(readers).ToArray());
+
+        Console.WriteLine($"Chiavi totali: {dizionario.Count}");
+    }
+
+    static void ScriveChiavi(int writerId)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            int chiave = writerId * 1000 + i;
+
+            // WRITE LOCK necessario per modifiche
+            rwLock.EnterWriteLock();
+            try
+            {
+                dizionario[chiave] = $"Valore-{writerId}-{i}";
+            }
+            finally
+            {
+                rwLock.ExitWriteLock();
+            }
+
+            Task.Delay(5).Wait();
+        }
+    }
+
+    static void LeggiChiavi()
+    {
+        Random rand = new();
+        for (int i = 0; i < 50; i++)
+        {
+            int chiave = rand.Next(0, 3000);
+
+            // READ LOCK permette letture concorrenti
+            rwLock.EnterReadLock();
+            try
+            {
+                if (dizionario.ContainsKey(chiave))
+                {
+                    string valore = dizionario[chiave];
+                    // Console.WriteLine($"Letto: {chiave} = {valore}");
+                }
+            }
+            finally
+            {
+                rwLock.ExitReadLock();
+            }
+
+            Task.Delay(2).Wait();
+        }
+    }
+}
+```
+
+### Esempio: Versione Thread-Safe con ConcurrentDictionary
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
+
+class ConcurrentDictionaryExample
+{
+    static ConcurrentDictionary<int, string> dizionario = new();
+
+    static void Main()
+    {
+        // Writer tasks
+        Task[] writers = new Task[3];
+        for (int i = 0; i < 3; i++)
+        {
+            int writerId = i;
+            writers[i] = Task.Run(() => ScriveChiavi(writerId));
+        }
+
+        // Reader tasks
+        Task[] readers = new Task[10];
+        for (int i = 0; i < 10; i++)
+        {
+            readers[i] = Task.Run(() => LeggiChiavi());
+        }
+
+        Task.WaitAll(writers.Concat(readers).ToArray());
+
+        Console.WriteLine($"Chiavi totali: {dizionario.Count}");
+    }
+
+    static void ScriveChiavi(int writerId)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            int chiave = writerId * 1000 + i;
+
+            // NESSUN LOCK - thread-safe internamente
+            dizionario[chiave] = $"Valore-{writerId}-{i}";
+
+            // Oppure con TryAdd per evitare sovrascritture
+            // dizionario.TryAdd(chiave, $"Valore-{writerId}-{i}");
+
+            Task.Delay(5).Wait();
+        }
+    }
+
+    static void LeggiChiavi()
+    {
+        Random rand = new();
+        for (int i = 0; i < 50; i++)
+        {
+            int chiave = rand.Next(0, 3000);
+
+            // TryGetValue è atomica e thread-safe
+            if (dizionario.TryGetValue(chiave, out string valore))
+            {
+                // Console.WriteLine($"Letto: {chiave} = {valore}");
+            }
+
+            Task.Delay(2).Wait();
+        }
+    }
+}
+```
+
+### Metodi Atomici Avanzati
+
+`ConcurrentDictionary<TKey, TValue>` offre metodi atomici che combinano più operazioni:
+
+```csharp
+// AddOrUpdate: Aggiunge o aggiorna atomicamente
+dizionario.AddOrUpdate(
+    key: 42,
+    addValue: "Nuovo",
+    updateValueFactory: (key, oldValue) => oldValue + " Aggiornato"
+);
+
+// GetOrAdd: Ottiene o, se non esiste, aggiunge
+string valore = dizionario.GetOrAdd(42, k => $"Valore per chiave {k}");
+
+// TryUpdate: Aggiorna solo se il valore corrente corrisponde
+bool aggiornato = dizionario.TryUpdate(
+    key: 42,
+    newValue: "Nuovo Valore",
+    comparisonValue: "Valore Atteso"
+);
+```
+
+### Analisi e Confronto Prestazioni
+
+:::tip[ConcurrentDictionary - Quando e Perché]
+`ConcurrentDictionary<TKey, TValue>` usa **fine-grained locking** con multiple lock interne (buckets):
+
+**Scenario Ideale:**
+
+- Mix di letture e scritture concorrenti
+- Molti thread (4+)
+- Chiavi distribuite uniformemente
+
+**Quando Evitarlo:**
+
+- Predominanza di letture (99%+) → Considera `ImmutableDictionary` o cache read-only
+- Single-threaded → Dictionary normale è 2-3x più veloce
+- Richiesto ordine di iterazione → usa `SortedDictionary` + lock
+
+**Overhead:**
+
+- Circa 2-3x memoria rispetto a Dictionary standard
+- Lock granulari (tipicamente 31 o più buckets)
+  :::
+
+**Confronto Prestazioni:**
+
+| Operazione                | Dictionary + RWLock     | ConcurrentDictionary          |
+| ------------------------- | ----------------------- | ----------------------------- |
+| Lettura (no contesa)      | ⚡ Molto veloce         | ✅ Veloce                     |
+| Lettura (alta contesa)    | ✅ Concorrente (RWLock) | ✅ Concorrente (fine-grained) |
+| Scrittura (bassa contesa) | ✅ Veloce               | ✅ Veloce                     |
+| Scrittura (alta contesa)  | 🐌 Serializzata         | ✅ Scalabile (lock multipli)  |
+| AddOrUpdate atomico       | ❌ Richiede 2+ lock     | ✅ Singola operazione atomica |
+| Memory footprint          | 💚 Ottimizzato          | 💛 +2-3x overhead             |
+
+**Benchmark Indicativi** (su 8-core, 1M operazioni):
+
+```
+Scenario: 80% Read, 20% Write (8 thread)
+- Dictionary + RWLock:     ~450ms
+- ConcurrentDictionary:    ~280ms (1.6x più veloce)
+
+Scenario: 50% Read, 50% Write (8 thread)
+- Dictionary + RWLock:     ~1200ms
+- ConcurrentDictionary:    ~400ms (3x più veloce)
+```
+
+---
+
+## 5. BlockingCollection - Coordinazione Producer-Consumer
+
+### Funzionalità Principale
+
+`BlockingCollection<T>` è una wrapper thread-safe che aggiunge **capacità di blocking** a qualsiasi collezione che implementa `IProducerConsumerCollection<T>`. È la soluzione raccomandata per il pattern Producer-Consumer.
+
+### Caratteristiche Distintive
+
+:::note[BlockingCollection vs Altre Collezioni]
+A differenza di `ConcurrentQueue` o `ConcurrentStack`, `BlockingCollection<T>` **blocca** i thread quando:
+
+- Il producer tenta di aggiungere elementi a una collezione piena (`Add` blocca)
+- Il consumer tenta di prelevare da una collezione vuota (`Take` blocca)
+
+Questo elimina la necessità di polling attivo o semafori esterni.
+:::
+
+### Collezione Sottostante Personalizzabile
+
+```csharp
+// Default: usa ConcurrentQueue<T> (FIFO)
+var collection = new BlockingCollection<int>();
+
+// Esplicito ConcurrentQueue
+var collectionFIFO = new BlockingCollection<int>(new ConcurrentQueue<int>());
+
+// ConcurrentStack per LIFO
+var collectionLIFO = new BlockingCollection<int>(new ConcurrentStack<int>());
+
+// Con capacità limitata (bounded)
+var collectionBounded = new BlockingCollection<int>(boundedCapacity: 50);
+```
+
+### Esempio Completo: Pipeline di Elaborazione
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
+
+class PipelineExample
+{
+    static BlockingCollection<int> buffer1 = new(boundedCapacity: 10);
+    static BlockingCollection<string> buffer2 = new(boundedCapacity: 10);
+
+    static void Main()
+    {
+        // Stage 1: Producer - genera numeri
+        Task producer = Task.Run(() =>
+        {
+            for (int i = 1; i <= 100; i++)
+            {
+                buffer1.Add(i);
+                Console.WriteLine($"[Producer] Generato: {i}");
+                Thread.Sleep(20);
+            }
+            buffer1.CompleteAdding(); // Segnala fine produzione
+            Console.WriteLine("[Producer] Completato");
+        });
+
+        // Stage 2: Processor - trasforma numeri in stringhe
+        Task processor = Task.Run(() =>
+        {
+            // GetConsumingEnumerable blocca finché ci sono elementi o fino a CompleteAdding
+            foreach (int numero in buffer1.GetConsumingEnumerable())
+            {
+                string elaborato = $"Numero-{numero}-Elaborato";
+                buffer2.Add(elaborato);
+                Console.WriteLine($"[Processor] Elaborato: {numero} -> {elaborato}");
+                Thread.Sleep(30);
+            }
+            buffer2.CompleteAdding();
+            Console.WriteLine("[Processor] Completato");
+        });
+
+        // Stage 3: Consumer - consuma stringhe elaborate
+        Task consumer = Task.Run(() =>
+        {
+            foreach (string item in buffer2.GetConsumingEnumerable())
+            {
+                Console.WriteLine($"[Consumer] Ricevuto: {item}");
+                Thread.Sleep(50);
+            }
+            Console.WriteLine("[Consumer] Completato");
+        });
+
+        Task.WaitAll(producer, processor, consumer);
+        Console.WriteLine("\nPipeline completata!");
+    }
+}
+```
+
+### Metodi Principali
+
+:::tip[API di BlockingCollection]
+
+**Aggiunta (Producer):**
+
+- `Add(T item)` - Blocca se piena
+- `TryAdd(T item, int millisecondsTimeout)` - Timeout configurabile
+- `CompleteAdding()` - Segnala fine produzione
+
+**Rimozione (Consumer):**
+
+- `Take()` - Blocca se vuota
+- `TryTake(out T item, int millisecondsTimeout)` - Timeout configurabile
+- `GetConsumingEnumerable()` - Iterator bloccante (tipicamente in foreach)
+
+**Stato:**
+
+- `Count` - Numero elementi correnti
+- `IsCompleted` - True se CompleteAdding chiamato e collezione vuota
+- `IsAddingCompleted` - True se CompleteAdding chiamato
+  :::
+
+### Analisi e Vantaggi
+
+:::note[Vantaggi rispetto a Semafori Manuali]
+
+Confronto con implementazione manuale (Queue + 2 Semafori):
+
+| Aspetto                     | Queue + Semafori             | BlockingCollection  |
+| --------------------------- | ---------------------------- | ------------------- |
+| Complessità implementazione | Alta (gestione manuale)      | Bassa (built-in)    |
+| Linee di codice             | ~80-100                      | ~30-40              |
+| Gestione terminazione       | Manuale (flag + logica)      | `CompleteAdding()`  |
+| Errori potenziali           | Alto (deadlock, logica)      | Basso (ben testata) |
+| Performance                 | Ottima (se ben implementata) | Ottima              |
+
+Vedere [Esercizio 6](/corso/advanced-csharp/concurrent-computing/esercizi-task#esercizio-6-processo-produttivo-con-pressa-e-verniciatrice) per confronto dettagliato.
+:::
+
+---
+
+## Tabella Riassuntiva: Scelta della Struttura Dati
+
+| Scenario                           | Struttura Consigliata               | Alternativa                     |
+| ---------------------------------- | ----------------------------------- | ------------------------------- |
+| **Lista senza ordine specifico**   | `ConcurrentBag<T>`                  | `ConcurrentQueue<T>`            |
+| **Coda FIFO standard**             | `ConcurrentQueue<T>`                | `BlockingCollection<T>`         |
+| **Producer-Consumer con blocking** | `BlockingCollection<T>`             | `ConcurrentQueue<T>` + semafori |
+| **Stack LIFO**                     | `ConcurrentStack<T>`                | N/A                             |
+| **Dizionario read/write mix**      | `ConcurrentDictionary<TKey,TValue>` | `Dictionary<K,V>` + RWLock      |
+| **Dizionario 99% read**            | `Dictionary<K,V>` (immutabile)      | `ImmutableDictionary<K,V>`      |
+| **Set (valori univoci)**           | `ConcurrentDictionary<T,byte>`      | `HashSet<T>` + lock             |
+
+:::caution[Quando NON Usare Collezioni Concorrenti]
+Le collezioni concurrent hanno overhead. **Evitarle** se:
+
+- Ambiente single-threaded garantito
+- Prestazioni critiche e nessuna condivisione reale
+- Accesso completamente read-only dopo inizializzazione
+
+In questi casi, le collezioni standard sono 2-5x più veloci.
+:::
+
+---
+
+## Best Practices e Raccomandazioni
+
+:::tip[Linee Guida Generali]
+
+1. **Preferisci Collezioni Concurrent a Lock Manuali**
+
+   - Meno errori, codice più pulito
+   - Performance comparabili o migliori
+   - Manutenibilità superiore
+
+2. **Usa BlockingCollection per Producer-Consumer**
+
+   - Elimina polling attivo
+   - Gestione terminazione elegante con `CompleteAdding()`
+   - Supporta multiple producers/consumers
+
+3. **Attenzione all'Overhead**
+   - ~2-3x memoria in più rispetto a collezioni standard
+   - Overhead accettabile in scenari realmente concorrenti
+
+4 **Evita Iterazioni Durante Modifiche**
+
+- Anche se thread-safe, `foreach` può vedere snapshot inconsistenti
+- Usa `ToArray()` per snapshot o disegna logica tollerante
+
+5. **Monitoring e Performance**
+   - Misura sempre con profiler in scenari reali
+   - Le performance teoriche possono variare con pattern di accesso
+     :::
+
+:::note[Riferimenti Ufficiali Microsoft]
+
+- [Collections Thread-Safe](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/)
+- [When to Use Concurrent Collection](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/when-to-use-a-thread-safe-collection)
+- [BlockingCollection Overview](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/blockingcollection-overview)
+- [ConcurrentDictionary](https://learn.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2)
+  :::
