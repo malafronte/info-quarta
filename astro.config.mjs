@@ -132,8 +132,7 @@ export default defineConfig({
       tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
       components: {
         //Header: "./src/components/CustomHeader.astro",
-        // Footer override example
-        // Footer: "./src/components/Footer.astro",
+        Footer: "./src/components/CustomFooter.astro",
       },
       expressiveCode: {
         themes: ["houston", "light-plus"],
