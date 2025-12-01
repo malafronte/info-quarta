@@ -6,13 +6,13 @@ sidebar:
   order: 40
 
 ---
-<style>
-img {display: block; margin: 0 auto;}
-</style>
+<style>{
+  img {display: block; margin: 0 auto;}
+}</style>
 
 ## Task Parallel Library (TPL)
 
-<https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-parallel-library-tpl>
+[https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-parallel-library-tpl](https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-parallel-library-tpl)
 
 La libreria Task Parallel Library (TPL) è un insieme di tipi e API pubblici negli spazi dei nomi [System.Threading](https://docs.microsoft.com/en-us/dotnet/api/system.threading) e [System.Threading.Tasks](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks). Lo scopo di TPL è rendere gli sviluppatori più produttivi semplificando l'aggiunta di parallelismo e concorrenza alle applicazioni. La libreria TPL adatta dinamicamente il grado di concorrenza per sfruttare efficacemente tutti i processori disponibili. Inoltre gestisce il partizionamento del lavoro, la schedulazione dei thread nel [ThreadPool](https://docs.microsoft.com/en-us/dotnet/api/system.threading.threadpool), il supporto per l'annullamento, la gestione dello stato e altri dettagli di basso livello. Usando TPL è possibile ottimizzare le prestazioni concentrandosi sulle operazioni applicative rilevanti.
 
@@ -34,7 +34,7 @@ I Task possono rendere l'applicazione più reattiva: se il thread dell'interfacc
 
 ### C# Task: Programmazione asincrona e/o parallela basata su attività
 
-<https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-based-asynchronous-programming>
+[https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-based-asynchronous-programming](https://docs.microsoft.com/en-us/dotnet/standard/parallel-programming/task-based-asynchronous-programming)
 
 La libreria TPL si basa sul concetto di attività (task), che rappresenta un'operazione asincrona. In qualche modo un task è analogo a un thread o a un elemento di lavoro del `ThreadPool`, ma a un livello di astrazione più elevato. Per "parallelismo delle attività" si intende l'esecuzione contemporanea di una o più attività indipendenti. I vantaggi principali delle attività sono:
 
@@ -43,13 +43,13 @@ La libreria TPL si basa sul concetto di attività (task), che rappresenta un'ope
 
 Per questi motivi, TPL è l'API preferita in .NET per codice multithreading, asincrono e parallelo.
 
-Il metodo [Parallel.Invoke](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.invoke) consente di eseguire simultaneamente più azioni; si passano delegati Action, spesso come espressioni lambda. Esempio:
+Il metodo [Parallel.Invoke](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.invoke) consente di eseguire simultaneamente più azioni; si passano delegati `Action`, spesso come espressioni lambda. Esempio:
 
 ```cs
 Parallel.Invoke(() => DoSomeWork(), () => DoSomeOtherWork());
 ```
 
-Un'attività senza valore di ritorno è rappresentata da `Task`. Un'attività che restituisce un valore è `Task<TResult>` che eredita da `Task`.
+Un'attività senza valore di ritorno è rappresentata da `Task`. Un'attività che restituisce un valore è `Task<`TResult`>` che eredita da `Task`.
 
 L'oggetto `Task` gestisce i dettagli dell'infrastruttura e mette a disposizione metodi e proprietà (es. `Status`) per interrogare lo stato dell'attività (avviata, completata, annullata, faulted). Lo stato è rappresentato dall'enumerazione `TaskStatus`.
 
@@ -163,32 +163,34 @@ namespace TaskWithCustomData
     }
 }
 // The example displays output like the following:
-Task Name = 0, Task Id = 1, Task status = RanToCompletion,  created at 637737183135068576, ran on Thread Id = 5.
-Task Name = 1, Task Id = 2, Task status = RanToCompletion,  created at 637737183135317927, ran on Thread Id = 6.
-Task Name = 2, Task Id = 3, Task status = RanToCompletion,  created at 637737183135345356, ran on Thread Id = 4.
-Task Name = 3, Task Id = 4, Task status = RanToCompletion,  created at 637737183135369204, ran on Thread Id = 7.
-Task Name = 4, Task Id = 5, Task status = RanToCompletion,  created at 637737183135391197, ran on Thread Id = 11.
-Task Name = 5, Task Id = 6, Task status = RanToCompletion,  created at 637737183135415846, ran on Thread Id = 13.
-Task Name = 6, Task Id = 7, Task status = RanToCompletion,  created at 637737183135794745, ran on Thread Id = 8.
-Task Name = 7, Task Id = 8, Task status = RanToCompletion,  created at 637737183135879399, ran on Thread Id = 10.
-Task Name = 8, Task Id = 9, Task status = RanToCompletion,  created at 637737183135879724, ran on Thread Id = 12.
-Task Name = 9, Task Id = 10, Task status = RanToCompletion,  created at 637737183135879799, ran on Thread Id = 9.
+// Task Name = 0, Task Id = 1, Task status = RanToCompletion,  created at 637737183135068576, ran on Thread Id = 5.
+// Task Name = 1, Task Id = 2, Task status = RanToCompletion,  created at 637737183135317927, ran on Thread Id = 6.
+// Task Name = 2, Task Id = 3, Task status = RanToCompletion,  created at 637737183135345356, ran on Thread Id = 4.
+// Task Name = 3, Task Id = 4, Task status = RanToCompletion,  created at 637737183135369204, ran on Thread Id = 7.
+// Task Name = 4, Task Id = 5, Task status = RanToCompletion,  created at 637737183135391197, ran on Thread Id = 11.
+// Task Name = 5, Task Id = 6, Task status = RanToCompletion,  created at 637737183135415846, ran on Thread Id = 13.
+// Task Name = 6, Task Id = 7, Task status = RanToCompletion,  created at 637737183135794745, ran on Thread Id = 8.
+// Task Name = 7, Task Id = 8, Task status = RanToCompletion,  created at 637737183135879399, ran on Thread Id = 10.
+// Task Name = 8, Task Id = 9, Task status = RanToCompletion,  created at 637737183135879724, ran on Thread Id = 12.
+// Task Name = 9, Task Id = 10, Task status = RanToCompletion,  created at 637737183135879799, ran on Thread Id = 9.
 
 ```
 
 Ogni task ha un Id univoco accessibile tramite Task.Id.
 
-Un punto importante: quando si usa una lambda in un ciclo, è importante prestare attenzione alle variabili catturate: la lambda può acquisire il valore finale della variabile di ciclo invece del valore per ogni iterazione; la soluzione è passare i dati necessari come stato al task invece di fare affidamento sulla variabile di ciclo.
+:::caution
+Quando si usa una lambda in un ciclo, è importante prestare attenzione alle variabili catturate: la lambda può acquisire il valore finale della variabile di ciclo invece del valore per ogni iterazione; la soluzione è passare i dati necessari come stato al task invece di fare affidamento sulla variabile di ciclo.
+:::
 
 ### Modello di esecuzione di un Task
 
 Il delegato di un task viene eseguito in un thread separato. In macchine single-core ciò può implicare molti context switch; su macchine multicore i task possono essere distribuiti sui core disponibili e offrire vantaggio rispetto all'esecuzione sequenziale.
 
-Nota di utilizzo: chiamare t.Wait(); è equivalente a chiamare Join su un thread: il chiamante aspetta che il task termini.
+Nota di utilizzo: chiamare `t.Wait();` è equivalente a chiamare `Join` su un thread: il chiamante aspetta che il task termini.
 
 ### Task C# che restituisce un valore
 
-.NET dispone di `Task<TResult>` per task che restituiscono valori. L'accesso alla proprietà Result forza l'attesa fino al completamento del task (comportamento equivalente a Join/Wait).
+.NET dispone di `Task<TResult>` per task che restituiscono valori. L'accesso alla proprietà Result forza l'attesa fino al completamento del task (comportamento equivalente a `Join`/`Wait`).
 
 ```cs
 using System;
@@ -293,7 +295,7 @@ namespace TaskContinuation01
 
 È possibile creare una continuazione che verrà eseguita al termine di una o tutte le attività di un gruppo di attività. Per eseguire una continuazione al termine di tutte le attività precedenti, chiamare il metodo statico [Task.WhenAll](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall) o il metodo [TaskFactory.ContinueWhenAll](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.continuewhenall) dell'istanza. Per eseguire una continuazione al termine di almeno una delle attività precedenti, chiamare il metodo statico [Task.WhenAny](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenany) o il metodo [TaskFactory.ContinueWhenAny](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.continuewhenany) dell'istanza.
 
-Nell'esempio seguente viene chiamato il metodo [Task.WhenAll(IEnumerable<Task>)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall#System_Threading_Tasks_Task_WhenAll_System_Collections_Generic_IEnumerable_System_Threading_Tasks_Task__) per creare un'attività di continuazione che riflette il risultato delle 10 attività precedenti. Ogni attività precedente eleva al quadrato un valore di indice compreso tra uno e 10. Se le attività precedenti vengono completate correttamente (ovvero la relativa proprietà [Task.Status](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.status) è [TaskStatus.RanToCompletion](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskstatus#System_Threading_Tasks_TaskStatus_RanToCompletion)), la proprietà [Task<TResult>.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) della continuazione è una vettore dei valori [Task<TResult>.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) restituiti da ogni attività precedente. L'esempio somma tali valori per calcolare la somma dei quadrati per tutti i numeri compresi tra uno e 10.
+Nell'esempio seguente viene chiamato il metodo [Task.WhenAll(IEnumerable&lt;Task&gt;)](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.whenall#System_Threading_Tasks_Task_WhenAll_System_Collections_Generic_IEnumerable_System_Threading_Tasks_Task__) per creare un'attività di continuazione che riflette il risultato delle 10 attività precedenti. Ogni attività precedente eleva al quadrato un valore di indice compreso tra uno e 10. Se le attività precedenti vengono completate correttamente (ovvero la relativa proprietà [Task.Status](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.status) è [TaskStatus.RanToCompletion](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskstatus#System_Threading_Tasks_TaskStatus_RanToCompletion)), la proprietà [Task&lt;TResult&gt;.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) della continuazione è una vettore dei valori [Task&lt;TResult&gt;.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) restituiti da ogni attività precedente. L'esempio somma tali valori per calcolare la somma dei quadrati per tutti i numeri compresi tra uno e 10.
 
 ```cs
 using System;
@@ -333,7 +335,7 @@ namespace ContinuationAllDemo01
 
 ### Pianificazione di continuazioni diverse
 
-ContinueWith offre overload per configurare quando la continuazione verrà eseguita (es. solo in caso di fault, solo se cancellata, solo se completata con successo), permettendo di definire comportamenti distinti per ciascun esito.
+`ContinueWith` offre overload per configurare quando la continuazione verrà eseguita (es. solo in caso di fault, solo se cancellata, solo se completata con successo), permettendo di definire comportamenti distinti per ciascun esito.
 
 ```cs
 using System;
@@ -578,9 +580,6 @@ namespace ParallelDemoTask
 Un esempio di utilizzo di Semafori con i Task:
 
 ```cs
-Esempio con in task (i task saranno introdotti nei prossimi paragrafi):
-
-```cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -650,7 +649,7 @@ namespace SemaforoDemo01
 
 ### Parallelismo dei dati (Task Parallel Library)
 
-<https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/data-parallelism-task-parallel-library>
+[https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/data-parallelism-task-parallel-library](https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/data-parallelism-task-parallel-library)
 
 Con "parallelismo dei dati" si intende eseguire contemporaneamente la stessa operazione sugli elementi di una matrice o raccolta. La raccolta viene partizionata in segmenti eseguiti da thread diversi. TPL supporta il parallelismo dei dati tramite `System.Threading.Tasks.Parallel`, che fornisce cicli paralleli `Parallel.For` e `Parallel.ForEach`. La scrittura della logica è simile ai cicli sequenziali; non è necessario creare thread o gestire manualmente il lavoro di basso livello.
 
@@ -700,7 +699,7 @@ namespace ParallelForDemo
 
 ```
 
-Nei cicli paralleli è possibile usare variabili partition-local per accumuli locali e poi combinare il risultato in modo thread-safe (es. Interlocked.Add).
+Nei cicli paralleli è possibile usare variabili partition-local per accumuli locali e poi combinare il risultato in modo thread-safe (es. `Interlocked.Add`).
 
 ```cs
 using System;
@@ -713,8 +712,7 @@ namespace ParallelMatricesMultiply
     class Program
     {
         #region Sequential_Loop
-        static void MultiplyMatricesSequential(double[,] matA, double[,] matB,
-                                                double[,] result)
+        static void MultiplyMatricesSequential(double[,] matA, double[,] matB, double[,] result)
         {
             int matACols = matA.GetLength(1);
             int matBCols = matB.GetLength(1);
@@ -727,23 +725,48 @@ namespace ParallelMatricesMultiply
                     double temp = 0;
                     for (int k = 0; k < matACols; k++)
                     {
+                        // Accesso a matB[k, j] è lento per grandi matrici (salta righe)
                         temp += matA[i, k] * matB[k, j];
                     }
-                    result[i, j] += temp;
+                    result[i, j] = temp;
                 }
             }
         }
         #endregion
 
-        #region Parallel_Loop
+        #region Parallel_Loop_Optimized
+
+        // Helper per trasporre la matrice.
+        // Trasforma le colonne in righe per migliorare la "Cache Locality".
+        static double[,] TransposeMatrixParallel(double[,] matrix)
+        {
+            int rows = matrix.GetLength(0);
+            int cols = matrix.GetLength(1);
+            double[,] result = new double[cols, rows];
+
+            Parallel.For(0, rows, i =>
+            {
+                for (int j = 0; j < cols; j++)
+                {
+                    result[j, i] = matrix[i, j];
+                }
+            });
+
+            return result;
+        }
+
         static void MultiplyMatricesParallel(double[,] matA, double[,] matB, double[,] result)
         {
             int matACols = matA.GetLength(1);
             int matBCols = matB.GetLength(1);
             int matARows = matA.GetLength(0);
 
-            // A basic matrix multiplication.
-            // Parallelize the outer loop to partition the source array by rows.
+            // PASSO 1: Trasposizione
+            // Costo iniziale aggiuntivo, ma guadagno massiccio durante i calcoli.
+            // Ora scorrere una "colonna" di B equivale a scorrere una riga di matBTransposed.
+            double[,] matBTransposed = TransposeMatrixParallel(matB);
+
+            // PASSO 2: Moltiplicazione Parallela
             Parallel.For(0, matARows, i =>
             {
                 for (int j = 0; j < matBCols; j++)
@@ -751,29 +774,32 @@ namespace ParallelMatricesMultiply
                     double temp = 0;
                     for (int k = 0; k < matACols; k++)
                     {
-                        temp += matA[i, k] * matB[k, j];
+                        // OTTIMIZZAZIONE QUI:
+                        // Invece di matB[k, j], usiamo matBTransposed[j, k].
+                        // Entrambi gli accessi (matA e matBTransposed) ora incrementano 'k' (l'indice destro).
+                        // Questo significa che stiamo leggendo memoria contigua.
+                        temp += matA[i, k] * matBTransposed[j, k];
                     }
                     result[i, j] = temp;
                 }
-            }); // Parallel.For
+            });
         }
         #endregion
-
 
         #region Main
         static void Main(string[] args)
         {
-            // Set up matrices. Use small values to better view 
-            // result matrix. Increase the counts to see greater 
-            // speedup in the parallel loop vs. the sequential loop.
-            int colCount = 1800;
-            int rowCount = 2000;
-            int colCount2 = 270;
+            // Set up matrices.
+            int colCount = 1000;
+            int rowCount = 1000;
+            int colCount2 = 1000;
+
+            Console.WriteLine($"Inizializzazione matrici {rowCount}x{colCount}...");
             double[,] m1 = InitializeMatrix(rowCount, colCount);
             double[,] m2 = InitializeMatrix(colCount, colCount2);
             double[,] result = new double[rowCount, colCount2];
 
-            // First do the sequential version.
+            // --- SEQUENTIAL ---
             Console.Error.WriteLine("Executing sequential loop...");
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -781,29 +807,31 @@ namespace ParallelMatricesMultiply
             MultiplyMatricesSequential(m1, m2, result);
             stopwatch.Stop();
             long sequentialTime = stopwatch.ElapsedMilliseconds;
-            Console.Error.WriteLine("Sequential loop time in milliseconds: {0}",
-                                    sequentialTime);
+            Console.Error.WriteLine("Sequential loop time in milliseconds: {0}", sequentialTime);
 
-            // For the skeptics.
-            //OfferToPrint(rowCount, colCount2, result);
-
-            // Reset timer and results matrix. 
+            // Reset timer and results matrix.
             stopwatch.Reset();
             result = new double[rowCount, colCount2];
 
-            // Do the parallel loop.
-            Console.Error.WriteLine("Executing parallel loop...");
+            // Garbage Collection forzato per pulire la memoria prima del test parallelo
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
+            // --- PARALLEL (Optimized) ---
+            Console.Error.WriteLine("Executing parallel loop (with Transposition)...");
             stopwatch.Start();
+
+            // Nota: Il tempo includerà anche il tempo necessario per trasporre la matrice!
             MultiplyMatricesParallel(m1, m2, result);
+
             stopwatch.Stop();
             long parallelTime = stopwatch.ElapsedMilliseconds;
-            Console.Error.WriteLine("Parallel loop time in milliseconds: {0}",
-                                    parallelTime);
-            //OfferToPrint(rowCount, colCount2, result);
-            //calculate speedup factor
+            Console.Error.WriteLine("Parallel loop time in milliseconds: {0}", parallelTime);
+
+            // --- RESULTS ---
             double speedup = (double)sequentialTime / parallelTime;
-            Console.WriteLine($"Speedup = {speedup:F2}; il calcolo parallelo è {speedup:F2} volte più veloce di quello sequenziale");
-            // Keep the console window open in debug mode.
+            Console.WriteLine($"Speedup = {speedup:F2}; il calcolo parallelo ottimizzato è {speedup:F2} volte più veloce.");
+
             Console.Error.WriteLine("Press any key to exit.");
             Console.ReadKey();
         }
@@ -813,7 +841,6 @@ namespace ParallelMatricesMultiply
         static double[,] InitializeMatrix(int rows, int cols)
         {
             double[,] matrix = new double[rows, cols];
-
             Random r = new Random();
             for (int i = 0; i < rows; i++)
             {
@@ -824,34 +851,12 @@ namespace ParallelMatricesMultiply
             }
             return matrix;
         }
-
-        private static void OfferToPrint(int rowCount, int colCount, double[,] matrix)
-        {
-            Console.Error.Write("Computation complete. Print results (y/n)? ");
-            char c = Console.ReadKey(true).KeyChar;
-            Console.Error.WriteLine(c);
-            if (Char.ToUpperInvariant(c) == 'Y')
-            {
-                if (!Console.IsOutputRedirected && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) Console.WindowWidth = 180;
-                Console.WriteLine();
-                for (int x = 0; x < rowCount; x++)
-                {
-                    Console.WriteLine("ROW {0}: ", x);
-                    for (int y = 0; y < colCount; y++)
-                    {
-                        Console.Write("{0:#.##} ", matrix[x, y]);
-                    }
-                    Console.WriteLine();
-                }
-            }
-        }
         #endregion
     }
-
 }
 ```
 
-### Child task attachati e staccati
+### Child task attached e detached
 
 Un child task (o nested task) è un Task creato all'interno del delegato di un altro Task (parent). Un child può essere detached o attached. Un detached child esegue indipendentemente dal parent; un attached child creato con `TaskCreationOptions.AttachedToParent` fa sì che il parent attenda il completamento dei figli e propaghi le eccezioni. Per la maggior parte degli scenari si raccomandano detached child perché relazioni meno complesse: i task creati dentro altri task sono detached per default.
 
@@ -885,7 +890,47 @@ public class Example
 //        Nested task completing.
 ```
 
-Se il child task è un oggetto [Task<TResult>](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) invece di un [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task), è possibile assicurarsi che il parent attenda il completamento del child accedendo alla proprietà [Task<TResult>.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) del child anche se è un detached child task. La proprietà [Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) blocca fino al completamento del task, come nell'esempio seguente.
+Il metodo `Thread.SpinWait(500000)` serve a **simulare un carico di lavoro (o un ritardo)** mantenendo la CPU occupata.
+
+
+1. Che cosa fa tecnicamente
+
+    `Thread.SpinWait` forza il processore a eseguire un ciclo stretto (loop) per un numero specifico di iterazioni (in questo caso, 500.000).
+
+    -   **Busy Waiting:** A differenza di una pausa "classica", il thread non si "addormenta". Rimane **attivo** e continua a consumare cicli della CPU.
+
+    -   **Iterazioni, non Tempo:** Il numero `500000` non rappresenta millisecondi o secondi, ma **cicli di iterazione**. La durata reale in termini di tempo dipende dalla velocità del processore del computer su cui gira il codice.
+
+2. Differenza tra `SpinWait` e `Sleep`
+
+    È fondamentale distinguere questo metodo da `Thread.Sleep()`, che è molto più comune.
+
+    | **Caratteristica** | **Thread.Sleep(x)** | **Thread.SpinWait(x)** |
+    | --- |  --- |  --- |
+    | **Stato della CPU** | Il thread cede la CPU ad altri processi ("riposa"). | Il thread tiene la CPU impegnata al 100% ("gira a vuoto"). |
+    | **Utilizzo ideale** | Attese lunghe (es. database, download). | Attese brevissime (pochi microsecondi). |
+    | **Costo** | Alto overhead (context switch). | Basso overhead (nessun context switch). |
+
+3. Perché viene usato in questo esempio?
+
+    In questo specifico codice, `SpinWait` viene usato per uno scopo didattico preciso: **Creare un ritardo prevedibile senza sospendere il thread.**
+
+    L'obiettivo dell'esempio è dimostrare che il **Parent Task** (Task esterno) termina *prima* del **Child Task** (Task annidato).
+
+    1.  Il `Child Task` inizia.
+
+    2.  Esegue `SpinWait` (simula un lavoro breve).
+
+    3.  Nel frattempo, il `Parent Task` finisce la sua esecuzione perché, di default, i task annidati sono **indipendenti** (Detached).
+
+    Se si usasse `Thread.Sleep`, il sistema operativo potrebbe decidere di mettere in pausa il thread del Child e dare priorità al Parent, rendendo l'ordine di output meno deterministico o semplicemente "rallentando" l'esecuzione in modo diverso. `SpinWait` assicura che quel thread stia "lavorando" per quel breve lasso di tempo, rendendo evidente che il Parent non lo sta aspettando.
+
+4. Sintesi dell'output
+
+    Il codice produce quell'output perché il `parent.Wait()` aspetta solo il task genitore. Poiché il task figlio non è "attaccato" (`AttachedToParent`), il genitore finisce, stampa "Outer has completed", e solo dopo il figlio finisce il suo "SpinWait" e stampa "Nested task completing".
+
+
+Se il child task è un oggetto [Task&lt;TResult&gt;](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) invece di un [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task), è possibile assicurarsi che il parent attenda il completamento del child accedendo alla proprietà [Task&lt;TResult&gt;.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) del child anche se è un detached child task. La proprietà [Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) blocca fino al completamento del task, come nell'esempio seguente.
 
 ```cs
 using System;
@@ -985,7 +1030,7 @@ public class Example
 
 ### Cancellazione di un'attività
 
-<https://docs.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads>
+[https://docs.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads](https://docs.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads)
 
 A partire da .NET Framework 4 si usa un modello unificato per l'annullamento cooperativo basato su `CancellationTokenSource` e `CancellationToken`. Chi crea il token chiede l'annullamento; le operazioni che ricevono il token devono cooperare per osservare la richiesta e terminare in modo appropriato.
 
@@ -1061,7 +1106,7 @@ namespace TaskCancellationDemo
 ```
 
 :::note
-Lanciare l'esempio precedente con CTRL+F5 (Avvia senza Debug), oppure se si lancia con F5 (Start Debug), Visual Studio si ferma sull'eccezione `OperationCanceledException` a meno che non si modifichi la configurazione di default di Visual Studio per le eccezioni.
+Lanciare l'esempio precedente con CTRL+F5 (Avvia senza Debug), oppure se si lancia con F5 (Start Debug), Visual Studio Code si ferma sull'eccezione `OperationCanceledException` a meno che non si modifichi la configurazione di default di Visual Studio Code per le eccezioni.
 :::
 
 #### Cancellare un task e i suoi figli
@@ -1069,6 +1114,9 @@ Lanciare l'esempio precedente con CTRL+F5 (Avvia senza Debug), oppure se si lanc
 È possibile creare task cancellabili passando il token al delegato e al metodo `Task.Run`; il delegato deve rilevare la richiesta e lanciare `OperationCanceledException` se opportuno. Se si usa `Wait` o `WhenAll` su task cancellati, è necessario gestire le eccezioni in try/catch (`AggregateException/OperationCanceledException`).
 
 ```cs
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Concurrent;
 
 namespace TaskAndSonsCancellationDemo
@@ -1293,13 +1341,14 @@ public class CustomException : Exception
    {}
 }
 // The example displays the following output:
-//    Detached child task faulted.
 //    Attached child task faulted.
 ```
 
 Altro esempio:
 
 ```cs
+using System;
+using System.Threading.Tasks;
 namespace TaskExceptionsDemos
 {
     internal class Program

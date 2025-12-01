@@ -6,9 +6,9 @@ sidebar:
   order: 70
 ---
 
-<style>{`
+<style>{
   img {display: block; margin: 0 auto;}
-`}</style>
+}</style>
 
 In questa pagina vengono proposti alcuni esercizi svolti sulla programmazione con i Task in C#. L'obiettivo è quello di mettere in pratica i concetti appresi riguardo alla Task Parallel Library (TPL), la gestione asincrona, la sincronizzazione e i pattern avanzati di concorrenza.
 

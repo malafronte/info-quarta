@@ -170,18 +170,71 @@ Supponiamo due thread X e Y che vogliono accedere a una risorsa R. Si sceglie un
 
 .NET offre vari tipi per sincronizzare l'accesso a risorse condivise o coordinare l'interazione tra thread.
 
-- Classe WaitHandle e primitive di sincronizzazione basate su handle del sistema operativo:
-  - System.Threading.Mutex: concede accesso esclusivo a una risorsa. Lo stato è segnalato se nessun thread lo possiede.
-  - System.Threading.Semaphore: limita il numero di thread che possono accedere simultaneamente a una risorsa o a un pool di risorse.
+- Classe WaitHandle e primitive di sincronizzazione basate su **handle del sistema operativo**:
+  - `System.Threading.Mutex`: concede accesso esclusivo a una risorsa. Lo stato è segnalato se nessun thread lo possiede.
+  - `System.Threading.Semaphore`: limita il numero di thread che possono accedere simultaneamente a una risorsa o a un pool di risorse.
 
-I tipi "lightweight" non si basano su handle del kernel e generalmente offrono prestazioni migliori, ma non supportano la sincronizzazione interprocesso. Usarli per sincronizzare thread all'interno della stessa applicazione.
+I tipi **"lightweight"** non si basano su handle del kernel e generalmente offrono prestazioni migliori, ma non supportano la sincronizzazione interprocesso. Usarli per sincronizzare thread all'interno della stessa applicazione.
 
-I tipi leggeri illustrati in questa guida:
+I tipi leggeri illustrati in questa guida sono:
 
-- SemaphoreSlim: alternativa leggera a Semaphore.
-- System.Threading.Monitor: fornisce esclusione reciproca tramite lock sull'oggetto identificativo della risorsa; include metodi Enter, TryEnter, Exit, Wait, Pulse, PulseAll.
+- `SemaphoreSlim`: alternativa leggera a Semaphore.
+- `System.Threading.Monitor`: fornisce esclusione reciproca tramite lock sull'oggetto identificativo della risorsa; include metodi Enter, TryEnter, Exit, Wait, Pulse, PulseAll.
 
-<http://www.albahari.com/threading/part2.aspx>
+#### Analisi Comparata: Monitor, Mutex e SemaphoreSlim in .NET
+
+Nel contesto del framework .NET, la gestione della concorrenza richiede la selezione accurata della primitiva di sincronizzazione più idonea. Sebbene `Monitor`, `Mutex` e `SemaphoreSlim` condividano l'obiettivo di coordinare l'accesso alle risorse condivise, essi differiscono sostanzialmente per implementazione interna, ambito di visibilità e supporto ai pattern asincroni.
+
+##### 1. System.Threading.Monitor
+
+Il **Monitor** rappresenta la primitiva di sincronizzazione fondamentale per le applicazioni gestite (managed). Esso implementa un meccanismo di esclusione reciproca (Mutual Exclusion) ibrido ed esclusivo per il processo corrente.
+
+- **Implementazione Tecnica:** Il Monitor in C# non è un oggetto del kernel puro. Esso sfrutta l'**Object Header** (nello specifico il *SyncBlock Index*) presente in ogni oggetto allocato sull'heap gestito. L'implementazione è definita "ibrida" poiché inizia con uno *spin-wait* (ciclo di attesa attiva in user-mode) per operazioni brevi, scalando a un'attesa basata sul kernel solo in caso di contesa prolungata.
+
+- **Sintassi:** Il linguaggio C# astrae l'utilizzo delle chiamate `Monitor.Enter` e `Monitor.Exit` attraverso la parola chiave `lock`. Questo garantisce che il blocco venga rilasciato anche in presenza di eccezioni, grazie a un blocco `try-finally` implicito generato dal compilatore.
+
+- **Limitazioni:**
+
+    - **Ambito:** Visibile solo all'interno dell'`AppDomain` (non può sincronizzare processi diversi).
+
+    - **Thread Affinity:** Il thread che acquisisce il lock deve essere necessariamente lo stesso che lo rilascia.
+
+    - **Sincronia:** Non supporta l'attesa asincrona (non è compatibile con `await` all'interno del blocco critico).
+
+##### 2. System.Threading.Mutex
+
+La classe **Mutex** (Mutual Exclusion) è un wrapper gestito che incapsula un oggetto di sincronizzazione del kernel di Windows (Win32 Kernel Object).
+
+- **Implementazione Tecnica:** A differenza del Monitor, il Mutex richiede sempre una transizione in **Kernel Mode** per ogni operazione di acquisizione o rilascio, comportando un overhead computazionale significativamente maggiore (nell'ordine di grandezza dei microsecondi rispetto ai nanosecondi del Monitor).
+
+- **Identità di Sistema (IPC):** La caratteristica distintiva del Mutex è la possibilità di essere identificato da un nome univoco a livello di Sistema Operativo (es. `Global\MyMutex`). Ciò abilita la comunicazione tra processi (**IPC - Inter-Process Communication**), permettendo di sincronizzare thread appartenenti ad applicazioni distinte.
+
+- **Thread Affinity:** Analogamente al Monitor, possiede affinità di thread: solo il thread proprietario può rilasciarlo.
+
+##### 3. System.Threading.SemaphoreSlim
+
+Il **SemaphoreSlim** è una versione "leggera" e moderna del classico `Semaphore`. Mentre il `Semaphore` tradizionale è un wrapper del kernel (come il Mutex), il `SemaphoreSlim` è implementato interamente in codice gestito (user-mode), ottimizzato per l'attesa breve.
+
+- **Funzionamento:** A differenza di Mutex e Monitor che sono binari (locked/unlocked), il semaforo gestisce un contatore numerico che permette l'accesso concorrente a un numero $N$ di thread.
+
+    - Se inizializzato con `maxCount = 1`, il `SemaphoreSlim` si comporta funzionalmente come un **Mutex Asincrono**.
+
+- **Supporto Asincrono (Key Feature):** Questa è la differenza critica nell'ecosistema .NET moderno. `SemaphoreSlim` espone il metodo `WaitAsync()`. Ciò permette al thread corrente di non bloccarsi fisicamente durante l'attesa della risorsa, ma di restituire il controllo al pool di thread, ottimizzando la scalabilità nelle applicazioni I/O bound o nelle UI.
+
+- **Thread Affinity:** **Non possiede affinità di thread.** Un thread può acquisire il semaforo (decrementare il contatore) e un thread diverso può rilasciarlo (incrementare il contatore).
+
+#### Tabella di Sintesi Tecnica
+
+La seguente tabella riassume le differenze architetturali e funzionali per guidare la scelta implementativa.
+
+| **Caratteristica**    | **Monitor (lock)**          | **Mutex**                              | **SemaphoreSlim**                        |
+| --------------------- | --------------------------- | -------------------------------------- | ---------------------------------------- |
+| **Tipo di Oggetto**   | Gestito (User-mode ibrido)  | Kernel Object (Win32 wrapper)          | Gestito (User-mode ibrido)               |
+| **Ambito (Scope)**    | Intra-processo (AppDomain)  | **Inter-processo** (Sistema Operativo) | Intra-processo                           |
+| **Performance**       | Molto Alta (ns)             | Bassa (µs - Kernel transition)         | Alta (ns)                                |
+| **Pattern Asincrono** | **Non supportato**          | Non supportato nativamente             | **Pieno supporto (`WaitAsync`)**         |
+| **Semantica**         | Mutua Esclusione (1 thread) | Mutua Esclusione (1 thread)            | Throttling (N thread) o Mutex (1 thread) |
+| **Thread Affinity**   | Sì (Obbligatoria)           | Sì (Obbligatoria)                      | No (Opzionale)                           |
 
 **Confronto tra costrutti di locking:**
 
@@ -192,7 +245,70 @@ I tipi leggeri illustrati in questa guida:
 | [SemaphoreSlim] (introdotto in Framework 4.0) | Limita il numero di thread concorrenti che possono accedere a una risorsa o sezione di codice | -                  | 200ns          |
 | [Semaphore]                                   | Versione utilizzabile cross-process                                                           | Sì                 | 1000ns         |
 
-\*Tempo per acquisire e rilasciare il lock sullo stesso thread (assumendo nessun blocco), misurato su Intel Core i7 860.
+\*Tempo per acquisire e rilasciare il lock sullo stesso thread (assumendo nessun blocco), misurato su Intel Core i7 860.[^1]
+
+[^1]: <http://www.albahari.com/threading/part2.aspx>
+
+#### Scenario Pratico: Quando utilizzare cosa
+
+Di seguito si delineano le linee guida per l'adozione delle primitive in scenari di produzione:
+
+1. Scenario Standard (In-Process Safety):
+
+    Si utilizzi Monitor (pattern lock) per proteggere l'accesso a strutture dati in memoria (es. List<T>, campi statici) quando il codice è sincrono e l'attesa è breve. È la scelta predefinita per prestazioni e sicurezza.
+
+2. Scenario Single-Instance (Cross-Process):
+
+    Si utilizzi Mutex esclusivamente quando è necessario garantire che una sola istanza dell'applicazione sia in esecuzione sull'intera macchina.
+
+3. Scenario Asincrono o Throttling:
+
+    Si utilizzi SemaphoreSlim in due casi specifici:
+
+    - Quando il codice all'interno della sezione critica utilizza `await` (es. chiamate a database, API web). L'uso di `lock` con `await` è vietato dal compilatore.
+
+    - Quando si desidera limitare il parallelismo (es. permettere massimo 5 download simultanei), impostando il contatore iniziale a 5.
+
+#### Esempio di Codice Comparativo
+
+```cs
+public class EsempioSincronizzazione
+{
+    // 1. MONITOR: Oggetto semplice per il lock
+    private readonly object _lockObj = new object();
+
+    // 2. SEMAPHORESLIM: Inizializzato a 1 per comportarsi come un Mutex
+    private readonly SemaphoreSlim _asyncLock = new SemaphoreSlim(1, 1);
+
+    public void MetodoSincrono()
+    {
+        // Uso standard del Monitor tramite 'lock'
+        lock (_lockObj)
+        {
+            // Sezione critica veloce e sincrona
+            Console.WriteLine("Accesso esclusivo sincrono");
+        }
+    }
+
+    public async Task MetodoAsincrono()
+    {
+        // Uso del SemaphoreSlim per attesa asincrona
+        // Il thread non si blocca, ma libera risorse durante l'attesa
+        await _asyncLock.WaitAsync();
+        try
+        {
+            // Sezione critica che include operazioni I/O asincrone
+            await Task.Delay(1000);
+            Console.WriteLine("Accesso esclusivo asincrono");
+        }
+        finally
+        {
+            _asyncLock.Release();
+        }
+    }
+}
+
+```
 
 #### C# Lock Keyword
 
@@ -272,43 +388,120 @@ Esempio di utilizzo:
 
 ```csharp
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
-public class Cache
+namespace ReaderWriterLockSlimExample
 {
-    private ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
-    private Dictionary<int, string> innerCache = new Dictionary<int, string>();
-
-    public string Read(int key)
+    public class Cache
     {
-        cacheLock.EnterReadLock();
-        try
+        private ReaderWriterLockSlim cacheLock = new ReaderWriterLockSlim();
+        private Dictionary<int, string> innerCache = new Dictionary<int, string>();
+
+        public string Read(int key)
         {
-            return innerCache.ContainsKey(key) ? innerCache[key] : null;
+            cacheLock.EnterReadLock();
+            try
+            {
+                // Simuliamo un'operazione di lettura che richiede tempo (es. 100ms)
+                // In questo modo possiamo vedere che più lettori entrano contemporaneamente
+                Console.WriteLine($"[Lettura] Thread {Thread.CurrentThread.ManagedThreadId} sta leggendo la chiave {key}...");
+                Thread.Sleep(100); 
+                
+                if (innerCache.ContainsKey(key))
+                {
+                    string val = innerCache[key];
+                    Console.WriteLine($"[Lettura] Thread {Thread.CurrentThread.ManagedThreadId} ha completato la lettura: {val}");
+                    return val;
+                }
+                else
+                {
+                    Console.WriteLine($"[Lettura] Thread {Thread.CurrentThread.ManagedThreadId} non ha trovato la chiave {key}");
+                    return null;
+                }
+            }
+            finally
+            {
+                cacheLock.ExitReadLock();
+            }
         }
-        finally
+
+        public void Add(int key, string value)
         {
-            cacheLock.ExitReadLock();
+            cacheLock.EnterWriteLock();
+            try
+            {
+                // Simuliamo un'operazione di scrittura che richiede più tempo (es. 2s)
+                // Durante questo tempo, NESSUN altro thread può leggere o scrivere
+                Console.WriteLine($"[SCRITTURA] Thread {Thread.CurrentThread.ManagedThreadId} ha acquisito il lock in SCRITTURA per la chiave {key}...");
+                Thread.Sleep(2000); 
+                innerCache[key] = value;
+                Console.WriteLine($"[SCRITTURA] Thread {Thread.CurrentThread.ManagedThreadId} ha completato la scrittura.");
+            }
+            finally
+            {
+                cacheLock.ExitWriteLock();
+            }
+        }
+
+        public void Dispose()
+        {
+            if (cacheLock != null) cacheLock.Dispose();
         }
     }
 
-    public void Add(int key, string value)
+    class Program
     {
-        cacheLock.EnterWriteLock();
-        try
+        static void Main(string[] args)
         {
-            innerCache[key] = value;
+            var cache = new Cache();
+            var random = new Random();
+
+            // Popoliamo inizialmente la cache
+            cache.Add(1, "Dato Iniziale 1");
+            cache.Add(2, "Dato Iniziale 2");
+            cache.Add(3, "Dato Iniziale 3");
+
+            Console.WriteLine("Avvio simulazione: 5 lettori e 2 scrittori...");
+            Console.WriteLine("Si osservi come le letture si sovrappongono, mentre le scritture sono esclusive.");
+            Console.WriteLine("----------------------------------------------------------------------------");
+
+            // Avviamo 5 thread lettori
+            for (int i = 0; i < 5; i++)
+            {
+                int readerId = i;
+                Thread t = new Thread(() =>
+                {
+                    while (true)
+                    {
+                        int key = random.Next(1, 5);
+                        cache.Read(key);
+                        Thread.Sleep(random.Next(50, 200)); // Pausa casuale tra le letture
+                    }
+                });
+                t.Start();
+            }
+
+            // Avviamo 2 thread scrittori
+            for (int i = 0; i < 2; i++)
+            {
+                int writerId = i;
+                Thread t = new Thread(() =>
+                {
+                    while (true)
+                    {
+                        int key = random.Next(1, 5);
+                        string val = $"Aggiornamento da Writer {writerId} ore {DateTime.Now.Second}";
+                        cache.Add(key, val);
+                        Thread.Sleep(random.Next(2000, 4000)); // Scritture meno frequenti
+                    }
+                });
+                t.Start();
+            }
+
+            // Attendiamo input per terminare
+            Console.ReadLine();
         }
-        finally
-        {
-            cacheLock.ExitWriteLock();
-        }
-    }
-    
-    // Non dimenticare di disporre il lock quando non serve più
-    public void Dispose()
-    {
-        cacheLock.Dispose();
     }
 }
 ```
@@ -423,6 +616,9 @@ namespace ThreadGym
 Prima versione: buffer a gestione LIFO (Stack)
 
 ```cs
+using System;
+using System.Threading;
+
 namespace ProducerConsumerLIFO
 {
     class Program
@@ -504,6 +700,9 @@ namespace ProducerConsumerLIFO
 Seconda versione: buffer gestito con tecnica FIFO, con coda circolare
 
 ```cs
+using System;
+using System.Threading;
+
 namespace ProducerConsumerFIFO
 {
     class Program
@@ -617,7 +816,7 @@ namespace BarberShopV1
         const int numberOfSeats = 10;
         static int freeSeats = numberOfSeats;
         static SemaphoreSlim seatAccess = new SemaphoreSlim(1, 1);
-        static SemaphoreSlim barberReady = new SemaphoreSlim(1, 1);
+        static SemaphoreSlim barberReady = new SemaphoreSlim(0, 1);
         static SemaphoreSlim clientReady = new SemaphoreSlim(0, numberOfSeats);
         static void Main(string[] args)
         {
@@ -660,7 +859,7 @@ namespace BarberShopV1
                 barberReady.Wait();//attende che il barbiere sia disponibile
                 //il cliente viene servito
                 Console.WriteLine($"Sono il cliente con ThreadId = {Thread.CurrentThread.ManagedThreadId} " +
-                    $". Il Barbiere mi sta tagliando i capelli.");
+                    $". Il Barbiere ha finito di tagliarmi i capelli.");
             }
             else
             {
@@ -706,7 +905,7 @@ namespace BarberShopV2
         const int numberOfSeats = 10;
         static int freeSeats = numberOfSeats;
         private static readonly object _lock = new object();
-        static SemaphoreSlim barberReady = new SemaphoreSlim(1, 1);
+        static SemaphoreSlim barberReady = new SemaphoreSlim(0, 1);
         static SemaphoreSlim clientReady = new SemaphoreSlim(0, numberOfSeats);
 
         static void Main(string[] args)
@@ -758,7 +957,7 @@ namespace BarberShopV2
                 barberReady.Wait();//attende che il barbiere sia disponibile
                                    //il cliente viene servito
                 Console.WriteLine($"Sono il cliente con ThreadId = {Thread.CurrentThread.ManagedThreadId} " +
-                    $". Il Barbiere mi sta tagliando i capelli.");
+                    $". Il Barbiere ha finito di tagliarmi i capelli.");
             }
             else
             {
@@ -826,7 +1025,7 @@ namespace BarberShopDeadLock
         const int numberOfSeats = 10;
         static int freeSeats = numberOfSeats;
         private static readonly object _lock = new object();
-        static SemaphoreSlim barberReady = new SemaphoreSlim(1, 1);
+        static SemaphoreSlim barberReady = new SemaphoreSlim(0, 1);
         static SemaphoreSlim clientReady = new SemaphoreSlim(0, numberOfSeats);
 
         static void Main(string[] args)

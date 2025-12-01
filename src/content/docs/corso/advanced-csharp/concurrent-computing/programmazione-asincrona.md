@@ -12,9 +12,9 @@ img {display: block; margin: 0 auto;}
 
 ## Programmazione asincrona
 
-<https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/>
+[https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/)
 
-Il modello di programmazione asincrona Task (TAP) offre un'astrazione su codice asincrono. È possibile leggere il codice come se ogni istruzione venisse completata prima che venga iniziata quella successiva. Il compilatore esegue una serie di trasformazioni poiché alcune delle istruzioni potrebbero essere eseguite e restituire [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) che rappresenta il lavoro in corso.
+Il modello di programmazione asincrona Task (TAP) offre un'astrazione su codice asincrono. È possibile leggere il codice come se ogni istruzione venisse completata prima che venga iniziata quella successiva. Il compilatore esegue una serie di trasformazioni poiché alcune delle istruzioni potrebbero essere eseguite e restituire [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) che rappresenta il lavoro in corso.
 
 L'obiettivo di questa sintassi consiste nell'abilitare un codice che viene letto come una sequenza di istruzioni ma viene eseguito in un ordine più complesso in base all'allocazione delle risorse esterne e al completamento dell'attività. Si tratta di un funzionamento analogo a quello in cui gli utenti specificano istruzioni per i processi che includono attività asincrone. In questo articolo verrà usato un esempio di istruzioni per la preparazione di una colazione per osservare in che modo le parole chiave async e await consentono di motivare in modo più semplice un codice che include una serie di istruzioni asincrone. Si procederà a scrivere istruzioni come quelle dell'elenco seguente per descrivere come preparare una colazione:
 
@@ -66,7 +66,7 @@ namespace AsyncBreakfast
     {
         static void Main(string[] args)
         {
-                        //Prepariamo la colazione - versione sincrona
+            //Prepariamo la colazione - versione sincrona
             Console.WriteLine("Prepariamo la colazione - versione sincrona");
             ColazioneSincrona();
 
@@ -247,151 +247,91 @@ private static void ApplyButter(Task<List<Toast>> toast)
 
 ### Non bloccare, ma attendere
 
-Si procederà ora ad aggiornare il codice in modo che il thread non venga bloccato mentre sono in esecuzione altre attività.La parola chiave await consente di iniziare un'attività senza alcun blocco e di continuare l'esecuzione al completamento dell'attività. Una versione asincrona semplice del codice della preparazione della colazione sarebbe simile al frammento seguente:
+Si procederà ora ad aggiornare il codice in modo che il thread non venga bloccato mentre sono in esecuzione altre attività.La parola chiave `await` consente di iniziare un'attività senza alcun blocco e di continuare l'esecuzione al completamento dell'attività. Una versione asincrona semplice del codice della preparazione della colazione sarebbe simile al frammento seguente:
 
 ```cs
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Diagnostics;
-namespace AsyncBreakfast
-{
-
-    internal class Bacon
-    {
-    }
-    internal class Egg
-    {
-    }
-    internal class Coffee
-    {
-    }
-    internal class Juice
-    {
-    }
-    internal class Toast
-    {
-    }
-    class Program
-    {
-        static async Task Main(string[] args)
-        {
-            //Prepariamo la colazione - versione sincrona
-            Console.WriteLine("Prepariamo la colazione - versione sincrona");
-            ColazioneSincrona();
-
-            //Prepariamo la colazione - versione parallela
-            Console.WriteLine("\n\nPrepariamo la colazione - versione parallela");
-            ColazioneParallela();
-
-            //Prepariamo la colazione - versione asincrona
-            Console.WriteLine("\n\nPrepariamo la colazione - versione asincrona");
-            await ColazioneAsincrona();
-
-            //Prepariamo la colazione - versione asincrona
-            //Console.WriteLine("\n\nPrepariamo la colazione - versione asincrona ottimizzata");
-            //await ColazioneAsincronaOttimizzata();
-        }
-
 private static async Task ColazioneAsincrona()
-        {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            PourCoffee();
-            //un metodo asincrono restituisce un Task
-            //Il task può non restituire nulla, nel caso di azione asincrona (operazione che non restituisce alcun valore al chiamante)
-            //oppure può restituire un oggetto, come ad esempio nel caso di una lista di Egg o di Bacon
+{
+    Stopwatch sw = new Stopwatch();
+    sw.Start();
+    PourCoffee();
+    //un metodo asincrono restituisce un Task
+    //Il task può non restituire nulla, nel caso di azione asincrona (operazione che non restituisce alcun valore al chiamante)
+    //oppure può restituire un oggetto, come ad esempio nel caso di una lista di Egg o di Bacon
 
-            //ci sono due modi per utilizzare un metodo asincrono:
-            //1) aspettare il completamento del task restituito dal metodo asincrono, come nel caso di:
-            //Task<List<Egg>> eggs =  FryEggsAsync(2);
-            //2) aspettare in maniera asincrona direttamente il risultato del task, come nel caso di 
-            //List<Toast> toast = await MakeToastWithButterAndJamAsync();
-            //in questo secondo caso si utilizza la keyword await, che vuol dire asyncronous wait.
-            //con l'utilizzo della keyword await dopo il segno di = si ottiene non un Task, ma direttamente il valore restituito 
-            //dal task, se esiste, oppure si attende la fine del task se questo non restituisce nessun valore
-            Task<List<Egg>> eggs =  FryEggsAsync(2);
-            Task<List<Bacon>> bacon = FryBaconAsync(3);
-            List<Toast> toast = await MakeToastWithButterAndJamAsync(2);
-            await bacon;
-            Console.WriteLine("bacon is ready");
-            await eggs;
-            Console.WriteLine("eggs are ready");
-            
-            Console.WriteLine("toast is ready");
+    //ci sono due modi per utilizzare un metodo asincrono:
+    //1) aspettare il completamento del task restituito dal metodo asincrono, come nel caso di:
+    //Task<List<Egg>> eggs =  FryEggsAsync(2);
+    //2) aspettare in maniera asincrona direttamente il risultato del task, come nel caso di 
+    //List<Toast> toast = await MakeToastWithButterAndJamAsync();
+    //in questo secondo caso si utilizza la keyword await, che vuol dire asyncronous wait.
+    //con l'utilizzo della keyword await dopo il segno di = si ottiene non un Task, ma direttamente il valore restituito 
+    //dal task, se esiste, oppure si attende la fine del task se questo non restituisce nessun valore
+    Task<List<Egg>> eggs =  FryEggsAsync(2);
+    Task<List<Bacon>> bacon = FryBaconAsync(3);
+    List<Toast> toast = await MakeToastWithButterAndJamAsync(2);
+    await bacon;
+    Console.WriteLine("bacon is ready");
+    await eggs;
+    Console.WriteLine("eggs are ready");
+    
+    Console.WriteLine("toast is ready");
 
 
-            Juice oj = PourOJ();
-            Console.WriteLine("oj is ready");
-            //quando tutto è pronto la colazione è pronta
-            Console.WriteLine("Breakfast is ready!");
-            sw.Stop();
-            Console.WriteLine($"Il tempo per la colazione asincrona è {sw.ElapsedMilliseconds} ms");
-        }
+    Juice oj = PourOJ();
+    Console.WriteLine("oj is ready");
+    //quando tutto è pronto la colazione è pronta
+    Console.WriteLine("Breakfast is ready!");
+    sw.Stop();
+    Console.WriteLine($"Il tempo per la colazione asincrona è {sw.ElapsedMilliseconds} ms");
+}     
 
-private static Coffee PourCoffee()
-        {
-            Console.WriteLine($"Sto iniziando a preparare il caffè");
-            Task.Delay(1000).Wait();
-            return new Coffee();
-        }
+//Un metodo asincrono è definito tramite la keyword async e restituisce un Task<TResult> oppure Task se non restituisce nulla
+//la keyword async si utilizza in combinazione con la keyword await all'interno del metodo
+private static async Task<List<Egg>> FryEggsAsync(int v)
+{
+    Console.WriteLine($"Sto iniziando a friggere {v} uova");
 
-        //Un metodo asincrono è definito tramite la keyword async e restituisce un Task<TResult> oppure Task se non restituisce nulla
-        //la keyword async si utilizza in combinazione con la keyword await all'interno del metodo
-        private static async Task<List<Egg>> FryEggsAsync(int v)
-        {
-            Console.WriteLine($"Sto iniziando a friggere {v} uova");
-
-            List<Egg> uova = new List<Egg>();
-            for (int i = 0; i < v; i++)
-            {
-                await Task.Delay(200);
-                uova.Add(new Egg());
-            }
-            return uova;
-        }
-        private static async Task<List<Bacon>> FryBaconAsync(int v)
-        {
-            Console.WriteLine($"Sto iniziando a friggere {v} fette di pancetta");
-
-            List<Bacon> fetteDiPancetta = new List<Bacon>();
-            for (int i = 0; i < v; i++)
-            {
-                await Task.Delay(200);
-                fetteDiPancetta.Add(new Bacon());
-            }
-            return fetteDiPancetta;
-        }
-        private static async Task<List<Toast>> MakeToastWithButterAndJamAsync(int v)
-        {
-            List<Toast> toast = await ToastBreadAsync(v);
-            //await toast;
-            ApplyButter(toast);//attività sincrona
-            ApplyJam(toast);//attività sincrona
-            return toast;
-        }
-        private static async Task<List<Toast>> ToastBreadAsync(int v)
-        {
-                Console.WriteLine($"Sto iniziando a tostare {v} fette di pane");
-                List<Toast> toasts = new List<Toast>();
-                for (int i = 0; i < v; i++)
-                {
-                    Console.WriteLine($"\tTosto la {i + 1}-ma fetta");
-                    await Task.Delay(200);
-                    toasts.Add(new Toast());
-                }
-                return toasts;
-         
-        }
-         private static Juice PourOJ()
-        {
-            Console.WriteLine("Sto iniziando a spremere le arance");
-            Task.Delay(1000).Wait();
-            return new Juice();
-        }
-
+    List<Egg> uova = new List<Egg>();
+    for (int i = 0; i < v; i++)
+    {
+        await Task.Delay(200);
+        uova.Add(new Egg());
     }
+    return uova;
+}
+private static async Task<List<Bacon>> FryBaconAsync(int v)
+{
+    Console.WriteLine($"Sto iniziando a friggere {v} fette di pancetta");
+
+    List<Bacon> fetteDiPancetta = new List<Bacon>();
+    for (int i = 0; i < v; i++)
+    {
+        await Task.Delay(200);
+        fetteDiPancetta.Add(new Bacon());
+    }
+    return fetteDiPancetta;
+}
+private static async Task<List<Toast>> MakeToastWithButterAndJamAsync(int v)
+{
+    List<Toast> toast = await ToastBreadAsync(v);
+    //await toast;
+    ApplyButter(toast);//attività sincrona
+    ApplyJam(toast);//attività sincrona
+    return toast;
+}
+private static async Task<List<Toast>> ToastBreadAsync(int v)
+{
+        Console.WriteLine($"Sto iniziando a tostare {v} fette di pane");
+        List<Toast> toasts = new List<Toast>();
+        for (int i = 0; i < v; i++)
+        {
+            Console.WriteLine($"\tTosto la {i + 1}-ma fetta");
+            await Task.Delay(200);
+            toasts.Add(new Toast());
+        }
+        return toasts;
+    
 }
 ```
 
@@ -417,7 +357,7 @@ Tutti gli alimenti della colazione sono pronti contemporaneamente ad eccezione d
 La composizione di un'operazione asincrona, seguita da un lavoro sincrono è un'operazione asincrona. In altre parole, se una parte di un'operazione è asincrona, l'intera operazione è asincrona.
 :::
 
-Il codice precedente ha mostrato che è possibile usare gli oggetti [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) o [Task<TResult>](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) per attività in esecuzione. Si rimane in attesa (await) di ogni attività prima di usarne il risultato. Il passaggio successivo consiste nel creare metodi che rappresentano la combinazione di altre operazioni. Prima di servire la colazione, si vuole attendere l'attività che rappresenta la tostatura del pane prima dell'aggiunta del butto e della marmellata. È possibile rappresentare queste operazioni con il codice seguente:
+Il codice precedente ha mostrato che è possibile usare gli oggetti [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task) o [Task<TResult>](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) per attività in esecuzione. Si rimane in attesa (await) di ogni attività prima di usarne il risultato. Il passaggio successivo consiste nel creare metodi che rappresentano la combinazione di altre operazioni. Prima di servire la colazione, si vuole attendere l'attività che rappresenta la tostatura del pane, prima dell'aggiunta del burro e della marmellata. È possibile rappresentare queste operazioni con il codice seguente:
 
 ```cs
 private static async Task<List<Toast>> MakeToastWithButterAndJamAsync(int v)
@@ -444,7 +384,7 @@ private static async Task<List<Toast>> ToastBreadAsync(int v)
 
 Il metodo precedente include il modificatore async nella firma. Il modificatore segnala al compilatore che il metodo contiene un'istruzione await; contiene operazioni asincrone. Questo metodo rappresenta l'attività di tostatura del pane, quindi aggiunge il burro e la marmellata. Questo metodo restituisce [Task<TResult>](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) che rappresenta la composizione di queste tre operazioni.
 
-La modifica precedente ha illustrato una tecnica importante per l'uso di codice asincrono. Si compongono le attività separando le operazioni in un nuovo metodo che restituisce un'attività. È possibile scegliere quando rimanere in attesa dell'attività. È possibile iniziare altre attività contemporaneamente.
+La modifica precedente ha illustrato una tecnica importante per l'uso di codice asincrono. Si compongono le attività separando le operazioni in un nuovo metodo che restituisce un'attività. È possibile scegliere quando rimanere in attesa dell'attività. È possibile iniziare altre attività contemporaneamente.
 
 ### Attendere le attività in modo efficiente
 
@@ -499,17 +439,77 @@ private static async Task ColazioneAsincronaOttimizzata()
         }
 ```
 
-Il codice finale è asincrono. Riflette con maggior precisione il modo in cui viene preparata una colazione. Confrontare il codice precedente con il primo esempio di codice di questo articolo. Le azioni principali risultano ancora chiare dalla lettura del codice. È possibile leggere il codice allo stesso modo in cui si leggerebbero le istruzioni per preparare una colazione riportate all'inizio di questo articolo. Le funzionalità del linguaggio per async e await offrono la traduzione che ogni persona farebbe per seguire le istruzioni scritte: iniziare le attività non appena possibile e non bloccarsi in attesa del completamento delle attività
+Il codice finale è asincrono. Riflette con maggior precisione il modo in cui viene preparata una colazione. Confrontare il codice precedente con il primo esempio di codice di questo articolo. Le azioni principali risultano ancora chiare dalla lettura del codice. È possibile leggere il codice allo stesso modo in cui si leggerebbero le istruzioni per preparare una colazione riportate all'inizio di questo articolo. Le funzionalità del linguaggio per async e await offrono la traduzione che ogni persona farebbe per seguire le istruzioni scritte: iniziare le attività non appena possibile e non bloccarsi in attesa del completamento delle attività.
 
-###  I/O di file asincrono
+### Confronto: Asincrono vs Parallelo
 
-<https://docs.microsoft.com/en-us/dotnet/standard/io/>
+È fondamentale comprendere che **codice asincrono non significa necessariamente codice parallelo**.
 
-<https://docs.microsoft.com/en-us/dotnet/standard/io/asynchronous-file-i-o>
+Nel modello asincrono (come nell'esempio della colazione "ottimizzata"), non stiamo necessariamente utilizzando più thread contemporaneamente per *eseguire* il lavoro. Quando usiamo `await`, il thread corrente viene liberato per fare altro mentre attende il completamento dell'operazione (spesso I/O bound, come tostare il pane o leggere un file). Non c'è un thread "bloccato" in attesa, e non c'è necessariamente un nuovo thread creato per ogni operazione.
+
+Nel caso della colazione asincrona:
+- C'è **una sola persona** (un solo thread) che si sposta rapidamente tra le varie attività.
+- Quando mette il pane nel tostapane, non rimane a fissarlo (non blocca), ma va a controllare le uova.
+- Il numero di "cuochi" (thread) non aumenta drasticamente; è l'efficienza del singolo cuoco che migliora.
+
+Al contrario, nel **parallelismo** (CPU bound), si usano attivamente più thread per eseguire calcoli contemporaneamente su più core della CPU. Sarebbe come avere **più cuochi** in cucina: uno frigge le uova, uno tosta il pane, uno fa il caffè. Questo è utile per calcoli pesanti, ma per operazioni di attesa (I/O) è uno spreco di risorse (cuochi che stanno fermi a guardare il tostapane).
+
+#### Eseguire un Task su un thread separato
+
+Se si ha necessità di eseguire un'operazione intensiva per la CPU (CPU-bound) senza bloccare il thread principale, è possibile "spostare" esplicitamente quel lavoro su un altro thread.
+
+In C#, questo si ottiene comunemente con `Task.Run`:
+
+```csharp
+await Task.Run(() => {
+    // Codice oneroso per la CPU
+    CalcoliComplessi();
+});
+```
+
+Questo istruisce il runtime a prendere un thread dal *ThreadPool* ed eseguire lì il codice, permettendo al thread chiamante di proseguire o rimanere reattivo. Tuttavia, per operazioni di puro I/O (come nel caso della colazione o lettura file), `Task.Run` è spesso superfluo e controproducente, in quanto consuma un thread solo per attendere.
+
+#### Configurare il contesto di attesa (ConfigureAwait)
+
+Spesso ci si chiede: "Come possiamo assicurarci che il codice *dopo* l'await venga eseguito su un thread diverso?".
+
+Per comprendere questo, bisogna introdurre il concetto di **SynchronizationContext**. In molte applicazioni (come WPF, Windows Forms, o vecchie versioni di ASP.NET), esiste un contesto speciale che rappresenta "il thread principale" (o il contesto della richiesta).
+
+Per impostazione predefinita, quando si usa `await`, il sistema:
+1. Cattura il contesto corrente prima di attendere.
+2. Esegue il task asincrono.
+3. Quando il task finisce, tenta di eseguire il resto del codice (la continuazione) sul contesto originale catturato.
+
+Questo è utile nelle app UI: se si inizia un download dal click di un bottone, si vuole che il codice dopo l'await possa aggiornare una TextBox, e per farlo deve essere sul thread della UI.
+
+Tuttavia, questo comportamento ha due svantaggi:
+1. **Performance**: Tornare al contesto originale ha un costo (context switch).
+2. **Deadlock**: Se il thread principale è bloccato in attesa del task (ad esempio usando `.Result` o `.Wait()` invece di `await`), e il task cerca di tornare sul thread principale per finire, si crea un blocco mortale. Il thread principale aspetta il task, e il task aspetta il thread principale.
+
+**La soluzione: `ConfigureAwait(false)`**
+
+Usando `ConfigureAwait(false)`, dici al sistema: "Non mi importa di tornare sul contesto originale".
+
+```csharp
+await OperazioneLungaAsync().ConfigureAwait(false);
+// Il codice qui sotto verrà eseguito su un thread del ThreadPool,
+// molto probabilmente DIVERSO da quello che ha iniziato la chiamata.
+Console.WriteLine("Finito!");
+```
+
+**Quando usarlo?**
+- **Sempre nel codice di libreria**: Se scrivi una libreria generica che non tocca la UI, usa sempre `ConfigureAwait(false)` per efficienza e per evitare di causare deadlock a chi usa la tua libreria.
+- **Mai (o quasi) nel codice UI**: Se devi aggiornare l'interfaccia dopo l'await, devi tornare sul contesto originale, quindi NON usare `ConfigureAwait(false)` (o usalo, ma poi devi usare il Dispatcher per aggiornare la UI).
+
+### I/O di file asincrono
+
+[https://docs.microsoft.com/en-us/dotnet/standard/io/](https://docs.microsoft.com/en-us/dotnet/standard/io/)
+
+[https://docs.microsoft.com/en-us/dotnet/standard/io/asynchronous-file-i-o](https://docs.microsoft.com/en-us/dotnet/standard/io/asynchronous-file-i-o)
 
 A partire da .NET Framework 4.5, i tipi di I/O includono metodi async per semplificare le operazioni asincrone. Un metodo asincrono contiene Async nel nome, ad esempio [ReadAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.readasync), [WriteAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.writeasync), [CopyToAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.copytoasync), [FlushAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream.flushasync), [ReadLineAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.textreader.readlineasync) e [ReadToEndAsync](https://docs.microsoft.com/en-us/dotnet/api/system.io.textreader.readtoendasync). Questi metodi asincroni sono implementati nelle classi di flusso, come [Stream](https://docs.microsoft.com/en-us/dotnet/api/system.io.stream), [FileStream](https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream)e [MemoryStream](https://docs.microsoft.com/en-us/dotnet/api/system.io.memorystream), e nelle classi usate per la lettura o la scrittura nei flussi, come [TextReader](https://docs.microsoft.com/en-us/dotnet/api/system.io.textreader) e [TextWriter](https://docs.microsoft.com/en-us/dotnet/api/system.io.textwriter).
 
-L'esempio seguente mostra come usare due oggetti [FileStream](https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream) per copiare i file in modo asincrono da una directory a un'altra.
+L'esempio seguente mostra come usare due oggetti [FileStream](https://docs.microsoft.com/en-us/dotnet/api/system.io.filestream) per copiare i file in modo asincrono da una directory a un'altra.
 
 Copiare file in modalità asincrona
 
@@ -558,8 +558,8 @@ namespace CopyAsyncDemo
         {
             //creo un task che copia i file
             //i percorsi sorgente e destinazione devono esistere
-            string StartDirectory = @"C:\Users\genna\source\repos\2020-2021";
-            string EndDirectory = @"C:\Users\genna\Documents\Temp";
+            string StartDirectory = @"C:\temp\test";
+            string EndDirectory = @"C:\temp\test2";
             Task copyTask = CopyFiles(StartDirectory, EndDirectory);
 
             //creo un task che perde tempo, ma che interrompo appena ho finito a copiare i task
@@ -667,7 +667,7 @@ Di seguito vengono proposti tre esercizi completi per mettere in pratica i conce
 
 ### Esercizio 1: Analizzatore di Log Multiplo
 
-**Obiettivo**: Leggere contemporaneamente più file di testo (log simulati) e contare le occorrenze di una specifica parola chiave (es. "ERROR") in modo asincrono.
+**Obiettivo**: Confrontare le prestazioni tra un approccio sequenziale (bloccante) e uno asincrono nella lettura e analisi di file di log multipli.
 
 **Concetti chiave**: `File.WriteAllTextAsync`, `File.ReadAllTextAsync`, `Task.WhenAll`, `ConcurrentBag` o `Interlocked`.
 
@@ -687,7 +687,7 @@ namespace AsyncLogAnalyzer
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("=== Analizzatore di Log Asincrono ===");
+            Console.WriteLine("=== Analizzatore di Log: Asincrono vs Sequenziale ===");
             string directoryPath = "logs_temp";
             string keyword = "ERROR";
 
@@ -697,53 +697,82 @@ namespace AsyncLogAnalyzer
             Directory.CreateDirectory(directoryPath);
             
             var generationTasks = new List<Task>();
-            for (int i = 0; i < 10; i++)
+            // Aumentiamo un po' il numero di file per rendere il confronto più interessante
+            for (int i = 0; i < 50; i++)
             {
                 generationTasks.Add(GenerateLogFileAsync(Path.Combine(directoryPath, $"log_{i}.txt"), i));
             }
             await Task.WhenAll(generationTasks);
-            Console.WriteLine("File generati.");
+            Console.WriteLine("File generati.\n");
 
-            // 2. Elaborazione: Leggiamo e analizziamo i file in parallelo/asincrono
-            Stopwatch sw = Stopwatch.StartNew();
             string[] files = Directory.GetFiles(directoryPath);
-            
-            // Usiamo un contatore thread-safe
-            int totalErrors = 0;
 
+            // 2. Esecuzione Sequenziale
+            Console.WriteLine("--- Inizio Analisi Sequenziale ---");
+            Stopwatch sw = Stopwatch.StartNew();
+            int totalErrorsSeq = AnalyzeLogsSequential(files, keyword);
+            sw.Stop();
+            Console.WriteLine($"Analisi Sequenziale completata in {sw.ElapsedMilliseconds} ms.");
+            Console.WriteLine($"Totale occorrenze: {totalErrorsSeq}\n");
+
+            // 3. Esecuzione Asincrona
+            Console.WriteLine("--- Inizio Analisi Asincrona ---");
+            sw.Restart();
+            int totalErrorsAsync = await AnalyzeLogsAsync(files, keyword);
+            sw.Stop();
+            Console.WriteLine($"Analisi Asincrona completata in {sw.ElapsedMilliseconds} ms.");
+            Console.WriteLine($"Totale occorrenze: {totalErrorsAsync}\n");
+
+            // Pulizia
+            if (Directory.Exists(directoryPath)) Directory.Delete(directoryPath, true);
+        }
+
+        static int AnalyzeLogsSequential(string[] files, string keyword)
+        {
+            int totalErrors = 0;
+            foreach (var file in files)
+            {
+                // SIMULAZIONE LATENZA I/O (es. lettura da rete o disco lento)
+                Thread.Sleep(10); 
+
+                // Lettura bloccante
+                string content = File.ReadAllText(file);
+                int count = CountOccurrences(content, keyword);
+                totalErrors += count;
+            }
+            return totalErrors;
+        }
+
+        static async Task<int> AnalyzeLogsAsync(string[] files, string keyword)
+        {
+            int totalErrors = 0;
+            
             var analysisTasks = files.Select(async file =>
             {
-                // Leggiamo il file in modo asincrono senza bloccare il thread
+                // SIMULAZIONE LATENZA I/O ASINCRONA
+                // await libera il thread per fare altro mentre "aspetta"
+                await Task.Delay(10);
+
+                // Lettura asincrona non bloccante
                 string content = await File.ReadAllTextAsync(file);
                 
-                // Elaborazione CPU-bound (conteggio parole)
-                // Nota: per file molto grandi, potremmo voler fare questo in un Task.Run,
-                // ma per I/O asincrono puro, questo approccio va bene.
                 int count = CountOccurrences(content, keyword);
                 
                 // Aggiornamento sicuro del contatore condiviso
                 Interlocked.Add(ref totalErrors, count);
-                
-                Console.WriteLine($"Analizzato {Path.GetFileName(file)}: trovati {count} '{keyword}'");
             });
 
             await Task.WhenAll(analysisTasks);
-
-            sw.Stop();
-            Console.WriteLine($"\nAnalisi completata in {sw.ElapsedMilliseconds} ms.");
-            Console.WriteLine($"Totale occorrenze di '{keyword}': {totalErrors}");
-
-            // Pulizia
-            if (Directory.Exists(directoryPath)) Directory.Delete(directoryPath, true);
+            return totalErrors;
         }
 
         static async Task GenerateLogFileAsync(string path, int seed)
         {
             var random = new Random(seed);
             var lines = new List<string>();
-            for (int i = 0; i < 1000; i++)
+            // Aumentiamo le righe per file
+            for (int i = 0; i < 5000; i++)
             {
-                // Inseriamo "ERROR" casualmente circa il 10% delle volte
                 string level = random.Next(10) == 0 ? "ERROR" : "INFO";
                 lines.Add($"{DateTime.Now:O} [{level}] Messaggio di log numero {i}");
             }
@@ -765,6 +794,21 @@ namespace AsyncLogAnalyzer
 }
 ```
 
+#### Analisi dei Risultati
+
+Potreste notare che, senza la simulazione di latenza (`Thread.Sleep` e `Task.Delay`), i tempi di esecuzione sequenziale e asincrona sono molto simili, o addirittura l'asincrono potrebbe essere leggermente più lento.
+
+**Perché succede?**
+I moderni sistemi operativi sono molto efficienti nel fare caching dei file. Quando leggiamo piccoli file appena creati dal disco locale (SSD veloce), l'operazione è quasi istantanea e non c'è vera "attesa" di I/O. In questo caso, il costo (overhead) di creare e gestire i Task supera il beneficio del non bloccare il thread.
+
+**Perché abbiamo aggiunto la latenza?**
+Nel codice sopra abbiamo aggiunto `Thread.Sleep(10)` (sequenziale) e `await Task.Delay(10)` (asincrono) per simulare uno scenario reale di I/O, come:
+- Leggere file da una cartella di rete lenta.
+- Fare richieste HTTP a un'API remota.
+- Interrogare un database sotto carico.
+
+In questi casi reali, l'approccio asincrono vince drasticamente perché mentre nel sequenziale i 10ms si sommano per ogni file (50 file * 10ms = 500ms di attesa pura), nell'asincrono le attese avvengono "in parallelo" (o meglio, in concorrenza), riducendo il tempo totale quasi alla durata della singola operazione più lenta.
+
 #### Analisi dell'Esercizio 1
 
 **1. Obiettivo dell'esempio:** dimostrare come l'I/O asincrono permetta di avviare più operazioni di lettura file contemporaneamente senza bloccare il thread principale e senza dover creare un thread dedicato per ogni file. Questo è fondamentale in scenari server o cloud dove le risorse sono limitate.
@@ -784,6 +828,8 @@ In un approccio sincrono tradizionale, leggeremmo i file uno dopo l'altro.
 Stopwatch sw = Stopwatch.StartNew();
 foreach (var file in files)
 {
+    // SIMULAZIONE LATENZA I/O (es. lettura da rete o disco lento)
+    Thread.Sleep(10);
     // Il thread si blocca qui per ogni file!
     string content = File.ReadAllText(file); 
     int count = CountOccurrences(content, keyword);
@@ -805,6 +851,7 @@ sw.Stop();
 
 ```csharp
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -814,7 +861,7 @@ namespace AsyncResourceMonitor
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("=== Monitoraggio Risorse Background ===");
+            Console.WriteLine("=== Monitoraggio Risorse Background (Reale) ===");
             Console.WriteLine("Premi 's' per stoppare il monitoraggio, 'c' per controllare lo stato manualmente.");
 
             // Token per cancellare il task di background
@@ -861,31 +908,51 @@ namespace AsyncResourceMonitor
 
         static async Task StartMonitoringAsync(CancellationToken token)
         {
-            var random = new Random();
             Console.WriteLine("[Monitor] Avvio servizio di monitoraggio...");
+            var process = Process.GetCurrentProcess();
+            
+            // Variabili per calcolo CPU
+            var lastCpuTime = TimeSpan.Zero;
+            var lastCheckTime = DateTime.MinValue;
 
             while (!token.IsCancellationRequested)
             {
-                // Simuliamo lettura sensori / utilizzo CPU
-                int cpuUsage = random.Next(0, 100);
-                int memoryUsage = random.Next(100, 2000);
+                // Aggiorniamo le info del processo
+                process.Refresh();
+                
+                // Calcolo utilizzo CPU
+                var currentCpuTime = process.TotalProcessorTime;
+                var currentCheckTime = DateTime.Now;
+                double cpuUsagePercent = 0;
 
-                Console.WriteLine($"[Monitor] CPU: {cpuUsage}% | RAM: {memoryUsage}MB");
-
-                if (cpuUsage > 90)
+                if (lastCheckTime != DateTime.MinValue)
                 {
-                    Console.WriteLine("[Monitor] ALLARME: Utilizzo CPU elevato!");
+                    var cpuUsedMs = (currentCpuTime - lastCpuTime).TotalMilliseconds;
+                    var totalMsPassed = (currentCheckTime - lastCheckTime).TotalMilliseconds;
+                    // Normalizziamo per il numero di processori
+                    cpuUsagePercent = (cpuUsedMs / (Environment.ProcessorCount * totalMsPassed)) * 100;
+                }
+
+                lastCpuTime = currentCpuTime;
+                lastCheckTime = currentCheckTime;
+
+                // Lettura memoria (Working Set) in MB
+                long memoryUsage = process.WorkingSet64 / 1024 / 1024;
+
+                Console.WriteLine($"[Monitor] CPU: {cpuUsagePercent:F1}% | RAM: {memoryUsage}MB");
+
+                if (memoryUsage > 500) // Soglia fittizia di esempio
+                {
+                    Console.WriteLine("[Monitor] ALLARME: Utilizzo Memoria elevato!");
                 }
 
                 // Attendiamo 2 secondi prima della prossima lettura
-                // Passiamo il token al Delay così se viene cancellato, il delay si interrompe subito
                 try 
                 {
                     await Task.Delay(2000, token);
                 }
                 catch (TaskCanceledException)
                 {
-                    // Ignoriamo l'eccezione qui per uscire puliti dal loop
                     break;
                 }
             }
@@ -926,8 +993,43 @@ while (running)
 
 **Analisi**:
 
-- **Sincrono**: L'applicazione è "sorda" per la maggior parte del tempo (durante il `Thread.Sleep`). L'utente preme 's' ma non succede nulla finché lo sleep non finisce.
 - **Asincrono**: Il thread principale è sempre libero di ciclare nel `while(running)` e controllare `Console.KeyAvailable`. La reattività è immediata.
+
+#### Nota sul Monitoraggio CPU
+
+Nel codice sopra, il calcolo `process.TotalProcessorTime` rappresenta la percentuale di CPU consumata **specificamente da questo processo**. Se il programma fa poco (come in questo caso, dove aspetta per la maggior parte del tempo), il valore sarà molto basso (vicino allo 0%).
+
+Se invece si desidera ottenere l'utilizzo della CPU **totale del sistema** (simile a quello mostrato in Task Manager), su Windows è necessario utilizzare la classe `PerformanceCounter` (disponibile nel pacchetto NuGet `System.Diagnostics.PerformanceCounter` per .NET Core/5+).
+
+Per maggiori dettagli, consultare la [documentazione ufficiale di PerformanceCounter](https://learn.microsoft.com/en-us/dotnet/api/system.diagnostics.performancecounter).
+
+Ecco alcuni esempi di contatori comuni per ottenere dati aggregati di sistema:
+
+```csharp
+// Richiede: dotnet add package System.Diagnostics.PerformanceCounter
+// ATTENZIONE: Funziona solo su Windows e potrebbe richiedere privilegi di Amministratore
+using System.Diagnostics;
+
+// 1. CPU Totale
+var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+
+// 2. Memoria Disponibile (in MB)
+var ramCounter = new PerformanceCounter("Memory", "Available MBytes");
+
+// 3. Utilizzo Disco Fisico (Tempo attivo)
+var diskCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
+
+// La prima chiamata a NextValue() spesso restituisce 0 o valori non calcolati
+cpuCounter.NextValue();
+ramCounter.NextValue();
+diskCounter.NextValue();
+
+await Task.Delay(1000); // Attendiamo un intervallo di campionamento
+
+Console.WriteLine($"CPU Totale Sistema: {cpuCounter.NextValue():F1}%");
+Console.WriteLine($"RAM Disponibile: {ramCounter.NextValue()} MB");
+Console.WriteLine($"Utilizzo Disco: {diskCounter.NextValue():F1}%");
+```
 
 ### Esercizio 3: Elaborazione Batch di Immagini (Simulata)
 
@@ -952,49 +1054,71 @@ namespace AsyncImageBatch
 
         static async Task Main(string[] args)
         {
-            Console.WriteLine("=== Elaborazione Batch Immagini (Throttling) ===");
-            
-            // Simuliamo una lista di file da elaborare
+            Console.WriteLine("=== Elaborazione Batch Immagini: Sequenziale vs Asincrono (Throttled) ===");
+
+            // Simuliamo una lista di 15 file da elaborare
             List<string> images = Enumerable.Range(1, 15).Select(i => $"img_{i}.jpg").ToList();
-            
-            Console.WriteLine($"Trovate {images.Count} immagini da elaborare.");
-            Console.WriteLine("Inizio elaborazione (max 3 simultanee)...");
+            Console.WriteLine($"Trovate {images.Count} immagini da elaborare.\n");
 
+            // 1. Esecuzione Sequenziale
+            Console.WriteLine("--- Inizio Elaborazione Sequenziale ---");
             Stopwatch sw = Stopwatch.StartNew();
+            ProcessImagesSequential(images);
+            sw.Stop();
+            Console.WriteLine($"Elaborazione Sequenziale completata in {sw.Elapsed.TotalSeconds:F2} secondi.\n");
 
+            // 2. Esecuzione Asincrona (con Throttling)
+            Console.WriteLine("--- Inizio Elaborazione Asincrona (Max 3 simultanee) ---");
+            sw.Restart();
+            await ProcessImagesAsync(images);
+            sw.Stop();
+            Console.WriteLine($"Elaborazione Asincrona completata in {sw.Elapsed.TotalSeconds:F2} secondi.");
+        }
+
+        static void ProcessImagesSequential(List<string> images)
+        {
+            foreach (var img in images)
+            {
+                int duration = GetDeterministicDuration(img);
+                Console.WriteLine($"[Seq] Elaborazione {img} ({duration}ms)...");
+                // Simuliamo lavoro bloccante
+                Thread.Sleep(duration);
+            }
+        }
+
+        static async Task ProcessImagesAsync(List<string> images)
+        {
             // Creiamo un task per ogni immagine
-            var tasks = images.Select(img => ProcessImageAsync(img));
+            var tasks = images.Select(async img =>
+            {
+                // Attendiamo il nostro turno per entrare nel semaforo
+                await _semaphore.WaitAsync();
+
+                try
+                {
+                    int duration = GetDeterministicDuration(img);
+                    Console.WriteLine($"[Async] Inizio {img} ({duration}ms)...");
+
+                    // Simuliamo lavoro asincrono (es. I/O o CPU offloaded)
+                    await Task.Delay(duration);
+                }
+                finally
+                {
+                    // Rilasciamo SEMPRE il semaforo, anche in caso di errori
+                    _semaphore.Release();
+                }
+            });
 
             // Attendiamo che TUTTI siano completati
             await Task.WhenAll(tasks);
-
-            sw.Stop();
-            Console.WriteLine($"\nTutte le immagini elaborate in {sw.Elapsed.TotalSeconds:F2} secondi.");
         }
 
-        static async Task ProcessImageAsync(string imageName)
+        // Funzione helper per ottenere una durata deterministica basata sul nome del file
+        // In questo modo il confronto è equo perché entrambi i metodi fanno lo stesso "lavoro"
+        static int GetDeterministicDuration(string imageName)
         {
-            // Attendiamo il nostro turno per entrare nel semaforo
-            await _semaphore.WaitAsync();
-            
-            try
-            {
-                Console.WriteLine($"--> Inizio elaborazione: {imageName}");
-                
-                // Simuliamo un tempo di elaborazione variabile (es. resize, filtro)
-                // tra 1 e 3 secondi
-                var rnd = new Random();
-                int processingTime = rnd.Next(1000, 3000);
-                
-                await Task.Delay(processingTime);
-                
-                Console.WriteLine($"<-- Fine elaborazione: {imageName} ({processingTime}ms)");
-            }
-            finally
-            {
-                // Rilasciamo sempre il semaforo, anche in caso di errori
-                _semaphore.Release();
-            }
+            // Restituisce un valore tra 200ms e 1200ms
+            return (Math.Abs(imageName.GetHashCode()) % 1000) + 200;
         }
     }
 }
@@ -1002,40 +1126,15 @@ namespace AsyncImageBatch
 
 #### Analisi dell'Esercizio 3
 
-**1. Obiettivo dell'esempio:** gestire il "backpressure" o il controllo di flusso. Lanciare 1000 task contemporaneamente potrebbe esaurire la memoria o le connessioni di rete. È necessario limitare quante operazioni avvengono simultaneamente.
+**Risultati Attesi**:
+Se si lancia questo codice, si noterà che la versione asincrona è significativamente più veloce.
+- **Sequenziale**: Deve elaborare le immagini una dopo l'altra. Se la somma delle durate è 10 secondi, impiegherà 10 secondi.
+- **Asincrona (Throttled)**: Può elaborare fino a 3 immagini contemporaneamente. Idealmente, impiegherà circa un terzo del tempo totale (es. 3.5 - 4 secondi), a seconda di come sono distribuite le durate.
 
-**2. Come viene utilizzata la programmazione asincrona**
+**Perché usare `SemaphoreSlim`?**
+Senza il semaforo, `ProcessImagesAsync` avrebbe avviato *tutte* le 15 elaborazioni contemporaneamente. Se fossero state 1000 immagini, avremmo potuto saturare la memoria o le connessioni di rete. Il semaforo ci permette di godere dei benefici della concorrenza (velocità) mantenendo però il controllo sul carico del sistema (stabilità).
 
+**Concetti chiave**:
 - **`SemaphoreSlim`**: Agisce come un buttafuori. Solo N task possono entrare nella sezione critica (tra `WaitAsync` e `Release`). Gli altri task attendono in modo asincrono (senza consumare thread) il loro turno.
 - **`Task.WhenAll`**: Attende la fine di tutto il batch, ma i singoli task partono e finiscono in tempi diversi, gestiti dal semaforo.
-
-**3. Confronto con programmazione sincrona bloccante**
-
-Un approccio ingenuo potrebbe essere processare tutto sequenzialmente o usare thread manuali.
-
-```csharp
-// Approccio Sequenziale
-foreach (var img in images)
-{
-    ProcessImage(img); // Aspetta 3 secondi per ogni immagine
-}
-// Tempo totale: 15 immagini * 3 secondi = 45 secondi.
-```
-
-Oppure usando `Parallel.ForEach` (che è ottimo per CPU-bound, ma diverso da async):
-
-```csharp
-// Approccio Parallelo (Bloccante)
-Parallel.ForEach(images, new ParallelOptions { MaxDegreeOfParallelism = 3 }, img =>
-{
-    // Questo blocca 3 thread del ThreadPool fisicamente
-    Thread.Sleep(ProcessingTime(img)); 
-});
-// Il metodo chiamante (Main) è bloccato finché TUTTO non finisce.
-```
-
-**Analisi**:
-- **Sequenziale**: Troppo lento (somma dei tempi).
-- **Parallel.ForEach**: Veloce, ma blocca il thread chiamante fino alla fine. Se siamo in una UI, l'interfaccia si blocca.
-- **Asincrono (`SemaphoreSlim` + `WhenAll`)**: Veloce (tempo parallelo) E non blocca il thread chiamante. Possiamo aggiornare una barra di progresso o rispondere all'utente mentre le immagini vengono elaborate.
 

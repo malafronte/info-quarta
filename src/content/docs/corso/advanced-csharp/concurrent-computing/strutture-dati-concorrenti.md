@@ -6,9 +6,9 @@ sidebar:
   order: 80
 ---
 
-<style>{`
+<style>{
   img {display: block; margin: 0 auto;}
-`}</style>
+}</style>
 
 ## Introduzione
 

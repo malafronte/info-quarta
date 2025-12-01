@@ -6,9 +6,9 @@ sidebar:
   order: 60
 ---
 
-<style>{`
+<style>{
   img {display: block; margin: 0 auto;}
-`}</style>
+}</style>
 
 In questa pagina vengono proposti alcuni esercizi svolti sulla programmazione concorrente in C#. L'obiettivo è quello di mettere in pratica i concetti appresi riguardo la gestione dei thread, la sincronizzazione e l'uso dei semafori.
 
