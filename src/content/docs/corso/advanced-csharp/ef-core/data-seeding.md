@@ -4,7 +4,7 @@ description: "The process of populating a database with an initial set of data"
 sidebar:
   order: 90
 ---
-<style>p {text-align: justify}</style>
+
 Data seeding is the process of populating a database with an initial set of data.
 There are several ways this can be accomplished in EF Core:
 

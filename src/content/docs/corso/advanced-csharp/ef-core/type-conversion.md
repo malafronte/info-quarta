@@ -5,7 +5,6 @@ sidebar:
   order: 80
 
 ---
-<style>p {text-align: justify}</style>
 Value converters allow property values to be converted when reading from or writing to the database. This conversion can be from one value to another of the same type (for example, encrypting strings) or from a value of one type to a value of another type (for example, converting enum values to and from strings in the database).  
 
 Value conversions are defined on properties in the `OnModelCreating` of your `DbContext`. For example[^1], consider an enum and entity type defined as:

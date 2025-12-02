@@ -5,9 +5,11 @@ sidebar:
   order: 30
 
 ---
-<style>
-img {display: block; margin: 0 auto;}
-</style>
+import { Badge } from '@astrojs/starlight/components'
+
+<style>{`
+  img {display: block; margin: 0 auto;}
+`}</style>
 
 ## Tecniche di sincronizzazione dei thread
 
@@ -166,7 +168,7 @@ Supponiamo due thread X e Y che vogliono accedere a una risorsa R. Si sceglie un
 
 #### Panoramica delle primitive di sincronizzazione in .NET
 
-<https://docs.microsoft.com/en-us/dotnet/standard/threading/overview-of-synchronization-primitives>
+[https://docs.microsoft.com/en-us/dotnet/standard/threading/overview-of-synchronization-primitives](https://docs.microsoft.com/en-us/dotnet/standard/threading/overview-of-synchronization-primitives)
 
 .NET offre vari tipi per sincronizzare l'accesso a risorse condivise o coordinare l'interazione tra thread.
 
@@ -247,7 +249,7 @@ La seguente tabella riassume le differenze architetturali e funzionali per guida
 
 \*Tempo per acquisire e rilasciare il lock sullo stesso thread (assumendo nessun blocco), misurato su Intel Core i7 860.[^1]
 
-[^1]: <http://www.albahari.com/threading/part2.aspx>
+[^1]: [http://www.albahari.com/threading/part2.aspx](http://www.albahari.com/threading/part2.aspx)
 
 #### Scenario Pratico: Quando utilizzare cosa
 
@@ -255,7 +257,7 @@ Di seguito si delineano le linee guida per l'adozione delle primitive in scenari
 
 1. Scenario Standard (In-Process Safety):
 
-    Si utilizzi Monitor (pattern lock) per proteggere l'accesso a strutture dati in memoria (es. List<T>, campi statici) quando il codice è sincrono e l'attesa è breve. È la scelta predefinita per prestazioni e sicurezza.
+    Si utilizzi Monitor (pattern lock) per proteggere l'accesso a strutture dati in memoria (es. `List<T>`, campi statici) quando il codice è sincrono e l'attesa è breve. È la scelta predefinita per prestazioni e sicurezza.
 
 2. Scenario Single-Instance (Cross-Process):
 
@@ -375,7 +377,7 @@ namespace LockKeyword
 
 ```
 
-#### ReaderWriterLockSlim
+#### ReaderWriterLockSlim <Badge text="Approfondimento" variant="note" size="medium" />   
 
 Quando si ha una risorsa che viene letta frequentemente ma scritta raramente, l'uso di un semplice `lock` (Monitor) può creare un collo di bottiglia, poiché blocca anche i lettori tra di loro. In questi scenari, la classe `ReaderWriterLockSlim` offre prestazioni migliori permettendo a più thread di leggere contemporaneamente, garantendo l'accesso esclusivo solo quando un thread deve scrivere.
 
@@ -510,12 +512,15 @@ Per approfondire: [ReaderWriterLockSlim Class (Microsoft Docs)](https://learn.mi
 
 #### Semafori
 
-<https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim>
+[https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim](https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim)
 
 I semafori possono essere locali all'applicazione o denominati nel sistema (utili per sincronizzazione interprocesso). SemaphoreSlim è un'alternativa leggera a Semaphore che non usa i semafori del kernel di Windows; non supporta semafori denominati e quindi è utilizzabile solo localmente. È il semaforo raccomandato per la sincronizzazione all'interno di una singola app.
 
-Un semaforo leggero controlla l'accesso a un pool di risorse locale all'applicazione. Si specificano il numero massimo di thread che possono entrare contemporaneamente e il numero iniziale. Il conteggio viene decrementato a ogni entrata e incrementato a ogni rilascio. Le chiamate Wait/WaitAsync bloccano quando il conteggio è zero; Release incrementa il conteggio. Quando il conteggio raggiunge zero le chiamate successive attendono fino a che altri thread rilasciano il semaforo. Non è garantito l'ordine FIFO per i thread in attesa.
-
+Un semaforo leggero controlla l'accesso a un pool di risorse locale all'applicazione. Si specificano il numero massimo di thread che possono entrare contemporaneamente e il numero iniziale.
+- **Il conteggio viene decrementato a ogni entrata (metodo `Wait`) e incrementato a ogni rilascio (metodo `Release`).** 
+- **Le chiamate `Wait`/`WaitAsync` bloccano lesecuzione del thread quando il conteggio è zero; Quando il conteggio raggiunge zero le chiamate successive attendono fino a che altri thread rilasciano il semaforo.**
+- **`Release` incrementa il conteggio.**
+- **Non è garantito l'ordine FIFO per i thread in attesa.**
 Struttura di base per usare SemaphoreSlim:
 
 ```cs
@@ -609,7 +614,7 @@ namespace ThreadGym
 
 ```
 
-<https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim>
+[https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim](https://docs.microsoft.com/en-us/dotnet/standard/threading/semaphore-and-semaphoreslim)
 
 #### Produttore-consumatore
 
@@ -800,7 +805,14 @@ Si consideri un negozio di barbiere ipotetico con un solo barbiere, una sedia da
 - Se un cliente arriva mentre il barbiere sta lavorando e tutte le sedie della sala d'attesa sono occupate, il cliente se ne va; altrimenti si siede su una sedia libera.
 - Quando il barbiere termina un taglio, controlla la sala d'attesa: se non ci sono clienti si riaddormenta.
 
-Due complicazioni principali: il rischio di race condition (es. il barbiere si addormenta mentre un cliente sta tornando alla sala d'attesa) e la possibile contesa quando due clienti contemporanei cercano di occupare l'ultima sedia libera.
+:::caution
+Complicazioni principali:
+1. **Deadlock**: Si verifica se il barbiere attende un cliente e il cliente attende il barbiere in modo circolare senza che nessuno dei due possa procedere. Ad esempio, se un cliente acquisisce un lock sulla sala d'attesa e poi attende che il barbiere sia libero, mentre il barbiere ha bisogno del lock sulla sala d'attesa per segnalare che è libero.
+2. **Starvation (Inedia)**: Se non viene garantito un ordine equo (es. FIFO), alcuni clienti potrebbero attendere indefinitamente mentre altri appena arrivati vengono serviti prima.
+3. **Race Conditions**: Se l'accesso al numero di sedie libere o allo stato del barbiere non è sincronizzato correttamente, due clienti potrebbero credere di aver trovato l'ultimo posto libero contemporaneamente, o il barbiere potrebbe addormentarsi mentre un cliente si sta sedendo.
+4. **Busy Waiting**: Se implementato male (es. con cicli `while` che controllano continuamente una variabile), l'algoritmo può consumare inutilmente CPU. L'uso di semafori o monitor evita questo problema sospendendo i thread.
+
+:::
 
 Prima versione -- sezione critica gestita con semaforo:
 
@@ -871,7 +883,7 @@ namespace BarberShopV1
 
         }
 
-        private static void Barber (object obj)
+        private static void Barber(object obj)
         {
             while (true)
             {
@@ -992,12 +1004,13 @@ namespace BarberShopV2
 
 Note e riferimenti:
 
-<https://github.com/meysam81/Sleeping-Barber-Problem>
-<https://github.com/meysam81/Networked-Sleeping-Barber-Problem>
+[https://github.com/meysam81/Sleeping-Barber-Problem](https://github.com/meysam81/Sleeping-Barber-Problem)
+
+[https://github.com/meysam81/Networked-Sleeping-Barber-Problem](https://github.com/meysam81/Networked-Sleeping-Barber-Problem)
 
 ### Deadlock
 
-<http://www.diag.uniroma1.it/~salza/SO/SO-III-2p.pdf>
+[http://www.diag.uniroma1.it/~salza/SO/SO-III-2p.pdf](http://www.diag.uniroma1.it/~salza/SO/SO-III-2p.pdf)
 
 ![alt text](./concurrent-programming/image.png)
 
@@ -1011,7 +1024,7 @@ Note e riferimenti:
 
 #### Un esempio di deadlock: il barbiere sbagliato
 
-La versione seguente dell'Algoritmo del Barbiere va in deadlock: è stato introdotto volontariamente un errore per mostrare il problema dell'attesa circolare.
+La versione seguente dell'`Algoritmo del Barbiere` va in `deadlock`: è stato introdotto volontariamente un errore per mostrare il problema dell'attesa circolare.
 
 ```cs
 using System;

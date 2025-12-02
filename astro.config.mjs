@@ -69,10 +69,10 @@ export default defineConfig({
               slug: "corso",
             },
             {
-              label: "💻 Advanced CSharp",
+              label: "💻 Advanced C#",
               collapsed: true,
               translations: {
-                en: "💻 Advanced CSharp",
+                en: "💻 Advanced C#",
               },
               items: [
                 { slug: "corso/advanced-csharp" },
