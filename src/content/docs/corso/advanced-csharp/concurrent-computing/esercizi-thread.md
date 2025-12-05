@@ -14,20 +14,24 @@ In questa pagina vengono proposti alcuni esercizi svolti sulla programmazione co
 
 ## Esercizio 1: La Giostra
 
-### Traccia
+### 1.1 Traccia
+
 Una giostra ha una capienza di 5 persone. Scrivi un programma che, mediante l’utilizzo dei semafori, gestisca l’accesso delle persone alla giostra. Quando è il turno di una persona, essa sale sulla giostra per un periodo di tempo casuale compreso tra 1 e 3 secondi, alla fine dei quali libera il posto al prossimo.
 
 Il programma deve stampare su console:
+
 - la persona x si mette in coda (appena creato il Thread)
 - la persona x sale sulla giostra (quando entra in sezione critica)
 - la persona x esce dalla giostra (quando esce dalla giostra e sta per terminare)
 
-### Riferimenti
+### 1.2 Riferimenti
+
 Per risolvere questo esercizio è necessario conoscere il funzionamento della classe `SemaphoreSlim` per gestire l'accesso limitato a una risorsa condivisa (la giostra).
+
 - [Classe Thread](../charp-threads/)
 - [SemaphoreSlim (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim?view=net-8.0)
 
-### Svolgimento
+### 1.3 Svolgimento
 
 Di seguito viene proposta una soluzione che utilizza `SemaphoreSlim` per limitare l'accesso concorrente alla giostra.
 
@@ -41,14 +45,14 @@ namespace GiostraThread
     {
         // Dati condivisi
         const int NumberOfChildren = 50; // Numero totale di bambini che vogliono salire
-        const int NumberOfCarouserSeats = 5; // Posti disponibili sulla giostra
+        const int NumberOfCarouselSeats = 5; // Posti disponibili sulla giostra
 
         // Semaforo per gestire i posti liberi. 
-        // Inizializzato con NumberOfCarouserSeats sia come valore iniziale che massimo.
-        static readonly SemaphoreSlim postiLiberi = new(NumberOfCarouserSeats, NumberOfCarouserSeats);
+        // Inizializzato con NumberOfCarouselSeats sia come valore iniziale che massimo.
+        static readonly SemaphoreSlim postiLiberi = new(NumberOfCarouselSeats, NumberOfCarouselSeats);
         
         static readonly Random gen = new();
-        static readonly object _lock = new(); // Lock per la generazione sicura di numeri casuali
+        static readonly Lock _lock = new(); // Lock per la generazione sicura di numeri casuali
 
         static void Main(string[] args)
         {
@@ -92,7 +96,7 @@ namespace GiostraThread
 }
 ```
 
-### Riflessioni
+### 1.4 Riflessioni
 
 In questo esercizio, l'uso di `SemaphoreSlim` è fondamentale per garantire che non più di 5 thread accedano contemporaneamente alla sezione critica (il giro in giostra).
 
@@ -108,19 +112,22 @@ Questo pattern è molto comune: il semaforo rappresenta il numero di "risorse" d
 
 ## Esercizio 2: La Giostra con Coda Limitata
 
-### Traccia
+### 2.1 Traccia
+
 Una giostra ha una capienza di 5 persone. Scrivi un programma che gestisca l’accesso, ma con una variante: la coda delle persone in attesa ha una dimensione massima di 10 posti. Se arriva una nuova persona e la coda è già al massimo, questa va via senza aspettare.
 
 Il programma stampa su console:
+
 - la persona x si mette in coda (appena creato il Thread)
 - la persona x sale sulla giostra (quando entra in sezione critica)
 - la persona x esce dalla giostra (quando esce dalla giostra e sta per terminare)
 - (Opzionale ma utile) Messaggi relativi alla gestione della coda di attesa.
 
-### Riferimenti
+### 2.2 Riferimenti
+
 Oltre ai concetti precedenti, qui è necessario gestire una risorsa contata manualmente (la lunghezza della coda) in modo thread-safe, oppure utilizzare meccanismi di sincronizzazione per proteggere la variabile contatore.
 
-### Svolgimento
+### 2.3 Svolgimento
 
 In questa soluzione utilizziamo un secondo semaforo (`attesa`) come mutex (valore 1) per proteggere l'accesso alla variabile `numeroBambiniInAttesa`.
 
@@ -133,13 +140,13 @@ namespace GiostraThreadConCodaFinita
     internal class Program
     {
         const int NumberOfChildren = 50;
-        const int NumberOfCarouserSeats = 5;
+        const int NumberOfCarouselSeats = 5;
         
         // Semaforo per i posti sulla giostra
-        static readonly SemaphoreSlim postiLiberi = new(NumberOfCarouserSeats, NumberOfCarouserSeats);
+        static readonly SemaphoreSlim postiLiberi = new(NumberOfCarouselSeats, NumberOfCarouselSeats);
         
         static readonly Random gen = new();
-        static readonly object _lock = new();
+        static readonly Lock _lock = new();
 
         // Gestione della coda di attesa
         const int NumeroMassimoBambiniInAttesa = 10;
@@ -206,7 +213,7 @@ namespace GiostraThreadConCodaFinita
 }
 ```
 
-### Riflessioni
+### 2.4 Riflessioni
 
 La gestione della coda limitata introduce la necessità di controllare una condizione *prima* di mettersi in attesa della risorsa principale.
 
@@ -222,20 +229,24 @@ In questo esercizio, il semaforo `attesa` viene usato come **mutex** (inizializz
 
 ## Esercizio 3: Sincronizzazione ABBC
 
-### Traccia
+### 3.1 Traccia
+
 Crea e fai partire 3 Thread, che stampano sulla console rispettivamente le lettere A, B e C. Noterai che l’ordine di esecuzione dei thread è casuale. Scrivi un programma che sincronizzi l’esecuzione dei thread in modo tale che sulla console venga stampata in modo deterministico la sequenza: **ABBC ABBC ABBC...**
 
-### Riferimenti
+### 3.2 Riferimenti
+
 Questo è un classico problema di coordinazione tra thread (Producer-Consumer o Token Passing). Si possono usare più semafori per "passare il testimone" da un thread all'altro.
 
-### Svolgimento
+### 3.3 Svolgimento
 
 L'idea è utilizzare tre semafori, uno per ogni "permesso" di stampare.
+
 - `goA`: Inizializzato a 1 (A parte per primo).
 - `goB`: Inizializzato a 0 (B deve aspettare).
 - `goC`: Inizializzato a 0 (C deve aspettare).
 
 La logica sarà:
+
 1. A stampa 'A', poi rilascia 2 permessi per B (perché B deve stampare due volte).
 2. B stampa 'B'. Ogni volta che stampa consuma un permesso. Quando ha finito i suoi permessi (o meglio, quando è stato eseguito due volte), deve dare il via a C.
    *Nota*: Nella soluzione proposta, B controlla se il semaforo è a 0 per decidere se passare il turno a C. Tuttavia, un approccio più robusto per "ABBC" esatto richiederebbe un contatore o una logica specifica per sapere se è la prima o la seconda B. La soluzione sotto sfrutta il fatto che A rilascia 2 permessi a B.
@@ -308,7 +319,7 @@ namespace SincronizzazioneTraTreThread
 }
 ```
 
-### Riflessioni
+### 3.4 Riflessioni
 
 La sequenza **ABBC** richiede che il thread B venga eseguito due volte per ogni esecuzione di A e C. Rilasciando 2 risorse sul semaforo `goB`, permettiamo al thread B di effettuare un ciclo due volte attraverso la sua `Wait()`.
 
@@ -322,34 +333,40 @@ La condizione `if(goB.CurrentCount == 0)` è il punto critico che determina quan
 
 ---
 
-## Esercizio 5: Negozio Concorrente
+## Esercizio 4: Negozio Concorrente
 
-### Traccia
+### 4.1 Traccia
+
 Scrivere un programma concorrente che simuli il funzionamento di un'attività commerciale. Il negozio è caratterizzato da uno stato (aperto/chiuso) e da una capacità massima di 5 clienti. L'attività è composta da tre thread concorrenti:
 
 **a) Thread EntraCliente**: esegue ripetutamente le seguenti attività:
+
 - Attende 1,5 secondi
-- Se il negozio è aperto e il numero di clienti presenti è minore della capacità massima, simula l'ingresso di un nuovo client nel negozio 
+- Se il negozio è aperto e il numero di clienti presenti è minore della capacità massima, simula l'ingresso di un nuovo client nel negozio
 - Se il negozio è chiuso, il thread termina
 
 **b) Thread EsceCliente**: esegue ripetutamente le seguenti attività:
+
 - Attende 5,5 secondi
 - Se nel locale vi è almeno un cliente, simula l'uscita di un cliente, il quale paga al commerciante la somma di 20 euro
 - Il thread termina quando il negozio è chiuso e non ci sono più clienti nel locale
 
 **c) Thread ChiudiNegozio**:
+
 - Attende 15 secondi
 - Chiude il negozio, indipendentemente dal numero di clienti ancora presenti (i clienti possono uscire anche quando il negozio è chiuso)
 
 I thread comunicano le attività svolte visualizzando appositi messaggi sullo schermo. Il programma, dopo aver atteso la fine dei tre thread, stampa il ricavo giornaliero del negozio.
 
-### Riferimenti
+### 4.2 Riferimenti
+
 Questo esercizio richiede la coordinazione di tre thread con stati condivisi protetti da lock.
+
 - [Classe Thread](../charp-threads/#thread-in-c)
 - [Lock e Monitor](../concurrent-programming/#c-lock-keyword)
 - [Parallel.Invoke (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.invoke)
 
-### Svolgimento
+### 4.3 Svolgimento
 
 In questa soluzione utilizziamo `Parallel.Invoke` per eseguire i tre thread concorrenti. `Parallel.Invoke` attende automaticamente il completamento di tutte le azioni prima di proseguire.
 
@@ -368,9 +385,9 @@ namespace NegozioConcorrente
         static bool negozioAperto = true;
         
         // Lock per proteggere l'accesso alle variabili condivise
-        static readonly object _lockClientiInNegozio = new();
-        static readonly object _lockSaldoNegozio = new();
-        static readonly object _lockNegozioAperto = new();
+        static readonly Lock _lockClientiInNegozio = new();
+        static readonly Lock _lockSaldoNegozio = new();
+        static readonly Lock _lockNegozioAperto = new();
         
         const int NumeroMassimoClientiNegozio = 5;
         
@@ -478,7 +495,7 @@ namespace NegozioConcorrente
 }
 ```
 
-### Riflessioni
+### 4.4 Riflessioni
 
 Questo esercizio dimostra l'importanza della sincronizzazione corretta in scenari con multiple variabili condivise:
 
@@ -513,16 +530,19 @@ Nella prossima sezione sugli esercizi con Task, vedremo come questo stesso probl
 
 ## Esercizio 5: I Tornelli dello Stadio
 
-### Traccia
+### 5.1 Traccia
+
 Uno stadio ha 3 tornelli d'ingresso. 50 persone devono entrare nello stadio, scegliendo casualmente uno dei tre tornelli. Ogni volta che una persona passa, un contatore globale degli spettatori presenti viene incrementato. Scrivi un programma che simuli l'ingresso delle persone e garantisca che il conteggio finale sia corretto (50), evitando problemi di *Race Condition*.
 
 Il programma deve stampare:
+
 - "Persona X entra dal tornello Y. Totale: Z"
 
-### Riferimenti
+### 5.2 Riferimenti
+
 Questo esercizio mira a risolvere il problema della **Race Condition** descritto nella pagina [C# Threads](../charp-threads/#race-condition). È necessario proteggere l'accesso alla variabile condivisa `totaleSpettatori`.
 
-### Svolgimento
+### 5.3 Svolgimento
 
 Utilizziamo l'istruzione `lock` per garantire che solo un thread alla volta possa incrementare e leggere il contatore.
 
@@ -535,7 +555,7 @@ namespace StadioTornelli
     internal class Program
     {
         static int totaleSpettatori = 0;
-        static readonly object _lock = new(); // Oggetto per il lock
+        static readonly Lock _lock = new(); // Oggetto per il lock
         static readonly Random gen = new();
 
         static void Main(string[] args)
@@ -574,10 +594,11 @@ namespace StadioTornelli
 }
 ```
 
-### Riflessioni
+### 5.4 Riflessioni
 
 :::caution[Race Condition Classica]
 Senza il blocco `lock`, due persone che entrano contemporaneamente da tornelli diversi potrebbero:
+
 1. Leggere lo stesso valore di `totaleSpettatori` (es. 10)
 2. Incrementarlo  entrambe a 11
 3. Scrivere 11, perdendo un conteggio
@@ -593,16 +614,19 @@ L'uso di `lock` serializza l'accesso alla variabile condivisa: solo un thread al
 
 ## Esercizio 6: Il Fast Food
 
-### Traccia
+### 6.1 Traccia
+
 In un Fast Food c'è un cuoco che prepara hamburger e li mette su uno scaffale riscaldato che può contenere al massimo 5 hamburger. I clienti arrivano e comprano un hamburger. Se lo scaffale è vuoto, il cliente aspetta. Se lo scaffale è pieno, il cuoco aspetta a produrne altri.
 Simula questa situazione con un thread Produttore (Cuoco) e più thread Consumatori (Clienti).
 
-### Riferimenti
+### 6.2 Riferimenti
+
 Questo è il classico problema del **Produttore-Consumatore**. Richiede di gestire due condizioni:
+
 1. Spazio disponibile per produrre (gestito con un semaforo inizializzato alla capacità massima).
 2. Prodotti disponibili per consumare (gestito con un semaforo inizializzato a 0).
 
-### Svolgimento
+### 6.3 Svolgimento
 
 ```csharp
 using System;
@@ -667,17 +691,20 @@ namespace FastFoodProducerConsumer
 }
 ```
 
-### Riflessioni
+### 6.4 Riflessioni
 
 :::tip[Pattern Producer-Consumer]
 In questo schema, i due semafori lavorano in modo **speculare**:
+
 - `postiVuoti` blocca il **produttore** quando lo scaffale è pieno
 - `hamburgerPronti` blocca i **consumatori** quando lo scaffale è vuoto
 
 Questo pattern garantisce che:
+
 - Non si produca oltre la capacità disponibile
 - Non si consumi ciò che non esiste
 - I due ruoli siano perfettamente sincronizzati
+
 :::
 
 :::note[Semafori Complementari]
@@ -688,16 +715,19 @@ Notare che i due semafori sono **complementari**: quando uno cresce, l'altro dec
 
 ## Esercizio 7: Il Tabellone Elettronico
 
-### Traccia
+### 7.1 Traccia
+
 In una scuola c'è un tabellone elettronico dove vengono pubblicati gli avvisi. Ci sono 10 studenti (lettori) che leggono periodicamente il tabellone e 1 preside (scrittore) che aggiorna il messaggio ogni tanto.
 Più studenti possono leggere il tabellone contemporaneamente, ma quando il preside scrive, nessuno può leggere né scrivere. Scrivi un programma che gestisca questa concorrenza in modo efficiente.
 
-### Riferimenti
+### 7.2 Riferimenti
+
 Questo è il problema dei **Lettori-Scrittori**. In .NET, la classe `ReaderWriterLockSlim` è ottimizzata proprio per questo scenario, permettendo letture multiple concorrenti ma scritture esclusive.
+
 - [ReaderWriterLockSlim (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.readerwriterlockslim?view=net-8.0)
 - [Gestione dei Lock in C# (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/standard/threading/overview-of-synchronization-primitives)
 
-### Svolgimento
+### 7.3 Svolgimento
 
 ```csharp
 using System;
@@ -772,7 +802,7 @@ namespace TabelloneLettoriScrittori
 }
 ```
 
-### Riflessioni
+### 7.4 Riflessioni
 
 :::tip[Quando Usare ReaderWriterLockSlim]
 L'uso di `ReaderWriterLockSlim` è molto più efficiente di un semplice `lock` (Monitor) in scenari dove **le letture sono molto più frequenti delle scritture**.

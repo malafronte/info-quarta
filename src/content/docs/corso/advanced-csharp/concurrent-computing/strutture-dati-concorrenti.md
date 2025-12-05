@@ -20,17 +20,18 @@ Questa pagina presenta le principali strutture dati utilizzate in programmazione
 
 - **Collezioni Standard**: `System.Collections.Generic` (List, Queue, Stack, Dictionary)
 - **Collezioni Concorrenti**: `System.Collections.Concurrent` (ConcurrentBag, ConcurrentQueue, ConcurrentStack, ConcurrentDictionary, BlockingCollection)
+
   :::
 
 ---
 
 ## 1. Liste e Collezioni Non Ordinate
 
-### Funzionalità Principale
+### 1.1 Funzionalità Principale
 
 Le liste sono collezioni dinamiche che permettono l'aggiunta, la rimozione e l'accesso casuale agli elementi. In scenari concorrenti, quando l'ordine di inserimento non è rilevante, le "bag" (sacche) rappresentano un'alternativa più efficiente.
 
-### Versioni Disponibili
+### 1.2 Versioni Disponibili
 
 | Tipo               | Versione Non Thread-Safe | Versione Thread-Safe    |
 | ------------------ | ------------------------ | ----------------------- |
@@ -41,7 +42,9 @@ Le liste sono collezioni dinamiche che permettono l'aggiunta, la rimozione e l'a
 `List<T>` non offre alcuna protezione contro l'accesso concorrente. Operazioni come `Add()`, `Remove()` o l'accesso tramite indice possono corrompere lo stato interno della lista se eseguite simultaneamente da più thread.
 :::
 
-### Esempio: Versione Non Thread-Safe con Lock
+### 1.3 Esempi
+
+#### 1.3.1 Versione Non Thread-Safe con Lock
 
 ```csharp
 using System;
@@ -82,7 +85,7 @@ class ListNonThreadSafe
 }
 ```
 
-### Esempio: Versione Thread-Safe con ConcurrentBag
+#### 1.3.2 Versione Thread-Safe con ConcurrentBag
 
 ```csharp
 using System;
@@ -125,7 +128,7 @@ class ConcurrentBagExample
 }
 ```
 
-### Analisi e Confronto Prestazioni
+### 1.4 Analisi e Confronto Prestazioni
 
 :::tip[Quando Usare ConcurrentBag]
 `ConcurrentBag<T>` è ottimizzato per scenari in cui:
@@ -143,6 +146,7 @@ class ConcurrentBagExample
 
 - Nessun accesso per indice (non supporta `bag[i]`)
 - Ordine di estrazione non garantito (LIFO locale, ma non globale)
+
   :::
 
 **Confronto Prestazioni:**
@@ -159,18 +163,20 @@ class ConcurrentBagExample
 
 ## 2. Code FIFO (First-In-First-Out)
 
-### Funzionalità Principale
+### 2.1 Funzionalità Principale
 
 Le code implementano il paradigma FIFO: il primo elemento inserito è il primo ad essere estratto. Sono fondamentali per implementare buffer, scheduling di task e pattern Producer-Consumer.
 
-### Versioni Disponibili
+### 2.2 Versioni Disponibili
 
 | Tipo           | Versione Non Thread-Safe | Versione Thread-Safe    |
 | -------------- | ------------------------ | ----------------------- |
 | Coda generica  | `Queue<T>`               | `ConcurrentQueue<T>`    |
 | Coda bloccante | N/A                      | `BlockingCollection<T>` |
 
-### Esempio: Versione Non Thread-Safe con Lock
+### 2.3 Esempi
+
+#### 2.3.1 Versione Non Thread-Safe con Lock
 
 ```csharp
 using System;
@@ -226,7 +232,7 @@ class QueueNonThreadSafe
 }
 ```
 
-### Esempio: Versione Thread-Safe con ConcurrentQueue
+#### 2.3.2 Versione Thread-Safe con ConcurrentQueue
 
 ```csharp
 using System;
@@ -276,7 +282,7 @@ class ConcurrentQueueExample
 }
 ```
 
-### Analisi e Confronto Prestazioni
+### 2.4 Analisi e Confronto Prestazioni
 
 :::tip[ConcurrentQueue - Lock-Free Implementation]
 `ConcurrentQueue<T>` utilizza algoritmi **lock-free** basati su **Compare-And-Swap (CAS)** atomico, offrendo:
@@ -292,6 +298,7 @@ class ConcurrentQueueExample
 
 - Overhead leggermente superiore in scenari single-threaded
 - Non blocca il consumer se vuota (richiede polling o `BlockingCollection`)
+
   :::
 
 :::note[BlockingCollection per Producer-Consumer]
@@ -314,17 +321,19 @@ Vedere [Esercizio 6](/corso/advanced-csharp/concurrent-computing/esercizi-task#e
 
 ## 3. Stack LIFO (Last-In-First-Out)
 
-### Funzionalità Principale
+### 3.1 Funzionalità Principale
 
 Gli stack implementano il paradigma LIFO: l'ultimo elemento inserito è il primo ad essere estratto. Utilizzati per gestione di scope, undo/redo, e algoritmi ricorsivi.
 
-### Versioni Disponibili
+### 3.2 Versioni Disponibili
 
 | Tipo           | Versione Non Thread-Safe | Versione Thread-Safe |
 | -------------- | ------------------------ | -------------------- |
 | Stack generica | `Stack<T>`               | `ConcurrentStack<T>` |
 
-### Esempio: Versione Non Thread-Safe con Lock
+### 3.3 Esempi
+
+#### 3.3.1 Versione Non Thread-Safe con Lock
 
 ```csharp
 using System;
@@ -392,7 +401,7 @@ class StackNonThreadSafe
 }
 ```
 
-### Esempio: Versione Thread-Safe con ConcurrentStack
+#### 3.3.2 Versione Thread-Safe con ConcurrentStack
 
 ```csharp
 using System;
@@ -451,7 +460,7 @@ class ConcurrentStackExample
 }
 ```
 
-### Analisi e Confronto Prestazioni
+### 3.4 Analisi e Confronto Prestazioni
 
 :::tip[ConcurrentStack - Lock-Free con Linked List]
 `ConcurrentStack<T>` è implementato come **linked list lock-free**:
@@ -490,11 +499,11 @@ Queste operazioni sono più efficienti di loop multipli.
 
 ## 4. Dizionari (Key-Value Maps)
 
-### Funzionalità Principale
+### 4.1 Funzionalità Principale
 
 I dizionari mappano chiavi univoche a valori, permettendo ricerca, inserimento e rimozione con complessità O(1) media. Sono la struttura dati più critica negli scenari concorrenti multi-lettura/scrittura.
 
-### Versioni Disponibili
+### 4.2 Versioni Disponibili
 
 | Tipo                | Versione Non Thread-Safe   | Versione Thread-Safe                   |
 | ------------------- | -------------------------- | -------------------------------------- |
@@ -505,7 +514,9 @@ I dizionari mappano chiavi univoche a valori, permettendo ricerca, inserimento e
 `Dictionary<TKey, TValue>` può corrompere la sua struttura interna (hash table) se modificato concorrentemente. Anche solo **leggere** durante una scrittura può causare eccezioni o loop infiniti.
 :::
 
-### Esempio: Versione Non Thread-Safe con ReaderWriterLockSlim
+### 4.3 Esempi
+
+#### 4.3.1 Versione Non Thread-Safe con ReaderWriterLockSlim
 
 ```csharp
 using System;
@@ -589,7 +600,7 @@ class DictionaryNonThreadSafe
 }
 ```
 
-### Esempio: Versione Thread-Safe con ConcurrentDictionary
+#### 4.3.2 Versione Thread-Safe con ConcurrentDictionary
 
 ```csharp
 using System;
@@ -657,7 +668,7 @@ class ConcurrentDictionaryExample
 }
 ```
 
-### Metodi Atomici Avanzati
+### 4.4 Metodi Atomici Avanzati
 
 `ConcurrentDictionary<TKey, TValue>` offre metodi atomici che combinano più operazioni:
 
@@ -680,7 +691,7 @@ bool aggiornato = dizionario.TryUpdate(
 );
 ```
 
-### Analisi e Confronto Prestazioni
+### 4.5 Analisi e Confronto Prestazioni
 
 :::tip[ConcurrentDictionary - Quando e Perché]
 `ConcurrentDictionary<TKey, TValue>` usa **fine-grained locking** con multiple lock interne (buckets):
@@ -701,6 +712,7 @@ bool aggiornato = dizionario.TryUpdate(
 
 - Circa 2-3x memoria rispetto a Dictionary standard
 - Lock granulari (tipicamente 31 o più buckets)
+
   :::
 
 **Confronto Prestazioni:**
@@ -716,7 +728,7 @@ bool aggiornato = dizionario.TryUpdate(
 
 **Benchmark Indicativi** (su 8-core, 1M operazioni):
 
-```
+```text
 Scenario: 80% Read, 20% Write (8 thread)
 - Dictionary + RWLock:     ~450ms
 - ConcurrentDictionary:    ~280ms (1.6x più veloce)
@@ -730,11 +742,11 @@ Scenario: 50% Read, 50% Write (8 thread)
 
 ## 5. BlockingCollection - Coordinazione Producer-Consumer
 
-### Funzionalità Principale
+### 5.1 Funzionalità Principale
 
 `BlockingCollection<T>` è una wrapper thread-safe che aggiunge **capacità di blocking** a qualsiasi collezione che implementa `IProducerConsumerCollection<T>`. È la soluzione raccomandata per il pattern Producer-Consumer.
 
-### Caratteristiche Distintive
+### 5.2 Caratteristiche Distintive
 
 :::note[BlockingCollection vs Altre Collezioni]
 A differenza di `ConcurrentQueue` o `ConcurrentStack`, `BlockingCollection<T>` **blocca** i thread quando:
@@ -745,7 +757,7 @@ A differenza di `ConcurrentQueue` o `ConcurrentStack`, `BlockingCollection<T>` *
 Questo elimina la necessità di polling attivo o semafori esterni.
 :::
 
-### Collezione Sottostante Personalizzabile
+### 5.3 Collezione Sottostante Personalizzabile
 
 ```csharp
 // Default: usa ConcurrentQueue<T> (FIFO)
@@ -761,7 +773,7 @@ var collectionLIFO = new BlockingCollection<int>(new ConcurrentStack<int>());
 var collectionBounded = new BlockingCollection<int>(boundedCapacity: 50);
 ```
 
-### Esempio Completo: Pipeline di Elaborazione
+### 5.4 Esempio Completo: Pipeline di Elaborazione
 
 ```csharp
 using System;
@@ -821,7 +833,7 @@ class PipelineExample
 }
 ```
 
-### Metodi Principali
+### 5.5 Metodi Principali
 
 :::tip[API di BlockingCollection]
 
@@ -842,9 +854,10 @@ class PipelineExample
 - `Count` - Numero elementi correnti
 - `IsCompleted` - True se CompleteAdding chiamato e collezione vuota
 - `IsAddingCompleted` - True se CompleteAdding chiamato
+
   :::
 
-### Analisi e Vantaggi
+### 5.6 Analisi e Vantaggi
 
 :::note[Vantaggi rispetto a Semafori Manuali]
 
@@ -863,7 +876,7 @@ Vedere [Esercizio 6](/corso/advanced-csharp/concurrent-computing/esercizi-task#e
 
 ---
 
-## Tabella Riassuntiva: Scelta della Struttura Dati
+## 6. Tabella Riassuntiva: Scelta della Struttura Dati
 
 | Scenario                           | Struttura Consigliata               | Alternativa                     |
 | ---------------------------------- | ----------------------------------- | ------------------------------- |
@@ -887,7 +900,7 @@ In questi casi, le collezioni standard sono 2-5x più veloci.
 
 ---
 
-## Best Practices e Raccomandazioni
+## 7. Best Practices e Raccomandazioni
 
 :::tip[Linee Guida Generali]
 
@@ -904,17 +917,20 @@ In questi casi, le collezioni standard sono 2-5x più veloci.
    - Supporta multiple producers/consumers
 
 3. **Attenzione all'Overhead**
+
    - ~2-3x memoria in più rispetto a collezioni standard
    - Overhead accettabile in scenari realmente concorrenti
 
 4 **Evita Iterazioni Durante Modifiche**
 
-- Anche se thread-safe, `foreach` può vedere snapshot inconsistenti
-- Usa `ToArray()` per snapshot o disegna logica tollerante
+   - Anche se thread-safe, `foreach` può vedere snapshot inconsistenti
+   - Usa `ToArray()` per snapshot o disegna logica tollerante
 
-5. **Monitoring e Performance**
+1. **Monitoring e Performance**
+
    - Misura sempre con profiler in scenari reali
    - Le performance teoriche possono variare con pattern di accesso
+  
      :::
 
 :::note[Riferimenti Ufficiali Microsoft]
@@ -923,4 +939,5 @@ In questi casi, le collezioni standard sono 2-5x più veloci.
 - [When to Use Concurrent Collection](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/when-to-use-a-thread-safe-collection)
 - [BlockingCollection Overview](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/blockingcollection-overview)
 - [ConcurrentDictionary](https://learn.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2)
+
   :::

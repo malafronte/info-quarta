@@ -14,7 +14,8 @@ In questa pagina vengono proposti alcuni esercizi svolti sulla programmazione co
 
 ## Esercizio 1: Palleggio tra Quattro Ragazzi
 
-### Traccia
+### 1.1 Traccia
+
 Quattro ragazzi (Giovanni, Mattia, Alessandro, Roberto) giocano a volley. Stanno facendo un esercizio di riscaldamento nel quale si passano la palla a turno: Giovanni passa a Mattia, Mattia passa ad Alessandro, Alessandro la passa a Roberto, Roberto la passa nuovamente a Giovanni e il ciclo si ripete.
 
 Ogni ragazzo quando riceve la palla dice la frase: **"Sono \{proprio nome\} e passo la palla a \{nome del ragazzo che riceverà la palla\}"**.
@@ -23,7 +24,8 @@ L'attività di palleggio (tempo in cui un ragazzo tiene la palla prima di passar
 
 Utilizzare i **Task** per gestire l'attività di ciascun ragazzo.
 
-### Riferimenti
+### 1.2 Riferimenti
+
 Questo esercizio introduce l'uso di Task per attività concorrenti coordinate, utilizzando semafori per il passaggio del controllo tra task.
 
 - [Task Parallel Library (TPL)](../tpl/)
@@ -31,7 +33,7 @@ Questo esercizio introduce l'uso di Task per attività concorrenti coordinate, u
 - [SemaphoreSlim (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim)
 - [Cancellazione Task (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/task-cancellation)
 
-### Svolgimento
+### 1.3 Svolgimento
 
 Di seguito vengono presentate due versioni della soluzione: una versione base con gestione della terminazione tramite variabile booleana condivisa, e una versione avanzata con `CancellationToken`.
 
@@ -64,7 +66,7 @@ namespace VolleyWarmUp
         
         // Flag per terminare il gioco
         static bool fischioAllenatore = false;
-        private static readonly object _lockFischioAllenatore = new();
+        private static readonly Lock _lockFischioAllenatore = new();
         
         static void Main(string[] args)
         {
@@ -288,7 +290,7 @@ namespace VolleyWarmUpCancellationToken
 }
 ```
 
-### Riflessioni
+### 1.4 Riflessioni
 
 Questo esercizio introduce concetti fondamentali della programmazione con Task:
 
@@ -304,16 +306,19 @@ Questo esercizio introduce concetti fondamentali della programmazione con Task:
 
 :::tip
 `CancellationToken` è preferibile a flag booleani per la cancellazione perché:
+
 - Può essere osservato da metodi come `Wait()`, `Delay()`, eliminando la necessità di controlli manuali
 - Fornisce un meccanismo standard riconosciuto in tutto il framework .NET
 - Permette di propagare la richiesta di cancellazione attraverso catene di operazioni asincrone
+
 :::
 
 ---
 
 ## Esercizio 2: Autolavaggio Concorrente (Singolo Tunnel)
 
-### Traccia
+### 2.1 Traccia
+
 Scrivere un programma multithreading console C# che simuli il funzionamento di un autolavaggio mediante Task.
 
 L'autolavaggio è costituito da **un tunnel** nel quale possono entrare le macchine una alla volta. Davanti al tunnel c'è un parcheggio nel quale possono entrare al massimo 20 macchine.
@@ -329,16 +334,18 @@ Se l'autolavaggio viene chiuso ma ci sono ancora auto in attesa, il sistema lava
 
 Il Main program fa partire il Task che simula il tunnel di lavaggio e 50 Task che simulano le auto che arrivano, quindi va in sleep per qualche secondo, poi chiude l' autolavaggio e aspetta che il sistema finisca.
 
-### Riferimenti
+### 2.2 Riferimenti
+
 Questo esercizio introduce il pattern Sleeping Barber (Barbiere che dorme) con semafori e la gestione di stato condiviso.
 
 - [Task Parallel Library](../tpl/)
 - [SemaphoreSlim](../concurrent-programming/#semafori)
 - [Producer-Consumer Pattern (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/blockingcollection-overview)
 
-### Svolgimento
+### 2.3 Svolgimento
 
 Questa soluzione utilizza due semafori:
+
 - `tunnelReady`: semaforo "servente" (il tunnel disponibile)
 - `carInParkingLotReady`: semaforo "utente" (auto in attesa)
 
@@ -363,9 +370,9 @@ namespace AutolavaggioTasks
         const int MaxCarArrivalIntervalMs = 300;
         
         // Lock per proteggere variabili condivise
-        private static readonly object _lockCurrentCarInTunnelIndex = new();
-        private static readonly object _lockFreePlaces = new();
-        private static readonly object _lockCarWashOpen = new();
+        private static readonly Lock _lockCurrentCarInTunnelIndex = new();
+        private static readonly Lock _lockFreePlaces = new();
+        private static readonly Lock _lockCarWashOpen = new();
         
         // Semafori per coordinare tunnel e auto
         static readonly SemaphoreSlim tunnelReady = new(NumberOfTunnels, NumberOfTunnels); // Servente
@@ -537,7 +544,7 @@ namespace AutolavaggioTasks
 }
 ```
 
-### Riflessioni
+### 2.4 Riflessioni
 
 Questo esercizio introduce il pattern **Sleeping Barber** (Barbiere che dorme) mediante semafori:
 
@@ -565,10 +572,11 @@ Attenzione all'uso di `CurrentCount` sul semaforo nella condizione del while. In
 
 ## Esercizio 3: Autolavaggio Concorrente (Tunnel Multipli)
 
-### Traccia
+### 3.1 Traccia
+
 Modificare l'esercizio precedente in modo che ci siano **due o più tunnel** nello stesso autolavaggio, permettendo di lavare più auto contemporaneamente.
 
-### Svolgimento
+### 3.2 Svolgimento
 
 La modifica è minima: basta cambiare `NumberOfTunnels` e creare un array di task per i tunnel:
 
@@ -594,8 +602,8 @@ namespace AutolavaggioTasksMultiTunnel
         const int MaxCarArrivalIntervalMs = 300;
         
         // Lock per proteggere variabili condivise
-        private static readonly object _lockFreePlaces = new();
-        private static readonly object _lockCarWashOpen = new();
+        private static readonly Lock _lockFreePlaces = new();
+        private static readonly Lock _lockCarWashOpen = new();
         
         // Coda concorrente per passare i dati delle auto ai tunnel
         static ConcurrentQueue<int> carsInParking = new();
@@ -777,7 +785,7 @@ namespace AutolavaggioTasksMultiTunnel
 }
 ```
 
-### Riflessioni
+### 3.3 Riflessioni
 
 Il passaggio da un tunnel a più tunnel dimostra la scalabilità del pattern Sleeping Barber:
 
@@ -791,6 +799,7 @@ Il passaggio da un tunnel a più tunnel dimostra la scalabilità del pattern Sle
 
 :::tip
 Questo pattern di "multiple workers" è molto comune in sistemi concorrenti:
+
 - Web server con pool di thread
 - Database connection pooling
 - Task queues in distributed systems
@@ -802,22 +811,25 @@ Il semaforo con count > 1 rappresenta esattamente il numero di "risorse" (tunnel
 
 ## Esercizio 4: Negozio Concorrente (Task Version)
 
-### Traccia
+### 4.1 Traccia
+
 Riscrivere l'esercizio del Negozio Concorrente (visto nella sezione Thread) utilizzando i **Task** invece dei Thread.
 
 Recall: Il negozio ha tre attività concurrent i:
+
 - **EntraCliente**: ogni 1,5s tenta di far entrare un cliente (max 5)
 - **EsceCliente**: ogni 5,5s fa uscire un cliente che paga 20 euro
 - **ChiudiNegozio**: dopo 15s chiude il negozio
 
 Il programma stampa il ricavo giornaliero alla fine.
 
-### Riferimenti
+### 4.2 Riferimenti
+
 - [Negozio Concorrente (Thread)](../esercizi-thread/#esercizio-5-negozio-concorrente)
 - [Task.Factory.StartNew (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.taskfactory.startnew)
 - [Task.WaitAll (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.waitall)
 
-### Svolgimento
+### 4.3 Svolgimento
 
 La conversione da Thread a Task richiede modifiche minime:
 
@@ -836,9 +848,9 @@ namespace NegozioConcorrenteTask
         static bool negozioAperto = true;
         
         // Lock per proteggere le variabili condivise
-        static readonly object _lockClientiInNegozio = new();
-        static readonly object _lockSaldoNegozio = new();
-        static readonly object _lockNegozioAperto = new();
+        static readonly Lock _lockClientiInNegozio = new();
+        static readonly Lock _lockSaldoNegozio = new();
+        static readonly Lock _lockNegozioAperto = new();
         
         const int NumeroMassimoClientiNegozio = 5;
         
@@ -936,11 +948,12 @@ namespace NegozioConcorrenteTask
 }
 ```
 
-### Riflessioni
+### 4.4 Riflessioni
 
 La transizione da Thread a Task evidenzia i vantaggi dell'astrazione offerta da TPL:
 
 1. **Sintassi Più Pulita**:
+
    ```csharp
    // Thread approach
    Thread t = new Thread(Method);
@@ -960,29 +973,34 @@ La transizione da Thread a Task evidenzia i vantaggi dell'astrazione offerta da 
 
 :::note
 Confrontando questa versione con la versione Thread in [Esercizi sui Thread](/corso/advanced-csharp/concurrent-computing/esercizi-thread#esercizio-5-negozio-concorrente), si nota che:
+
 - La versione Thread usa `Parallel.Invoke` (che internamente usa TaskPooling
 - La versione Task usa esplicitamente `Task.Factory.StartNew`
 - Entrambe hanno lo stesso comportamento, ma Task offre più flessibilità per scenari avanzati
+
 :::
 
 ---
 
 ## Esercizio 5: Somma dei Numeri Primi
 
-### Traccia
+### 5.1 Traccia
+
 Calcolare la somma dei numeri primi compresi tra 1 e 100.000 utilizzando:
+
 1. Il calcolo **sequenziale**
 2. Il calcolo **parallelo** con `Parallel.ForEach` e `ConcurrentBag`
 3. Il calcolo **parallelo** con `Parallel.ForEach` e **thread-local data**
 
 Calcolare il **fattore di speedup** nei due casi di calcolo parallelo (con e senza thread local data) rispetto al calcolo sequenziale.
 
-### Riferimenti
+### 5.2 Riferimenti
+
 - [Data Parallelism (TPL)](../tpl/#parallelismo-dei-dati-task-parallel-library)
 - [Parallel.ForEach (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.foreach)
 - [ConcurrentBag (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentbag-1)
 
-### Svolgimento
+### 5.3 Svolgimento
 
 Di seguito le tre implementazioni con confronto delle prestazioni.
 
@@ -1149,7 +1167,7 @@ namespace SommaNumeriPrimi
 }
 ```
 
-### Riflessioni
+### 5.4 Riflessioni
 
 Questo esercizio dimostra concetti chiave del parallelismo dei dati:
 
@@ -1160,6 +1178,7 @@ Questo esercizio dimostra concetti chiave del parallelismo dei dati:
    - **Thread Local Data**: Ogni thread accumula in una variabile locale privata, riducendo drasticamente la contesa. Solo il "finalizer" richiede un lock, che viene chiamato una volta per thread (non per ogni numero primo).
 
 3. **Struttura di Parallel.ForEach con Thread-Local**:
+
    ```csharp
    Parallel.ForEach(
        source,           // Sorgente dati da processare
@@ -1175,6 +1194,7 @@ Questo esercizio dimostra concetti chiave del parallelismo dei dati:
 
 :::tip
 **Regola pratica per il parallelismo dei dati:**
+
 - Se ogni iterazione è **fast** (< 1ms) e il dataset è piccolo → considera se il parallelismo vale l'overhead
 - Se ogni iterazione è **slow** (> 10ms) e le iterazioni sono indipendenti → il parallelismo porterà enormi benefici
 
@@ -1191,6 +1211,7 @@ Nel nostro caso, `IsPrime()` su numeri grandi è sufficientemente costoso da ben
 
 :::caution
 I risultati effettivi dipendono da:
+
 - Numero di core disponibili
 - Carico del sistema
 - Implementazione della JIT
@@ -1203,22 +1224,23 @@ Eseguire test multipli e calcolare la media per risultati affidabili.
 
 ## Esercizio 6: Moltiplicazione di Matrici
 
-### Traccia
+### 6.1 Traccia
 
 La moltiplicazione di matrici è un'operazione computazionalmente intensiva che si presta perfettamente alla parallelizzazione, poiché ogni cella della matrice risultante può essere calcolata indipendentemente dalle altre.
 
 Scrivere un programma che:
+
 1. Generi due matrici quadrate $A$ e $B$ di dimensione $N \times N$ (es. $N=1000$) con valori casuali.
 2. Implementi la moltiplicazione $C = A \times B$ in modo **sequenziale**.
 3. Implementi la moltiplicazione $C = A \times B$ in modo **parallelo** utilizzando `Parallel.For`.
 4. Misuri e confronti i tempi di esecuzione per diverse dimensioni di $N$ (es. 500, 1000, 1500).
 
-### Riferimenti
+### 6.2 Riferimenti
 
 - [Parallel.For (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.parallel.for)
 - [Data Parallelism](https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/data-parallelism-task-parallel-library)
 
-### Svolgimento
+### 6.3 Svolgimento
 
 ```csharp
 using System;
@@ -1307,7 +1329,7 @@ class MatrixMultiplication
 }
 ```
 
-### Riflessioni
+### 6.4 Riflessioni
 
 :::tip[Parallelismo sui Dati]
 Questo è un esempio classico di **Data Parallelism**. Non stiamo eseguendo task diversi (come nel Producer-Consumer), ma stiamo eseguendo **la stessa operazione su dati diversi** (le righe della matrice).
@@ -1321,43 +1343,47 @@ In questo esempio parallelizziamo solo il ciclo esterno (`i`). Parallelizzare an
 **Attenzione**: Con matrici di dimensioni medio-piccole (N < 2000), la versione parallela potrebbe essere **più lenta** della sequenziale!
 
 Questo accade perché:
+
 1. **Cache Thrashing**: L'accesso alla matrice B non è cache-friendly. Ogni thread accede a colonne diverse di B, causando continui cache miss.
 2. **Overhead del Parallelismo**: Il costo di creare e sincronizzare i thread supera il beneficio della parallelizzazione.
 3. **Competizione per la Cache**: I core competono per gli stessi dati in cache L2/L3.
 
 **Soluzioni**:
+
 - Usare matrici più grandi (N >= 2000-3000) per vedere benefici
 - Implementare **loop tiling/blocking** per migliorare la località della cache
 - Usare librerie ottimizzate come **BLAS** per operazioni su matrici in produzione
 
 **Risultati tipici su quad-core** (con ottimizzazioni):
+
 - N=500: Speedup 2.0-3.0x
 - N=1000: Speedup 3.5-5.0x (o 6-8x su 8+ core!)
 - N=2000+: Speedup 4.0-7.0x (scala con i core disponibili)
+
 :::
 
 ---
 
 ## Esercizio 7: Elaborazione Immagini Reale (Multi-Filtro)
 
-### Traccia
+### 7.1 Traccia
 
 Realizzare un'applicazione console che applichi un filtro grafico a scelta a un'immagine reale caricata da disco. L'elaborazione deve avvenire in parallelo per sfruttare tutti i core disponibili.
 
-1.  L'utente fornisce il percorso di un'immagine.
-2.  L'utente sceglie il filtro da applicare tra:
+1. L'utente fornisce il percorso di un'immagine.
+2. L'utente sceglie il filtro da applicare tra:
     - **Negativo**: Inverte i colori.
     - **Scala di Grigi**: Converte l'immagine in bianco e nero usando la formula della luminanza.
     - **Aumento Contrasto**: Aumenta il contrasto dei colori.
-3.  Il programma elabora l'immagine in parallelo accedendo direttamente ai byte in memoria.
-4.  Salvare l'immagine elaborata su disco.
+3. Il programma elabora l'immagine in parallelo accedendo direttamente ai byte in memoria.
+4. Salvare l'immagine elaborata su disco.
 
-### Riferimenti
+### 7.2 Riferimenti
 
 - [System.Drawing.Common (NuGet)](https://www.nuget.org/packages/System.Drawing.Common)
 - [Bitmap.LockBits Method](https://learn.microsoft.com/en-us/dotnet/api/system.drawing.bitmap.lockbits)
 
-### Prerequisiti
+### 7.3 Prerequisiti
 
 :::important[Installazione Pacchetto NuGet]
 Da .NET 6 in poi, `System.Drawing.Common` non è più incluso di default. Devi installare il pacchetto NuGet:
@@ -1367,6 +1393,7 @@ dotnet add package System.Drawing.Common
 ```
 
 Oppure tramite Package Manager Console in Visual Studio:
+
 ```powershell
 Install-Package System.Drawing.Common
 ```
@@ -1385,7 +1412,7 @@ Install-Package System.Drawing.Common
 Cambia `net8.0` in `net8.0-windows` (o la tua versione con `-windows` alla fine) per eliminare il warning.
 :::
 
-### Svolgimento
+### 7.4 Svolgimento
 
 ```csharp
 using System;
@@ -1615,7 +1642,7 @@ class ImageProcessingReal
 }
 ```
 
-### Riflessioni
+### 7.5 Riflessioni
 
 :::caution[Bitmap e Thread-Safety]
 La classe `Bitmap` di GDI+ **non è thread-safe**. Tentare di usare `GetPixel()` e `SetPixel()` da più thread contemporaneamente causerà eccezioni o corruzione della memoria. Inoltre, questi metodi sono estremamente lenti.
@@ -1623,13 +1650,13 @@ La classe `Bitmap` di GDI+ **non è thread-safe**. Tentare di usare `GetPixel()`
 
 :::tip[Accesso Diretto alla Memoria]
 La soluzione corretta per le performance è usare `LockBits`. Questo metodo ci dà accesso diretto all'area di memoria dove risiedono i pixel.
+
 1. Copiamo i dati in un array `byte[]` (Managed).
 2. Elaboriamo l'array in parallelo (sicuro e velocissimo).
 3. Ricopiamo i dati nell'immagine.
 
 Questo approccio è standard per l'elaborazione immagini ad alte prestazioni in C#.
 :::
-
 
 :::note[Parallelismo sulle Righe]
 Nel `Parallel.For`, iteriamo sulle **righe** (`y`) invece che sui singoli pixel. Questo riduce l'overhead della creazione dei task e migliora la **cache locality** (i pixel di una riga sono contigui in memoria).
@@ -1639,7 +1666,7 @@ Nel `Parallel.For`, iteriamo sulle **righe** (`y`) invece che sui singoli pixel.
 
 ## Esercizio 8: Processo Produttivo con Pressa e Verniciatrice
 
-### Traccia
+### 8.1 Traccia
 
 Si vuole simulare un processo produttivo di pezzi meccanici per automobili con due macchine collegate tra loro da un nastro trasportatore:
 
@@ -1650,6 +1677,7 @@ Si vuole simulare un processo produttivo di pezzi meccanici per automobili con d
 Scrivere un programma .NET Core Console che simuli il processo produttivo costituito da pressa, verniciatrice e nastro trasportatore, mediante Task.
 
 **Specifiche:**
+
 - La pressa impiega **0,5 secondi** per pressare la lamiera
 - La verniciatrice impiega **0,7 secondi** per verniciare un pezzo
 - Simulare la produzione di **25 pezzi**
@@ -1657,9 +1685,10 @@ Scrivere un programma .NET Core Console che simuli il processo produttivo costit
   - Pressa: `"Pressa: prodotto il pezzo i-mo"`
   - Verniciatrice: `"Verniciatrice: verniciato il pezzo i-mo"`
 
-### Riferimenti
+### 8.2 Riferimenti
 
 Questo è un classico problema **Producer-Consumer** con buffer limitato (nastro trasportatore). Richiede:
+
 - Un buffer FIFO (coda) per il nastro trasportatore
 - Sincronizzazione tra produttore (pressa) e consumatore (verniciatrice)
 - Gestione della capacità massima del nastro
@@ -1669,7 +1698,9 @@ Questo è un classico problema **Producer-Consumer** con buffer limitato (nastro
 - [SemaphoreSlim (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.threading.semaphoreslim)
 - [Queue\<T\> (Microsoft Docs)](https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.queue-1)
 
-### Svolgimento
+### 8.3 Svolgimento
+
+#### Versione 1: due semafori e coda FIFO
 
 La soluzione utilizza due semafori complementari e una coda FIFO per implementare il buffer del nastro trasportatore:
 
@@ -1770,7 +1801,7 @@ namespace ProcessoProduttivo
 }
 ```
 
-### Versione 2: Con BlockingCollection (Thread-Safe)
+#### Versione 2: uso di BlockingCollection (Thread-Safe)
 
 .NET fornisce `BlockingCollection<T>`, una collezione thread-safe **specifica per scenari Producer-Consumer** che semplifica enormemente il codice eliminando la necessità di gestire manualmente semafori e lock:
 
@@ -1848,7 +1879,7 @@ namespace ProcessoProduttivoBlockingCollection
 }
 ```
 
-### Riflessioni
+### 8.4 Riflessioni
 
 Questo esercizio presenta **due approcci** per implementare il pattern Producer-Consumer con buffer limitato:
 
@@ -1873,9 +1904,11 @@ Questo esercizio dimostra un'implementazione completa del pattern Producer-Consu
 L'uso di `Queue<int>` per il nastro trasportatore garantisce l'ordine FIFO (First-In-First-Out): i pezzi vengono verniciati nello stesso ordine in cui sono stati prodotti. Questo è fondamentale in molti processi produttivi reali.
 
 Operazioni:
+
 - `Enqueue()` aggiunge un elemento in coda
 - `Dequeue()` rimuove e restituisce il primo elemento
 - `Count` restituisce il numero di elementi presenti
+
 :::
 
 :::note[Sincronizzazione con Due Semafori]
@@ -1891,9 +1924,11 @@ La somma `postiLiberi.CurrentCount + pezziPronti.CurrentCount` è sempre uguale 
 
 :::caution[Protezione della Coda]
 Anche se i semafori garantiscono che solo un thread alla volta possa aggiungere (`Enqueue`) o rimuovere (`Dequeue`) elementi, è necessario il `lock` perché:
+
 1. `Queue<T>` **non è thread-safe**
 2. Vogliamo rendere atomica l'operazione di enqueue/dequeue insieme alla stampa del count
 3. Preveniamo race condition tra le operazioni sulla coda
+
 :::
 
 #### Versione 2: BlockingCollection\<T\>
@@ -1902,22 +1937,27 @@ Anche se i semafori garantiscono che solo un thread alla volta possa aggiungere 
 `BlockingCollection<T>` è la collezione **raccomandata da Microsoft** per scenari Producer-Consumer. Vantaggi:
 
 **Semplicità:**
+
 - Nessun semaforo da gestire manualmente
 - Nessun lock necessario
 - Codice più pulito e manutenibile
 
 **Funzionalità integrate:**
+
 - `Add()` blocca automaticamente se piena (come `Wait()` sul semaforo postiLiberi)
 - `Take()` o `GetConsumingEnumerable()` bloccano se vuota (come `Wait()` sul semaforo pezziPronti)
 - `CompleteAdding()` segnala la fine della produzione, permettendo al consumatore di terminare elegantemente
 
 **Thread-safety:**
+
 - Internamente usa `ConcurrentQueue<T>` (thread-safe)
 - Gestione ottimizzata dei lock interni
+
 :::
 
 :::note[GetConsumingEnumerable()]
 Il metodo `GetConsumingEnumerable()` è particolarmente elegante:
+
 ```csharp
 foreach (int item in collection.GetConsumingEnumerable())
 {
@@ -1926,12 +1966,15 @@ foreach (int item in collection.GetConsumingEnumerable())
 ```
 
 Questo pattern:
+
 - Blocca automaticamente quando la collezione è vuota
 - Termina automaticamente quando `CompleteAdding()` è stato chiamato e la collezione è vuota
 - Elimina la necessità di contatori manuali
+
 :::
 
 **Confronto Pressa (Produttore):**
+
 ```csharp
 // Versione 1: Manuale
 postiLiberi.Wait();              // Attendo spazio
@@ -1945,10 +1988,12 @@ nastroTrasportatore.Add(i);      // Tutto in una chiamata!
 ```
 
 **Differenze rispetto all'Esercizio Fast Food:**
+
 - **Con Queue/BlockingCollection**: Mantiene l'ordine FIFO dei pezzi (importante per tracciabilità)
 - **Senza Queue** (Fast Food): Non serviva tracciare quale hamburger specifico veniva consumato
 
 **Tempo di esecuzione:**
+
 - Pressa più veloce (0,5s) della verniciatrice (0,7s)
 - Il nastro inizialmente si riempie perché la pressa produce più velocemente
 - Verso la fine, il nastro si svuota aspettando che la verniciatrice finisca
@@ -1958,7 +2003,8 @@ In questo scenario, la **verniciatrice è il collo di bottiglia** (0,7s > 0,5s).
 :::
 
 :::note[Quale Versione Usare?]
+
 - **Versione 1 (Manuale)**: Utile per **scopi didattici** per comprendere i meccanismi sottostanti
 - **Versione 2 (BlockingCollection)**: Da preferire in **codice di produzione** per semplicità, manutenibilità e minori errori
-:::
 
+:::

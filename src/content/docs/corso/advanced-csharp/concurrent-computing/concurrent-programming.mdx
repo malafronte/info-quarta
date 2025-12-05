@@ -1,4 +1,4 @@
----
+thread---
 title: "Tecniche di sincronizzazione"
 description: "Tecniche di sincronizzazione tra thread. Semafori. Concetto di deadlock. Costrutti per la programmazione concorrente"
 sidebar:
@@ -102,7 +102,7 @@ namespace DataPartition01
         {
             //set length for the array size
             int length = 1000000;
-            //create new array of size lenght
+            //create new array of size length
             array = new int[length];
 
             //initialize array element with value of their respective index
@@ -277,7 +277,7 @@ Di seguito si delineano le linee guida per l'adozione delle primitive in scenari
 public class EsempioSincronizzazione
 {
     // 1. MONITOR: Oggetto semplice per il lock
-    private readonly object _lockObj = new object();
+    private readonly Lock _lockObj = new Lock();
 
     // 2. SEMAPHORESLIM: Inizializzato a 1 per comportarsi come un Mutex
     private readonly SemaphoreSlim _asyncLock = new SemaphoreSlim(1, 1);
@@ -328,7 +328,7 @@ namespace LockKeyword
     class Program
     {
         private static int sum;
-        private static readonly object _lock = new object();
+        private static readonly Lock _lock = new Lock();
 
         static void Main(string[] args)
         {
@@ -376,6 +376,10 @@ namespace LockKeyword
 }
 
 ```
+
+:::note
+La classe `System.Threading.Lock` è stata introdotta in [**.NET 9 e C# 13**](https://learn.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-13#new-lock-object) come tipo dedicato e ottimizzato per la sincronizzazione, offrendo **migliori prestazioni** e un'intenzione più chiara rispetto all'uso di un generico `object`.
+:::
 
 #### ReaderWriterLockSlim <Badge text="Approfondimento" variant="note" size="medium" />   
 
@@ -628,7 +632,7 @@ namespace ProducerConsumerLIFO
 {
     class Program
     {
-        static readonly object _lock = new ();
+        static readonly Lock _lock = new ();
         static int BufferSize = 10;
         static SemaphoreSlim emptyPosCount = new (BufferSize,BufferSize);
         static SemaphoreSlim fillPosCount = new (0,BufferSize);
@@ -712,7 +716,7 @@ namespace ProducerConsumerFIFO
 {
     class Program
     {
-        static readonly object _lock = new ();
+        static readonly Lock _lock = new ();
         static int bufferSize = 10;
         static int[] buffer = new int[bufferSize];
         static SemaphoreSlim emptyPosCount = new (bufferSize, bufferSize);
@@ -827,18 +831,18 @@ namespace BarberShopV1
         //per la gestione della sezione critica si utilizza un semaforo
         const int numberOfSeats = 10;
         static int freeSeats = numberOfSeats;
-        static SemaphoreSlim seatAccess = new SemaphoreSlim(1, 1);
-        static SemaphoreSlim barberReady = new SemaphoreSlim(0, 1);
-        static SemaphoreSlim clientReady = new SemaphoreSlim(0, numberOfSeats);
+        static readonly SemaphoreSlim seatAccess = new(1, 1);
+        static readonly SemaphoreSlim barberReady = new(0, 1);
+        static readonly SemaphoreSlim clientReady = new(0, numberOfSeats);
         static void Main(string[] args)
         {
             //Attivazione del thread del barbiere
             //il barbiere dorme sulla sua sedia da lavoro
             //quando arriva un cliente, il barbiere si sveglia e gli taglia i capelli
-            //quando ha finito di tagliare i capelli, se c'è un altro cliente seduto 
+            //quando ha finito di tagliare i capelli, se c'è un altro cliente seduto
             //su una delle sedie del negozio, lo serve immediatamente, altrimenti ritorna a dormine
             //il barbiere si sveglia appena arriva un nuovo cliente
-            Thread barber = new Thread(Barber);
+            Thread barber = new(Barber);
             barber.Start();
 
             //Attivazione dei thread dei clienti
@@ -855,7 +859,7 @@ namespace BarberShopV1
             barber.Join();
         }
 
-        private static void Client(object obj)
+        private static void Client()
         {
             //il cliente deve verificare se c'è posto
             //per farlo deve controllare il numero di posti liberi e quindi deve accedere alla
@@ -865,12 +869,12 @@ namespace BarberShopV1
             {
                 //il cliente si siede ed occupa un posto
                 freeSeats--;
-                Console.WriteLine($"Il cliente con Thread Id = {Thread.CurrentThread.ManagedThreadId} trova posto e attende di essere servito; posti disponibili = {freeSeats}");
+                Console.WriteLine($"Il cliente con Thread Id = {Environment.CurrentManagedThreadId} trova posto e attende di essere servito; posti disponibili = {freeSeats}");
                 seatAccess.Release();//esce dalla sezione critica
                 clientReady.Release();//aumenta il numero di clienti disponibili
                 barberReady.Wait();//attende che il barbiere sia disponibile
                 //il cliente viene servito
-                Console.WriteLine($"Sono il cliente con ThreadId = {Thread.CurrentThread.ManagedThreadId} " +
+                Console.WriteLine($"Sono il cliente con ThreadId = {Environment.CurrentManagedThreadId} " +
                     $". Il Barbiere ha finito di tagliarmi i capelli.");
             }
             else
@@ -878,12 +882,12 @@ namespace BarberShopV1
                 //libero la sezione critica
                 seatAccess.Release();
                 //il cliente se ne va
-                Console.WriteLine($"Il cliente con ThreadId = {Thread.CurrentThread.ManagedThreadId} non ha trovato posto e se ne va");
+                Console.WriteLine($"Il cliente con ThreadId = {Environment.CurrentManagedThreadId} non ha trovato posto e se ne va");
             }
 
         }
 
-        private static void Barber(object obj)
+        private static void Barber()
         {
             while (true)
             {
@@ -901,6 +905,7 @@ namespace BarberShopV1
     }
 }
 
+
 ```
 
 Seconda versione -- sezione critica gestita con Monitor (lock):
@@ -916,9 +921,9 @@ namespace BarberShopV2
         //per la gestione della sezione critica si utilizza un Monitor (lock)
         const int numberOfSeats = 10;
         static int freeSeats = numberOfSeats;
-        private static readonly object _lock = new object();
-        static SemaphoreSlim barberReady = new SemaphoreSlim(0, 1);
-        static SemaphoreSlim clientReady = new SemaphoreSlim(0, numberOfSeats);
+        private static readonly Lock _lock = new();
+        static readonly SemaphoreSlim barberReady = new(0, 1);
+        static readonly SemaphoreSlim clientReady = new(0, numberOfSeats);
 
         static void Main(string[] args)
         {
@@ -945,7 +950,7 @@ namespace BarberShopV2
             barber.Join();
         }
 
-        private static void Client(object obj)
+        private static void Client()
         {
             //il cliente deve verificare se c'è posto
             //per farlo deve controllare il numero di posti liberi e quindi deve accedere alla
@@ -958,7 +963,7 @@ namespace BarberShopV2
                 {
                     //il cliente si siede ed occupa un posto
                     freeSeats--;
-                    Console.WriteLine($"Il cliente con Thread Id = {Thread.CurrentThread.ManagedThreadId} trova posto e attende di essere servito;" +
+                    Console.WriteLine($"Il cliente con Thread Id = {Environment.CurrentManagedThreadId} trova posto e attende di essere servito;" +
                         $" posti disponibili = {freeSeats}");
                     clienteSiSiede = true;
                 }
@@ -968,20 +973,20 @@ namespace BarberShopV2
                 clientReady.Release();//aumenta il numero di clienti disponibili
                 barberReady.Wait();//attende che il barbiere sia disponibile
                                    //il cliente viene servito
-                Console.WriteLine($"Sono il cliente con ThreadId = {Thread.CurrentThread.ManagedThreadId} " +
+                Console.WriteLine($"Sono il cliente con ThreadId = {Environment.CurrentManagedThreadId} " +
                     $". Il Barbiere ha finito di tagliarmi i capelli.");
             }
             else
             {
                 //il cliente se ne va
-                Console.WriteLine($"Il cliente con ThreadId = {Thread.CurrentThread.ManagedThreadId} non ha trovato posto e se ne va");
+                Console.WriteLine($"Il cliente con ThreadId = {Environment.CurrentManagedThreadId} non ha trovato posto e se ne va");
             }
         }
 
 
 
 
-        private static void Barber(object obj)
+        private static void Barber()
         {
             while (true)
             {
@@ -1037,7 +1042,7 @@ namespace BarberShopDeadLock
         //per la gestione della sezione critica si utilizza un Monitor (lock)
         const int numberOfSeats = 10;
         static int freeSeats = numberOfSeats;
-        private static readonly object _lock = new object();
+        private static readonly Lock _lock = new Lock();
         static SemaphoreSlim barberReady = new SemaphoreSlim(0, 1);
         static SemaphoreSlim clientReady = new SemaphoreSlim(0, numberOfSeats);
 
