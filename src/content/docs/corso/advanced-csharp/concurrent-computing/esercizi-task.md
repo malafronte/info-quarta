@@ -1801,9 +1801,181 @@ namespace ProcessoProduttivo
 }
 ```
 
-#### Versione 2: uso di BlockingCollection (Thread-Safe)
+#### Versione 2: uso di `ConcurrentQueue`
 
-.NET fornisce `BlockingCollection<T>`, una collezione thread-safe **specifica per scenari Producer-Consumer** che semplifica enormemente il codice eliminando la necessità di gestire manualmente semafori e lock:
+`ConcurrentQueue` è la versione `thread-safe` di `Queue` ma non ha funzionalità di blocco automatico, quindi bisogna implementare la logica di sincronizzazione manuale per gestire:
+
+- Il blocco quando la coda è piena (produttore)
+- Il blocco quando la coda è vuota (consumatore)
+- La segnalazione di completamento
+
+In questo esercizio si hanno le seguenti caratteristiche:
+
+- **1 solo produttore** (Pressa)
+- **1 solo consumatore** (Verniciatrice)
+- **Semafori che già sincronizzano** l'accesso
+
+Una `Queue<int>` normale funziona correttamente perché:
+
+1. **Non c'è accesso concorrente alla coda stessa**:
+
+    - Solo la Pressa fa `Enqueue()` (dopo aver acquisito `semaforoCapacita`)
+    - Solo la Verniciatrice fa `Dequeue()` (dopo aver acquisito `semaforoDisponibilita`)
+    - Non c'è mai sovrapposizione tra le due operazioni
+2. **I semafori garantiscono la mutua esclusione**:
+
+    - `semaforoCapacita` impedisce alla Pressa di aggiungere quando è piena
+    - `semaforoDisponibilita` impedisce alla Verniciatrice di prelevare quando è vuota
+
+**Quando serve davvero la `ConcurrentQueue`:**
+
+- **Più produttori** che fanno `Enqueue()` contemporaneamente
+- **Più consumatori** che fanno `Dequeue()` contemporaneamente
+- Accesso concorrente senza semafori/lock
+
+```csharp
+using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ProcessoProduttivoBlockingCollection
+{
+    internal class Program
+    {
+        const int CapacitaNastro = 10;
+        const int NumeroPezzi = 25;
+        const int TempoPressa = 500;
+        const int TempoVerniciatrice = 700;
+
+        // ConcurrentQueue per il nastro trasportatore
+        static readonly ConcurrentQueue<int> nastroTrasportatore = new();
+
+        // Semaforo per limitare la capacità massima della coda
+        static readonly SemaphoreSlim semaforoCapacita = new(CapacitaNastro, CapacitaNastro);
+
+        // Semaforo per segnalare la disponibilità di elementi
+        static readonly SemaphoreSlim semaforoDisponibilita = new(0);
+
+        // Flag per segnalare il completamento della produzione
+        static volatile bool produzioneCompletata = false;
+
+        static void Main(string[] args)
+        {
+            Console.WriteLine("=== AVVIO PROCESSO PRODUTTIVO (BlockingCollection) ===\n");
+
+            // Creo i task per pressa e verniciatrice
+            Task pressa = Task.Factory.StartNew(Pressa);
+            Task verniciatrice = Task.Factory.StartNew(Verniciatrice);
+
+            // Attendo il completamento di entrambi i task
+            Task.WaitAll(pressa, verniciatrice);
+
+            Console.WriteLine("\n=== PROCESSO PRODUTTIVO COMPLETATO ===");
+            Console.WriteLine($"Totale pezzi prodotti e verniciati: {NumeroPezzi}");
+
+            // Verifica che la produzione sia stata completata
+            if (produzioneCompletata && nastroTrasportatore.IsEmpty)
+            {
+                Console.WriteLine("✓ Verifica: Produzione completata correttamente e nastro vuoto");
+            }
+            else
+            {
+                Console.WriteLine("✗ Attenzione: Possibile anomalia nel processo produttivo");
+                Console.WriteLine($"  - Produzione completata: {produzioneCompletata}");
+                Console.WriteLine($"  - Nastro vuoto: {nastroTrasportatore.IsEmpty}");
+                Console.WriteLine($"  - Elementi rimasti sul nastro: {nastroTrasportatore.Count}");
+            }
+        }
+
+        /// <summary>
+        /// Task che simula la pressa (produttore)
+        /// </summary>
+        static void Pressa()
+        {
+            for (int i = 1; i <= NumeroPezzi; i++)
+            {
+                // Simulo il tempo di pressatura
+                Task.Delay(TempoPressa).Wait();
+
+                // Attendo che ci sia spazio disponibile nel nastro
+                semaforoCapacita.Wait();
+
+                // Aggiungo il pezzo alla coda
+                nastroTrasportatore.Enqueue(i);
+
+                // Segnalo che c'è un nuovo elemento disponibile
+                semaforoDisponibilita.Release();
+
+                Console.WriteLine($"Pressa: prodotto il pezzo {i}-mo (sul nastro: {nastroTrasportatore.Count})");
+            }
+
+            // Segnalo che la produzione è completata
+            produzioneCompletata = true;
+            Console.WriteLine("\n[Pressa] Produzione completata");
+        }
+
+        /// <summary>
+        /// Task che simula la verniciatrice (consumatore)
+        /// </summary>
+        static void Verniciatrice()
+        {
+            int pezziVerniciati = 0;
+
+            while (pezziVerniciati < NumeroPezzi)
+            {
+                // Attendo che ci sia un elemento disponibile
+                semaforoDisponibilita.Wait();
+                
+                // Provo a prelevare un pezzo dalla coda
+                if (nastroTrasportatore.TryDequeue(out int numeroPezzo))
+                {
+                    // Segnalo che c'è spazio disponibile nel nastro
+                    semaforoCapacita.Release();
+
+                    // Simulo il tempo di verniciatura
+                    Task.Delay(TempoVerniciatrice).Wait();
+
+                    Console.WriteLine($"Verniciatrice: verniciato il pezzo {numeroPezzo}-mo");
+                    pezziVerniciati++;
+                }
+            }
+
+            Console.WriteLine("\n[Verniciatrice] Verniciatura completata");
+        }
+    }
+}
+```
+
+#### Versione 3: uso di BlockingCollection (Thread-Safe)
+
+.NET fornisce `BlockingCollection<T>`, una collezione thread-safe **specifica per scenari Producer-Consumer** che semplifica enormemente il codice eliminando la necessità di gestire manualmente semafori e lock.
+
+`BlockingCollection<T>` non è una coda, ma è un wrapper thread-safe che può contenere diverse strutture dati sottostanti.
+
+**Caratteristiche di `BlockingCollection`**:
+
+È un contenitore generico che per default usa internamente una `ConcurrentQueue<T>`, ma può anche usare:
+
+- `ConcurrentStack<T>` (LIFO)
+- `ConcurrentBag<T>` (non ordinato)
+- Qualsiasi classe che implementa `IProducerConsumerCollection<T>`
+- Fornisce funzionalità di blocco:
+
+  - `Add()/TryAdd()` - blocca se la capacità massima è raggiunta
+  - `Take()/TryTake()` - blocca se la collezione è vuota
+  - `CompleteAdding()` - segnala che non verranno aggiunti altri elementi
+
+**Esempio di utilizzo**:
+
+```csharp
+// Default: usa ConcurrentQueue internamente
+var bc = new BlockingCollection<int>(boundedCapacity: 10);
+// Oppure specifica la struttura dati
+var bcStack = new BlockingCollection<int>(new ConcurrentStack<int>(), 10);
+```
+
+**Esercizio svolto con `BlockingCollection`**:
 
 ```csharp
 using System;

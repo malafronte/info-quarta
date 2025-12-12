@@ -430,7 +430,7 @@ Per l'esempio precedente, nel caso in cui viene sollevata un'eccezione Visual St
 
 ####  Costrutto fork/join
 
-Gli esempi di fork/join visti nella sezione thread possono essere realizzati con TPL, usando `  Task.Factory.StartNew` e `Wait/Task.WaitAll`.
+Gli esempi di fork/join visti nella sezione thread possono essere realizzati con TPL, usando `Task.Factory.StartNew` e `Wait/Task.WaitAll`.
 
 ```cs
 using System;
@@ -892,14 +892,13 @@ public class Example
 
 Il metodo `Thread.SpinWait(500000)` serve a **simulare un carico di lavoro (o un ritardo)** mantenendo la CPU occupata.
 
-
 1. Che cosa fa tecnicamente
 
     `Thread.SpinWait` forza il processore a eseguire un ciclo stretto (loop) per un numero specifico di iterazioni (in questo caso, 500.000).
 
-    -   **Busy Waiting:** A differenza di una pausa "classica", il thread non si "addormenta". Rimane **attivo** e continua a consumare cicli della CPU.
+    - **Busy Waiting:** A differenza di una pausa "classica", il thread non si "addormenta". Rimane **attivo** e continua a consumare cicli della CPU.
 
-    -   **Iterazioni, non Tempo:** Il numero `500000` non rappresenta millisecondi o secondi, ma **cicli di iterazione**. La durata reale in termini di tempo dipende dalla velocità del processore del computer su cui gira il codice.
+    - **Iterazioni, non Tempo:** Il numero `500000` non rappresenta millisecondi o secondi, ma **cicli di iterazione**. La durata reale in termini di tempo dipende dalla velocità del processore del computer su cui gira il codice.
 
 2. Differenza tra `SpinWait` e `Sleep`
 
@@ -917,18 +916,17 @@ Il metodo `Thread.SpinWait(500000)` serve a **simulare un carico di lavoro (o un
 
     L'obiettivo dell'esempio è dimostrare che il **Parent Task** (Task esterno) termina *prima* del **Child Task** (Task annidato).
 
-    1.  Il `Child Task` inizia.
+    1. Il `Child Task` inizia.
 
-    2.  Esegue `SpinWait` (simula un lavoro breve).
+    2. Esegue `SpinWait` (simula un lavoro breve).
 
-    3.  Nel frattempo, il `Parent Task` finisce la sua esecuzione perché, di default, i task annidati sono **indipendenti** (Detached).
+    3. Nel frattempo, il `Parent Task` finisce la sua esecuzione perché, di default, i task annidati sono **indipendenti** (Detached).
 
     Se si usasse `Thread.Sleep`, il sistema operativo potrebbe decidere di mettere in pausa il thread del Child e dare priorità al Parent, rendendo l'ordine di output meno deterministico o semplicemente "rallentando" l'esecuzione in modo diverso. `SpinWait` assicura che quel thread stia "lavorando" per quel breve lasso di tempo, rendendo evidente che il Parent non lo sta aspettando.
 
 4. Sintesi dell'output
 
     Il codice produce quell'output perché il `parent.Wait()` aspetta solo il task genitore. Poiché il task figlio non è "attaccato" (`AttachedToParent`), il genitore finisce, stampa "Outer has completed", e solo dopo il figlio finisce il suo "SpinWait" e stampa "Nested task completing".
-
 
 Se il child task è un oggetto [Task&lt;TResult&gt;](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1) invece di un [Task](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task), è possibile assicurarsi che il parent attenda il completamento del child accedendo alla proprietà [Task&lt;TResult&gt;.Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) del child anche se è un detached child task. La proprietà [Result](https://docs.microsoft.com/en-us/dotnet/api/system.threading.tasks.task-1.result) blocca fino al completamento del task, come nell'esempio seguente.
 
@@ -1035,6 +1033,7 @@ public class Example
 A partire da .NET Framework 4 si usa un modello unificato per l'annullamento cooperativo basato su `CancellationTokenSource` e `CancellationToken`. Chi crea il token chiede l'annullamento; le operazioni che ricevono il token devono cooperare per osservare la richiesta e terminare in modo appropriato.
 
 Linee guida generali:
+
 - creare un'istanza di un oggetto [CancellationTokenSource](https://docs.microsoft.com/en-us/dotnet/api/system.threading.cancellationtokensource), che gestisce e invia la notifica di annullamento ai singoli token di annullamento.
 - passare il token restituito dalla proprietà [CancellationTokenSource.Token](https://docs.microsoft.com/en-us/dotnet/api/system.threading.cancellationtokensource.token) a ogni attività o thread in attesa di annullamento.
 - specificare un meccanismo per ogni attività o thread per rispondere all'annullamento.
@@ -1299,7 +1298,7 @@ namespace TaskAndSonsCancellationDemo
 
 #### Attached child tasks e `AggregateException` annidate
 
-Se un task ha un attached child task che genera un'eccezione, tale eccezione viene incapsulata in un'`AggregateException` prima di essere propagata al task genitore, che a sua volta la incapsula in una propria `AggregateException` prima di propagarsi al chiamante. In questi casi, la proprietà InnerExceptions dell'eccezione `AggregateException` catturata contiene una o più istanze di `AggregateException`, non le eccezioni originali. Per evitare di dover iterare su `AggregateException` annidate, è possibile utilizzare il metodo `Flatten` per rimuovere tutte le `AggregateException` annidate, in modo che la proprietà InnerExceptions contenga le eccezioni originali. 
+Se un task ha un attached child task che genera un'eccezione, tale eccezione viene incapsulata in un'`AggregateException` prima di essere propagata al task genitore, che a sua volta la incapsula in una propria `AggregateException` prima di propagarsi al chiamante. In questi casi, la proprietà InnerExceptions dell'eccezione `AggregateException` catturata contiene una o più istanze di `AggregateException`, non le eccezioni originali. Per evitare di dover iterare su `AggregateException` annidate, è possibile utilizzare il metodo `Flatten` per rimuovere tutte le `AggregateException` annidate, in modo che la proprietà InnerExceptions contenga le eccezioni originali.
 
 ```cs
 using System;
