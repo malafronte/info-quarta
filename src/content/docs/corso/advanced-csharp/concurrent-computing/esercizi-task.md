@@ -1386,19 +1386,13 @@ Realizzare un'applicazione console che applichi un filtro grafico a scelta a un'
 ### 7.3 Prerequisiti
 
 :::important[Installazione Pacchetto NuGet]
-Da .NET 6 in poi, `System.Drawing.Common` non è più incluso di default. Devi installare il pacchetto NuGet:
+Da .NET 6 in poi, `System.Drawing.Common` non è più incluso di default. Occorre installare il pacchetto NuGet:
 
 ```bash
 dotnet add package System.Drawing.Common
 ```
 
-Oppure tramite Package Manager Console in Visual Studio:
-
-```powershell
-Install-Package System.Drawing.Common
-```
-
-**Nota sul Platform Warning**: Poiché `System.Drawing.Common` funziona solo su Windows, dovrai modificare il file `.csproj` per indicare che il progetto è Windows-only:
+**Nota sul Platform Warning**: Poiché `System.Drawing.Common` funziona solo su Windows, occorre modificare il file `.csproj` per indicare che il progetto è Windows-only:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1409,28 +1403,65 @@ Install-Package System.Drawing.Common
 </Project>
 ```
 
-Cambia `net8.0` in `net8.0-windows` (o la tua versione con `-windows` alla fine) per eliminare il warning.
+Cambiare `net9.0` in `net9.0-windows` (o la versione di sdk con `-windows` alla fine) per eliminare il warning.
 :::
 
 ### 7.4 Svolgimento
 
 ```csharp
-using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 class ImageProcessingReal
 {
+    // Enumerativo per le opzioni del menu
+    enum MenuOption
+    {
+        Exit = 0,
+        Negative = 1,
+        Grayscale = 2,
+        Contrast = 3
+    }
+
     enum FilterType { Negative, Grayscale, Contrast }
 
     static void Main(string[] args)
     {
-        string inputPath = @"C:\temp\input.jpg"; 
-        
+        Console.WriteLine("Inserisci il path all'immagine");
+        string inputPath = Console.ReadLine() ?? string.Empty;
+
+        // Normalizza il path: rimuovi spazi, virgolette e converti a path assoluto
+        inputPath = inputPath.Trim().Trim('"', '\'');
+        if (!string.IsNullOrEmpty(inputPath))
+        {
+            try
+            {
+                // Tentiamo di convertire a path assoluto (risolve relativi, normalizza separatori, ecc.)
+                inputPath = Path.GetFullPath(inputPath);
+            }
+            catch (ArgumentException ex)
+            {
+                // Il path contiene caratteri non validi per il filesystem
+                Console.WriteLine($"Avvertimento: il path contiene caratteri non validi: {ex.Message}");
+                Console.WriteLine("Continuerò con il path originale (dopo trim).\n");
+            }
+            catch (PathTooLongException)
+            {
+                // Il path è troppo lungo (> 260 caratteri su Windows)
+                Console.WriteLine("Avvertimento: il path è troppo lungo (max 260 caratteri su Windows)");
+                Console.WriteLine("Continuerò con il path originale (dopo trim).\n");
+            }
+            catch (Exception ex)
+            {
+                // Altre eccezioni impreviste
+                Console.WriteLine($"Avvertimento: errore durante la normalizzazione del path: {ex.GetType().Name}");
+                Console.WriteLine($"Messaggio: {ex.Message}");
+                Console.WriteLine("Continuerò con il path originale (dopo trim).\n");
+            }
+        }
+
         if (!File.Exists(inputPath))
         {
             Console.WriteLine($"File non trovato: {inputPath}");
@@ -1440,102 +1471,211 @@ class ImageProcessingReal
         using (Bitmap originalImage = new Bitmap(inputPath))
         {
             Console.WriteLine($"Immagine caricata: {originalImage.Width}x{originalImage.Height}\n");
-            
+
+            // Estrai la cartella del file di input per salvare gli output
+            string outputDirectory = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
+
+            // Ciclo principale del menu
             bool continua = true;
             while (continua)
             {
-                Console.WriteLine("=== MENU FILTRI ===");
-                Console.WriteLine("1. Negativo");
-                Console.WriteLine("2. Scala di Grigi");
-                Console.WriteLine("3. Aumento Contrasto");
-                Console.WriteLine("0. Esci");
-                Console.Write("\nScelta: ");
-                
-                string scelta = Console.ReadLine();
-                
-                if (scelta == "0")
+                // Otteniamo la scelta dell'utente in modo robusto
+                bool shouldExit = GetMenuChoice(out MenuOption scelta);
+
+                if (shouldExit)
                 {
                     Console.WriteLine("\nUscita dal programma...");
                     continua = false;
                     continue;
                 }
-                
+
+                // Converti MenuOption a FilterType
                 FilterType filter = scelta switch
                 {
-                    "1" => FilterType.Negative,
-                    "2" => FilterType.Grayscale,
-                    "3" => FilterType.Contrast,
-                    _ => FilterType.Negative
+                    MenuOption.Negative => FilterType.Negative,
+                    MenuOption.Grayscale => FilterType.Grayscale,
+                    MenuOption.Contrast => FilterType.Contrast,
+                    _ => throw new InvalidOperationException($"Opzione menu non valida: {scelta}")
                 };
 
-                string outputPathSeq = $@"C:\temp\output_{filter}_seq.jpg";
-                string outputPathPar = $@"C:\temp\output_{filter}_par.jpg";
-
-                Console.WriteLine($"\n=== Elaborazione con filtro {filter} ===\n");
-                
-                // Versione Sequenziale
-                Console.WriteLine("=== ELABORAZIONE SEQUENZIALE ===");
-                Stopwatch sw = Stopwatch.StartNew();
-                Bitmap processedImageSeq = ApplyFilterSequential(originalImage, filter);
-                sw.Stop();
-                long tempoSeq = sw.ElapsedMilliseconds;
-                Console.WriteLine($"Completato in {tempoSeq} ms");
-                processedImageSeq.Save(outputPathSeq, ImageFormat.Jpeg);
-                Console.WriteLine($"Salvato in: {outputPathSeq}\n");
-                processedImageSeq.Dispose();
-
-                // Versione Parallela
-                Console.WriteLine("=== ELABORAZIONE PARALLELA ===");
-                sw.Restart();
-                Bitmap processedImagePar = ApplyFilterParallel(originalImage, filter);
-                sw.Stop();
-                long tempoPar = sw.ElapsedMilliseconds;
-                Console.WriteLine($"Completato in {tempoPar} ms");
-                processedImagePar.Save(outputPathPar, ImageFormat.Jpeg);
-                Console.WriteLine($"Salvato in: {outputPathPar}\n");
-                processedImagePar.Dispose();
-                
-                // Calcolo Speedup
-                double speedup = (double)tempoSeq / tempoPar;
-                Console.WriteLine("=== CONFRONTO PRESTAZIONI ===");
-                Console.WriteLine($"Tempo Sequenziale: {tempoSeq} ms");
-                Console.WriteLine($"Tempo Parallelo: {tempoPar} ms");
-                Console.WriteLine($"Speedup: {speedup:F2}x\n");
-                
-                Console.WriteLine("Premi un tasto per continuare...");
-                Console.ReadKey();
-                Console.Clear();
+                // Elaborazione del filtro
+                ProcessAndDisplayFilter(originalImage, outputDirectory, filter);
             }
         }
     }
 
+    /// <summary>
+    /// Visualizza il menu delle opzioni disponibili
+    /// </summary>
+    static void DisplayMenu()
+    {
+        Console.WriteLine("=== MENU FILTRI ===");
+        Console.WriteLine("1. Negativo");
+        Console.WriteLine("2. Scala di Grigi");
+        Console.WriteLine("3. Aumento Contrasto");
+        Console.WriteLine("0. Esci");
+        Console.Write("\nScelta: ");
+    }
+
+    /// <summary>
+    /// Ottiene la scelta dell'utente dal menu con validazione robusta
+    /// </summary>
+    /// <param name="scelta">Opzione del menu selezionata dall'utente</param>
+    /// <returns>true se l'utente ha scelto di uscire (Exit), false altrimenti</returns>
+    static bool GetMenuChoice(out MenuOption scelta)
+    {
+        scelta = MenuOption.Exit; // Valore di default
+
+        while (true)
+        {
+            DisplayMenu();
+
+            string input = Console.ReadLine() ?? string.Empty;
+            input = input.Trim(); // Rimuovi spazi iniziali/finali
+
+            // Verifica se l'input è vuoto
+            if (string.IsNullOrEmpty(input))
+            {
+                Console.WriteLine("Errore: inserire un'opzione valida (0-3).\n");
+                continue;
+            }
+
+            // Tentiamo di convertire l'input a intero
+            if (!int.TryParse(input, out int sceltaNumero))
+            {
+                Console.WriteLine("Errore: inserire un numero intero (0-3).\n");
+                continue;
+            }
+
+            // Verifichiamo se il numero è un valore valido dell'enum
+            if (!Enum.IsDefined(typeof(MenuOption), sceltaNumero))
+            {
+                Console.WriteLine($"Errore: {sceltaNumero} non è un'opzione valida. Scegli tra 0-3.\n");
+                continue;
+            }
+
+            scelta = (MenuOption)sceltaNumero;
+
+            // Se è Exit, ritorna true; altrimenti false
+            return scelta == MenuOption.Exit;
+        }
+    }
+
+    /// <summary>
+    /// Elabora e visualizza i risultati del filtro con confronto di prestazioni
+    /// </summary>
+    static void ProcessAndDisplayFilter(Bitmap originalImage, string outputDirectory, FilterType filter)
+    {
+        string outputPathSeq = Path.Combine(outputDirectory, $"output_{filter}_seq.jpg");
+        string outputPathPar = Path.Combine(outputDirectory, $"output_{filter}_par.jpg");
+
+        Console.WriteLine($"\n=== Elaborazione con filtro {filter} ===\n");
+
+        // Versione Sequenziale
+        Console.WriteLine("=== ELABORAZIONE SEQUENZIALE ===");
+        Stopwatch sw = Stopwatch.StartNew();
+        Bitmap processedImageSeq = ApplyFilterSequential(originalImage, filter);
+        sw.Stop();
+        long tempoSeq = sw.ElapsedMilliseconds;
+        Console.WriteLine($"Completato in {tempoSeq} ms");
+        processedImageSeq.Save(outputPathSeq, ImageFormat.Jpeg);
+        Console.WriteLine($"Salvato in: {outputPathSeq}\n");
+        processedImageSeq.Dispose();
+
+        // Versione Parallela
+        Console.WriteLine("=== ELABORAZIONE PARALLELA ===");
+        sw.Restart();
+        Bitmap processedImagePar = ApplyFilterParallel(originalImage, filter);
+        sw.Stop();
+        long tempoPar = sw.ElapsedMilliseconds;
+        Console.WriteLine($"Completato in {tempoPar} ms");
+        processedImagePar.Save(outputPathPar, ImageFormat.Jpeg);
+        Console.WriteLine($"Salvato in: {outputPathPar}\n");
+        processedImagePar.Dispose();
+
+        // Calcolo Speedup
+        double speedup = tempoPar > 0 ? (double)tempoSeq / tempoPar : 0;
+        Console.WriteLine("=== CONFRONTO PRESTAZIONI ===");
+        Console.WriteLine($"Tempo Sequenziale: {tempoSeq} ms");
+        Console.WriteLine($"Tempo Parallelo: {tempoPar} ms");
+        Console.WriteLine($"Speedup: {speedup:F2}x\n");
+
+        Console.WriteLine("Premi un tasto per continuare...");
+        Console.ReadKey();
+        Console.Clear();
+    }
+
     static Bitmap ApplyFilterSequential(Bitmap source, FilterType filterType)
     {
+        // Otteniamo le dimensioni dell'immagine
         int width = source.Width;
         int height = source.Height;
+        // Creiamo una copia dell'immagine originale per non modificarla direttamente
         Bitmap result = new Bitmap(source);
 
+        // Rectangle: definisce l'area dell'immagine da elaborare (tutta l'immagine in questo caso)
         Rectangle rect = new Rectangle(0, 0, width, height);
+
+        // BitmapData: permette l'accesso diretto ai dati grezzi dei pixel in memoria
+        // LockBits blocca l'immagine in memoria per un accesso veloce e sicuro
+        // ImageLockMode.ReadWrite: possiamo leggere e modificare i pixel
         BitmapData bmpData = result.LockBits(rect, ImageLockMode.ReadWrite, result.PixelFormat);
 
+        // Calcoliamo quanti byte occupa ogni pixel (solitamente 3 per RGB o 4 per RGBA)
         int bytesPerPixel = Image.GetPixelFormatSize(result.PixelFormat) / 8;
+
+        // Stride: numero di byte per ogni riga (include eventuali byte di padding per allineamento)
+        // byteCount: totale byte dell'immagine
         int byteCount = Math.Abs(bmpData.Stride) * height;
+
+        // Array che conterrà tutti i pixel dell'immagine in formato grezzo (byte)
         byte[] pixels = new byte[byteCount];
 
+        // Marshal.Copy: copia i dati grezzi dalla memoria (Scan0) all'array pixels
+        // Scan0: puntatore al primo byte dell'immagine in memoria
         Marshal.Copy(bmpData.Scan0, pixels, 0, byteCount);
 
-        // Elaborazione sequenziale
+        // ===== ELABORAZIONE SEQUENZIALE =====
+        // Rappresentazione della struttura immagine in memoria (esempio: width=4, height=3):
+        //
+        //  Immagine:  [width=4 pixel]  
+        //             ↓
+        //  Riga 0 (y=0): [P0_B][P0_G][P0_R] [P1_B][P1_G][P1_R] [P2_B][P2_G][P2_R] [P3_B][P3_G][P3_R]
+        //  Riga 1 (y=1): [P4_B][P4_G][P4_R] [P5_B][P5_G][P5_R] [P6_B][P6_G][P6_R] [P7_B][P7_G][P7_R]
+        //  Riga 2 (y=2): [P8_B][P8_G][P8_R] [P9_B][P9_G][P9_R] [P10_B][P10_G][P10_R] [P11_B][P11_G][P11_R]
+        //  ↑
+        //  [height=3 righe]
+        //  
+        //  Legenda: P#_B = Byte del componente blu del pixel #
+        //           P#_G = Byte del componente verde del pixel #
+        //           P#_R = Byte del componente rosso del pixel #
+        //           width = 4 pixel per riga
+        //           height = 3 righe totali
+        //           Totale pixel = width * height = 12 pixel
+        //  
+        //  La sequenza avviene riga per riga (raster scan), da sinistra a destra, dall'alto al basso.
+        //  Ogni riga inizia all'indice: rowStart = y * bmpData.Stride
+        //  Ogni pixel inizia all'indice: i = rowStart + x * bytesPerPixel
+        //
+        // Processiamo ogni pixel uno alla volta, riga per riga (ciclo esterno)
+        // e pixel per pixel all'interno di ogni riga (ciclo interno)
         for (int y = 0; y < height; y++)
         {
+            // Calcoliamo l'indice di inizio della riga corrente nell'array pixels
             int rowStart = y * bmpData.Stride;
-            
+
+            // Iteriamo su ogni pixel della riga
             for (int x = 0; x < width; x++)
             {
+                // Calcoliamo l'indice del pixel corrente nell'array
+                // Ogni pixel occupa bytesPerPixel byte consecutivi
                 int i = rowStart + x * bytesPerPixel;
-                
-                byte b = pixels[i];
-                byte g = pixels[i + 1];
-                byte r = pixels[i + 2];
+
+                // Leggiamo i tre componenti di colore del pixel
+                // IMPORTANTE: l'ordine in memoria è BGR (Blue, Green, Red), non RGB
+                byte b = pixels[i];       // Blue (componente blu)
+                byte g = pixels[i + 1];   // Green (componente verde)
+                byte r = pixels[i + 2];   // Red (componente rosso)
 
                 switch (filterType)
                 {
@@ -1553,7 +1693,7 @@ class ImageProcessingReal
                         break;
 
                     case FilterType.Contrast:
-                        double threshold = 1.5; 
+                        double threshold = 1.5;
                         pixels[i] = AdjustContrast(b, threshold);
                         pixels[i + 1] = AdjustContrast(g, threshold);
                         pixels[i + 2] = AdjustContrast(r, threshold);
@@ -1569,32 +1709,78 @@ class ImageProcessingReal
 
     static Bitmap ApplyFilterParallel(Bitmap source, FilterType filterType)
     {
+        // Otteniamo le dimensioni dell'immagine
         int width = source.Width;
         int height = source.Height;
+        // Creiamo una copia dell'immagine originale
         Bitmap result = new Bitmap(source);
 
+        // Rectangle: definisce l'area dell'immagine da elaborare
         Rectangle rect = new Rectangle(0, 0, width, height);
+
+        // BitmapData: permette l'accesso diretto ai dati grezzi dei pixel in memoria
+        // LockBits blocca l'immagine per un accesso veloce e thread-safe
         BitmapData bmpData = result.LockBits(rect, ImageLockMode.ReadWrite, result.PixelFormat);
 
+        // Calcoliamo quanti byte occupa ogni pixel
         int bytesPerPixel = Image.GetPixelFormatSize(result.PixelFormat) / 8;
+
+        // Stride: byte per riga (include padding), byteCount: totale byte immagine
         int byteCount = Math.Abs(bmpData.Stride) * height;
+
+        // Array condiviso che contiene tutti i pixel dell'immagine
         byte[] pixels = new byte[byteCount];
 
+        // Copiamo i dati dalla memoria all'array
         Marshal.Copy(bmpData.Scan0, pixels, 0, byteCount);
 
-        // Parallelizziamo sulle righe
+        // ===== ELABORAZIONE PARALLELA =====
+        // Rappresentazione della struttura immagine in memoria (esempio: width=4, height=3):
+        //
+        //  Immagine:  [width=4 pixel]
+        //             ↓
+        //  Riga 0 (y=0): [P0_B][P0_G][P0_R] [P1_B][P1_G][P1_R] [P2_B][P2_G][P2_R] [P3_B][P3_G][P3_R]
+        //  Riga 1 (y=1): [P4_B][P4_G][P4_R] [P5_B][P5_G][P5_R] [P6_B][P6_G][P6_R] [P7_B][P7_G][P7_R]
+        //  Riga 2 (y=2): [P8_B][P8_G][P8_R] [P9_B][P9_G][P9_R] [P10_B][P10_G][P10_R] [P11_B][P11_G][P11_R]
+        //  ↑
+        //  [height=3 righe]
+        //  
+        //  Con parallelizzazione:
+        //  Thread 0 elabora: Riga 0
+        //  Thread 1 elabora: Riga 1
+        //  Thread 2 elabora: Riga 2
+        //  (La divisione dipende dal numero di core disponibili)
+        //  
+        //  Totale pixel da processare = width * height = 4 * 3 = 12 pixel
+        //
+        // Parallel.For: divide automaticamente il lavoro tra più thread
+        // STRATEGIA DI PARALLELIZZAZIONE:
+        // - L'immagine viene divisa per RIGHE (non per pixel singoli)
+        // - Ogni thread elabora un gruppo di righe in modo indipendente
+        // - Questo evita race condition perché ogni riga è indipendente dalle altre
+        // - Il Task Parallel Library (TPL) gestisce automaticamente:
+        //   * La suddivisione del lavoro tra i core CPU disponibili
+        //   * Il bilanciamento del carico dinamico
+        //   * La sincronizzazione finale
+
         Parallel.For(0, height, y =>
         {
+            // Ogni iterazione di questo ciclo può essere eseguita da un thread diverso
+            // La variabile 'y' rappresenta l'indice della riga assegnata a questo thread
+
+            // Calcoliamo l'inizio della riga nell'array pixels
             int rowStart = y * bmpData.Stride;
-            
+
+            // Ogni thread processa tutti i pixel della sua riga assegnata
             for (int x = 0; x < width; x++)
             {
+                // Calcoliamo l'indice del pixel nell'array
                 int i = rowStart + x * bytesPerPixel;
-                
-                // Leggiamo i componenti (ordine BGR)
-                byte b = pixels[i];
-                byte g = pixels[i + 1];
-                byte r = pixels[i + 2];
+
+                // Leggiamo i componenti di colore (ordine BGR in memoria)
+                byte b = pixels[i];       // Blue
+                byte g = pixels[i + 1];   // Green
+                byte r = pixels[i + 2];   // Red
 
                 // Applichiamo il filtro scelto
                 switch (filterType)
@@ -1615,7 +1801,7 @@ class ImageProcessingReal
 
                     case FilterType.Contrast:
                         // Fattore contrasto (es. 1.5 aumenta il contrasto)
-                        double threshold = 1.5; 
+                        double threshold = 1.5;
                         pixels[i] = AdjustContrast(b, threshold);
                         pixels[i + 1] = AdjustContrast(g, threshold);
                         pixels[i + 2] = AdjustContrast(r, threshold);
@@ -1629,17 +1815,46 @@ class ImageProcessingReal
         return result;
     }
 
-    // Helper per il contrasto
+    /// <summary>
+    /// Regola il contrasto di una singola componente di colore (R, G o B)
+    /// </summary>
+    /// <param name="colorComponent">Valore originale del componente (0-255)</param>
+    /// <param name="factor">Fattore di contrasto (>1 aumenta, <1 diminuisce, 1 = nessun cambiamento)</param>
+    /// <returns>Valore del componente con contrasto regolato (0-255)</returns>
     static byte AdjustContrast(byte colorComponent, double factor)
     {
+        // ALGORITMO DI REGOLAZIONE DEL CONTRASTO:
+
+        // 1. Normalizzazione: convertiamo il valore da range [0, 255] a [0.0, 1.0]
+        //    Questo facilita i calcoli matematici
         double pixel = colorComponent / 255.0;
+
+        // 2. Centratura: spostiamo il valore in modo che 0.5 diventi il punto centrale (grigio medio)
+        //    Ora il range è [-0.5, 0.5] con 0 come punto neutro
         pixel -= 0.5;
+
+        // 3. Applicazione del contrasto: moltiplichiamo per il fattore
+        //    - Se factor > 1: i valori si allontanano dal centro (aumenta contrasto)
+        //    - Se factor < 1: i valori si avvicinano al centro (diminuisce contrasto)
+        //    - Se factor = 1: nessun cambiamento
+        //    Esempio con factor=1.5: un valore 0.2 diventa 0.3, un valore -0.2 diventa -0.3
         pixel *= factor;
+
+        // 4. Decentratura: riportiamo il punto centrale a 0.5
+        //    Torniamo al range [0.0, 1.0] (circa)
         pixel += 0.5;
+
+        // 5. Denormalizzazione: convertiamo da [0.0, 1.0] a [0, 255]
         pixel *= 255;
+
+        // 6. Clamp: assicuriamo che il valore finale sia nel range valido [0, 255]
+        //    Questo è necessario perché con factor > 1 potremmo superare i limiti
+        //    Math.Clamp limita il valore tra 0 e 255
         return (byte)Math.Clamp(pixel, 0, 255);
     }
 }
+
+
 ```
 
 ### 7.5 Riflessioni

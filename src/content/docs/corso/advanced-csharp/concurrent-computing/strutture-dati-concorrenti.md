@@ -930,8 +930,8 @@ In questi casi, le collezioni standard sono 2-5x più veloci.
 
    - Misura sempre con profiler in scenari reali
    - Le performance teoriche possono variare con pattern di accesso
-  
-     :::
+
+:::
 
 :::note[Riferimenti Ufficiali Microsoft]
 
@@ -940,4 +940,4 @@ In questi casi, le collezioni standard sono 2-5x più veloci.
 - [BlockingCollection Overview](https://learn.microsoft.com/en-us/dotnet/standard/collections/thread-safe/blockingcollection-overview)
 - [ConcurrentDictionary](https://learn.microsoft.com/en-us/dotnet/api/system.collections.concurrent.concurrentdictionary-2)
 
-  :::
+:::
