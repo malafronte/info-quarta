@@ -1031,6 +1031,128 @@ Console.WriteLine($"RAM Disponibile: {ramCounter.NextValue()} MB");
 Console.WriteLine($"Utilizzo Disco: {diskCounter.NextValue():F1}%");
 ```
 
+L'esercizio completo che gestisce il monitoraggio delle risorse in background con l'utilizzo della classe `PerformanceCounter` è riportato di seguito.
+
+````csharp
+
+using System.Diagnostics;
+
+
+namespace AsyncResourceMonitor
+{
+    class Program
+    {
+        static int monitorTop;
+        static async Task Main(string[] args)
+        {
+            Console.WriteLine("=== Monitoraggio Risorse Background (Reale) ===");
+            Console.WriteLine("Premi 's' per stoppare il monitoraggio, 'c' per controllare lo stato manualmente.");
+            monitorTop = Console.CursorTop;
+            // Token per cancellare il task di background
+            using var cts = new CancellationTokenSource();
+            // Avviamo il monitoraggio in un thread separato (Task.Run)
+            // Questo simula un lavoro CPU-bound o di lunga durata
+            //Task monitorTask = StartMonitoringAsync(cts.Token);
+            Task taskMonitorGlobal = StartMonitoringGlobalAsync(cts.Token);
+            bool running = true;
+            while (running)
+            {
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true).KeyChar;
+                    if (key == 's')
+                    {
+                        Console.SetCursorPosition(0,Math.Min(monitorTop + 4, Console.BufferHeight - 1));
+                        WriteFixedWidthLine("\nRichiesta di stop inviata...");
+                        cts.Cancel();
+                        running = false;
+                    }
+                    else if (key == 'c')
+                    {
+                        Console.SetCursorPosition(0, Math.Min(monitorTop + 4, Console.BufferHeight - 1));
+                        WriteFixedWidthLine($"\n[Main] Controllo manuale: Il sistema è attivo alle {DateTime.Now:T}");
+                    }
+                }
+                // Piccolo delay nel loop principale per non consumare 100% CPU in attesa di input
+                await Task.Delay(100);
+            }
+
+            try
+            {
+                // Attendiamo che il task finisca correttamente
+                //await monitorTask;
+                await taskMonitorGlobal;
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Monitoraggio cancellato correttamente.");
+            }
+            Console.WriteLine("Programma terminato.");
+        }
+        static void WriteFixedWidthLine(string text)
+        {
+            int width = Console.BufferWidth;
+            if (width <= 1)
+            {
+                Console.WriteLine(text);
+                return;
+            }
+
+            // Scriviamo una riga a larghezza fissa per cancellare eventuali residui della stampa precedente.
+            if (text.Length >= width)
+            {
+                text = text[..(width - 1)];
+            }
+
+            Console.Write(text.PadRight(width - 1));
+            Console.WriteLine();
+        }
+        static async Task StartMonitoringGlobalAsync(CancellationToken token)
+        {
+
+            Console.WriteLine("[Monitor] Avvio servizio di monitoraggio...");
+
+            // 1. CPU Totale
+            var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+
+            // 2. Memoria Disponibile (in MB)
+            var ramCounter = new PerformanceCounter("Memory", "Available MBytes");
+
+            // 3. Utilizzo Disco Fisico (Tempo attivo)
+            var diskCounter = new PerformanceCounter("PhysicalDisk", "% Disk Time", "_Total");
+            // La prima chiamata a NextValue() spesso restituisce 0 o valori non calcolati
+            cpuCounter.NextValue();
+            ramCounter.NextValue();
+            diskCounter.NextValue();
+            // Attendiamo 2 secondi prima della prossima lettura
+            await Task.Delay(2000, token);
+
+            // Da qui in poi aggiorniamo sempre le stesse righe, senza pulire tutta la console.
+            // Questo evita sfarfallii e non cancella messaggi stampati altrove.
+
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    Console.SetCursorPosition(0, monitorTop);
+                    WriteFixedWidthLine($"CPU Totale Sistema: {cpuCounter.NextValue():F1}%");
+                    WriteFixedWidthLine($"RAM Disponibile: {ramCounter.NextValue()} MB");
+                    WriteFixedWidthLine($"Utilizzo Disco: {diskCounter.NextValue():F1}%");
+                    await Task.Delay(2000, token); // Attendiamo un intervallo di campionamento
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
+            }
+            Console.WriteLine("[Monitor] Servizio arrestato.");
+        }
+        
+    }
+}
+
+```
+
 ### Esercizio 3: Elaborazione Batch di Immagini (Simulata)
 
 **Obiettivo**: Simulare l'elaborazione di una coda di immagini con tempi diversi, limitando il numero di elaborazioni simultanee (throttling) per non sovraccaricare il sistema.

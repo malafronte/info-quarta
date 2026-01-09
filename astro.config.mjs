@@ -92,6 +92,13 @@ export default defineConfig({
                   },
                   collapsed: true,
                 },
+                {
+                  label: "Network Programming",
+                  autogenerate: {
+                    directory: "corso/advanced-csharp/network-programming",
+                  },
+                  collapsed: true,
+                },
               ],
             },
           ],
