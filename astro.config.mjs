@@ -99,6 +99,13 @@ export default defineConfig({
                   },
                   collapsed: true,
                 },
+                {
+                  label: "REST API",
+                  autogenerate: {
+                    directory: "corso/advanced-csharp/rest-api",
+                  },
+                  collapsed: true,
+                },
               ],
             },
           ],
