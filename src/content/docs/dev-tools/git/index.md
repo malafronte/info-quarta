@@ -3,7 +3,7 @@ title: "Git"
 description: "Git per principianti"
 sidebar:
   label: "Git per principianti"
-  order: 70
+  order: 1
 ---
 
 Git è un sistema di controllo di versione distribuito (Distributed Version Control System - DVCS) creato da Linus Torvalds nel 2005. È diventato lo standard de facto per la gestione del codice sorgente nel mondo dello sviluppo software moderno. La sua importanza risiede nella capacità di tracciare ogni singola modifica apportata ai file di un progetto, permettendo agli sviluppatori di "viaggiare nel tempo" per recuperare versioni precedenti, confrontare cambiamenti e capire chi ha modificato cosa e perché.

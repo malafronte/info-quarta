@@ -128,6 +128,13 @@ export default defineConfig({
               autogenerate: { directory: "dev-tools/git" },
               collapsed: true,
             },
+            {
+              label: "🐍 🔄 Python tools and workflows",
+              autogenerate: {
+                directory: "dev-tools/python",
+              },
+              collapsed: true,
+            },
           ],
         },
         {

@@ -3,7 +3,7 @@ title: "Git Config"
 description: "Git Config"
 sidebar:
   label: "Git Config"
-  order: 80
+  order: 20
 ---
 <style>
 img {display: block; margin: 0 auto;}

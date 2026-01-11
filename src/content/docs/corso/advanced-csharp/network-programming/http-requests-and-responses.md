@@ -2399,7 +2399,7 @@ namespace HttpClientExtensionMethods
 
 #### Esercizi sulla serializzazione e de-serializzazione di oggetti JSON
 
-##### Esercizio N. 1
+##### Esercizio N. 1 (semplice)
 
 Seguendo l'esempio riportato in [How to write .NET objects as JSON (serialize)](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/how-to)
 
@@ -2506,7 +2506,7 @@ public class Todo
 
 ```
 
-##### Esercizio N. 2
+##### Esercizio N. 2 (semplice)
 
 Il programma si comporta come nell'esercizio precedente, con la differenza che la lista **`List<Todo> todoList`** degli oggetti `Todo`, anziché essere stampata a console, è salvata (in modo asincrono) su un file di testo chiamato **`todos.json`**
 
@@ -2637,7 +2637,7 @@ static class JsonOptionsCache
 }
 ```
 
-##### Esercizio N.3
+##### Esercizio N.3 (intermedio)
 
 Scrivere un programma C# che scarica dall’endpoint [https://dummyjson.com/recipes](https://dummyjson.com/recipes) l’array JSON delle ricette e di queste processa solo i primi 10 oggetti JSON de-serializzandoli nella lista `List<Recipe> recipes`. Il programma crea anche la lista `List<Photo> cachedPhotos` che contiene per i campi url e imagelUrl degli URI che puntano a risorse locali anziché alle risorse web. Suggerimento: scaricare le immagini in una cartella cachedPhotos, conservando lo stesso nome del file. Ad esempio, la foto descritta dall’URI: [https://cdn.dummyjson.com/recipe-images/1.webp](https://cdn.dummyjson.com/recipe-images/1.webp), viene mappata nel file locale descritto da un URI del tipi: `file:///C:/ProgramWorkingDir/cachedPhotos/1.webp` .
 

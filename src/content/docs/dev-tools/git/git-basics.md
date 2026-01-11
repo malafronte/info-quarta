@@ -3,7 +3,7 @@ title: "Git Basics"
 description: "Git Basics"
 sidebar:
   label: "Git Basics"
-  order: 90
+  order: 30
 ---
 <style>
 img {display: block; margin: 0 auto;}

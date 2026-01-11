@@ -3,12 +3,11 @@ title: "Git Installation"
 description: " "
 sidebar:
   label: "Git Installation"
-  order: 70
+  order: 10
 ---
 <style>
 img {display: block; margin: 0 auto;}
 </style>
-
 
 ## Installazione di Git
 
@@ -21,11 +20,9 @@ Per installare Git su Windows si può utilizzare il comando winget:
 winget install --id Git.Git -e --source winget
 ```
 
-{{< bs/alert >}}
-{{< markdownify >}}
+:::tip
 L'installazione eseguita tramite winget installa Git con le impostazioni di default, senza dare la possibilità all'utente di scegliere tra le varie opzioni disponibili. Questa opzione è indicata per utenti esperti che successivamente sanno modificare le impostazioni di funzionamento di Git con i comandi opportuni.
-{{< /markdownify >}}
-{{< /bs/alert >}}
+:::
 
 Per utenti principianti è più opportuno usare l'installer per Windows, scaricabile da <https://git-scm.com/download/win>, oppure da <https://gitforwindows.org/> e seguire i passaggi richiesti dell'installer. In particolare, è utile soffermarsi su alcuni punti dell'installazione per essere sicuri di aver configurato Git nel modo più utile per un utente inesperto su Windows:
 
