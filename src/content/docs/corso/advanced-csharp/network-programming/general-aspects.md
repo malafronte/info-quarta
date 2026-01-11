@@ -187,33 +187,33 @@ Riferimento tecnico (standard): [rfc3986](https://www.ietf.org/rfc/rfc3986.txt)
 Segue un esempio di creazione di URI in .NET:
 
 ```csharp
-using System;
-using System.Threading;
-namespace UriTest
+namespace UriTest;
+public class Program
 {
-    public class UriTestProgram
-    {
-        public static Uri GetSimpleUri() {
-            var builder = new UriBuilder();
-            builder.Scheme = "http";
-            builder.Host = "packt.com";
-            return builder.Uri;
-        }
-        public static Uri GetSimpleUri_Constructor() {
-            var builder = new UriBuilder("http", "packt.com");
-            return builder.Uri;
-        }
-        public static void Main(string[] args)
-        {
-            var simpleUri = GetSimpleUri();
-            Console.WriteLine(simpleUri.ToString());
+    public static Uri GetSimpleUri()
+    {
+        var builder = new UriBuilder
+        {
+            Scheme = "http",
+            Host = "packt.com"
+        };
+        return builder.Uri;
+    }
+    public static Uri GetSimpleUri_Constructor()
+    {
+        var builder = new UriBuilder("http", "packt.com");
+        return builder.Uri;
+    }
+    public static void Main(string[] args)
+    {
+        var simpleUri = GetSimpleUri();
+        Console.WriteLine(simpleUri.ToString());
             // Expected output: http://packt.com
-            var constructorUri = GetSimpleUri_Constructor();
-            Console.WriteLine(constructorUri.ToString());
+        var constructorUri = GetSimpleUri_Constructor();
+        Console.WriteLine(constructorUri.ToString());
             // Expected output: http://packt.com
-            Thread.Sleep(10000);
-        }
-    }
+      
+    }
 }
 ```
 
@@ -328,6 +328,7 @@ Gerarchia dei server DNS (vista logica, a partire dal root `.`):
      ├─ consulta root/TLD/autoritativi con query iterative
      └─ cache delle risposte secondo TTL
 ```
+
 ##### Diagramma di sequenza: risoluzione DNS con query ricorsiva
 
 Il seguente diagramma mostra il caso tipico di un browser web che risolve un nome di dominio utilizzando una **query ricorsiva**. Il browser delega completamente la risoluzione al resolver ricorsivo, che si occupa di consultare i server DNS necessari.
@@ -507,63 +508,56 @@ In alcune situazioni è utile determinare programmaticamente gli IP associati a 
 Esempio:
 
 ```csharp
-using System;
 using System.Net;
-using System.Threading;
-namespace DnsTest
+namespace DnsTest;
+
+internal class Program
 {
-    class DnsTestProgram {
-        static void Main(string[] args) {
-            var domainEntry = Dns.GetHostEntry("google.com");
-            Console.WriteLine(domainEntry.HostName);
-            foreach (var ip in domainEntry.AddressList) {
-                Console.WriteLine(ip);
-            }
-            var domainEntryByAddress = Dns.GetHostEntry("127.0.0.1");
-            Console.WriteLine(domainEntryByAddress.HostName);
-            foreach (var ip in domainEntryByAddress.AddressList) {
-                Console.WriteLine(ip);
-            }
-        }
-    }
+    private static void Main(string[] args)
+    {
+        var domainEntry = Dns.GetHostEntry("google.com");
+        Console.WriteLine(domainEntry.HostName);
+        foreach (var ip in domainEntry.AddressList)
+        {
+            Console.WriteLine(ip);
+        }
+        var domainEntryByAddress = Dns.GetHostEntry("127.0.0.1");
+        Console.WriteLine(domainEntryByAddress.HostName);
+        foreach (var ip in domainEntryByAddress.AddressList)
+        {
+            Console.WriteLine(ip);
+        }
+    }
 }
 ```
 
 Oppure:
 
 ```csharp
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Net;
-using System.Threading.Tasks;
-using System.Threading;
-namespace DnsTest
+namespace DnsTest;
+
+internal class Program
 {
-    class DnsTestProgram
-    {
-        static void Main(string[] args)
-        {
-            var domainEntry = Dns.GetHostEntry("www.istitutogreppi.edu.it");
-            Console.WriteLine(domainEntry.HostName);
-            foreach (var ip in domainEntry.AddressList)
-            {
-                Console.WriteLine(ip);
-            }
-            var domainEntryByAddress = Dns.GetHostEntry("127.0.0.1");
-            Console.WriteLine(domainEntryByAddress.HostName);
-            foreach (var ip in domainEntryByAddress.AddressList)
-            {
-                Console.WriteLine(ip);
-            }
-        }
-    }
+    private static void Main(string[] args)
+    {
+        var domainEntry = Dns.GetHostEntry("www.istitutogreppi.edu.it");
+        Console.WriteLine(domainEntry.HostName);
+        foreach (var ip in domainEntry.AddressList)
+        {
+            Console.WriteLine(ip);
+        }
+        var domainEntryByAddress = Dns.GetHostEntry("127.0.0.1");
+        Console.WriteLine(domainEntryByAddress.HostName);
+        foreach (var ip in domainEntryByAddress.AddressList)
+        {
+            Console.WriteLine(ip);
+        }
+    }
 }
 ```
 
 Si invita a confrontare il risultato con quanto ottenuto dal comando `nslookup` della shell di Windows.
-
 ![nslookup](general-aspects/nslookup.png)
 
 #### Modelli di riferimento di rete

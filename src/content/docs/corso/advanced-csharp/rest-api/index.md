@@ -1,8 +1,8 @@
 ---
-title: "Programmazione di rete in C#"
-description: "Programmazione di rete in C#"
+title: "Rest API in C#"
+description: "Rest API in C#: architettura, consumo, test e casi pratici"
 sidebar:
-  label: "Programmazione di rete"
+  label: "Rest API in C#"
   order: 1
 ---
 

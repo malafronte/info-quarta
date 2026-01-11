@@ -14,48 +14,6 @@ img {display: block; margin: 0 auto;}
 
 [Network programming in .NET](https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/overview)
 
-### Generalità
-
-#### Costruzione di un oggetto URI
-
-```csharp
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-namespace UriTest
-{
-    public class UriTestProgram
-    {
-        public static Uri GetSimpleUri()
-        {
-            var builder = new UriBuilder();
-            builder.Scheme = "http";
-            builder.Host = "packt.com";
-            return builder.Uri;
-        }
-        public static Uri GetSimpleUri_Constructor()
-        {
-            var builder = new UriBuilder("http", "packt.com");
-            return builder.Uri;
-        }
-        public static void Main(string[] args)
-        {
-            var simpleUri = GetSimpleUri();
-            Console.WriteLine(simpleUri.ToString());
-            // Expected output: http://packt.com
-            var constructorUri = GetSimpleUri_Constructor();
-            Console.WriteLine(constructorUri.ToString());
-            // Expected output: http://packt.com
-        }
-    }
-}
-```
-
-#### Caricamento e download dei dati da un server Internet
-
 ### HttpClient
 
 [Documentazione su HttpClient](https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httpclient)
@@ -63,35 +21,34 @@ namespace UriTest
 #### Scaricare del testo dalla rete
 
 ```csharp
-using System.Runtime.InteropServices;
-using Microsoft.Win32;
-using System.Net;
 namespace HttpClientDemo1
 {
-    class Program
-    {
+    class Program
+    {
         // HttpClient is intended to be instantiated once per application, rather than per-use. See Remarks.
-        static HttpClient? client;
-        static async Task Main()
-        {
-            client = new HttpClient();
-            // Call asynchronous network methods in a try/catch block to handle exceptions.
-            try
-            {
-                HttpResponseMessage response = await client.GetAsync("https://www.istitutogreppi.edu.it/");
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
-                // Above three lines can be replaced with new helper method below
-                // string responseBody = await client.GetStringAsync(uri);
-                Console.WriteLine(responseBody);
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-            }
-        }
-    }
+        static HttpClient? client;
+        static async Task Main()
+        {
+            client = new HttpClient();
+            // Call asynchronous network methods in a try/catch block to handle exceptions.
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync("https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/overview");
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                await File.WriteAllTextAsync(Path.Combine(desktopPath, nameof(HttpClientDemo1) + ".html"), responseBody);
+                // Above three lines can be replaced with new helper method below
+                //string responseBody = await client.GetStringAsync(url);
+                //Console.WriteLine(responseBody);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"{Environment.NewLine}Exception Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+        }
+    }
 }
 ```
 
@@ -114,250 +71,204 @@ public class GoodController : ApiController
 }
 ```
 
-Di seguito è riportata una versione ottimizzata del precedente esempio che fa uso del costrutto `Task.WhenAll`.
+#### Scaricare più pagine in parallelo
+
+Di seguito un esempio di programma C# che scarica in parallelo più pagine web e ne misura il tempo di scaricamento complessivo.
 
 ```csharp
 //https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/
 using System.Diagnostics;
-using Microsoft.Win32;
 using System.Runtime.InteropServices;
-using System.Net;
-namespace   
+
+namespace HttpClientDemo2;
+
+class Program
 {
-    class Program
-    {
-        /// <summary>
-        /// Scarica un file dalla rete e restituisce la lunghezza in byte
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="client"></param>
-        /// <returns></returns>
-        static async Task<int> ProcessURLAsync(string url, HttpClient client)
-        {
-            var sw = new Stopwatch();
-            sw.Start();
-            var byteArray = await client.GetByteArrayAsync(url);
-            sw.Stop();
-            DisplayResults(url, "https://docs.microsoft.com/en-us/", byteArray, sw.ElapsedMilliseconds);
-            return byteArray.Length;
-        }
-        /// <summary>
-        /// Stampa una parte dell'url, la dimensione in byte di una pagina e il tempo impiegato per il download
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="urlHeadingStrip"></param>
-        /// <param name="content"></param>
-        /// <param name="elapsedMillis"></param>
-        static void DisplayResults(string url, string urlHeadingStrip, byte[] content, long elapsedMillis)
-        {
-            // Display the length of each website.
-            var bytes = content.Length;
-            // Strip off the "urlHeadingStrip" part from url
-            var displayURL = url.Replace(urlHeadingStrip, "");
-            Console.WriteLine($"\n{displayURL,-80} bytes: {bytes,-10} ms: {elapsedMillis,-10}");
-        }
-        /// <summary>
-        /// Restituisce una lista di url
-        /// </summary>
-        /// <returns></returns>
-        static List<string> SetUpURLList()
-        {
-            List<string> urls = new()
-            {
-                "https://docs.microsoft.com/en-us/welcome-to-docs",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-objects",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-and-strings",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-overview",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/async-return-types",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-vs-dom",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection"
-            };
-            return urls;
-        }
-        /// <summary>
-        /// Effettua il setup di una lista di url e per ognuno di essi avvia un download asincrono su un task separato
-        /// </summary>
-        /// <returns></returns>
-        static async Task SumPageSizesAsync()
-        {
-            // Make a list of web addresses.
-            List<string> urlList = SetUpURLList();
-            //setup del client con eventuale Proxy
-            HttpClient client = new HttpClient();
-            //// Create a query.
-            //IEnumerable<Task<int>> downloadTasksQuery =
-            //    from url in urlList select ProcessURLAsync(url, client);
-            //misuriamo il tempo complessivo per scaricare tutte le pagine
-            var swGlobal = new Stopwatch();
-            swGlobal.Start();
-            //processiamo in parallelo una lista di URL
-            IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, client));
-            ////altro modo per processare in parallelo più attività è il seguente:
-            //var completedDownloads = new List<Task<int>>();
-            //Parallel.For(0, urlList.Count, (index) =>
-            //{
-            //    completedDownloads.Add(ProcessURLAsync(urlList[index], client));
-            //});
-            //// You can do other work here before awaiting.
-            //int[] lengthsParallel = await Task.WhenAll(completedDownloads);
-            //int totalParallel = lengthsParallel.Sum();
-            ////altro modo per processare in parallelo più attività è il seguente:
-            //var completedDownloads2 = new List<Task<int>>();
-            //Parallel.ForEach(urlList, url =>
-            //{
-            //    completedDownloads2.Add(ProcessURLAsync(url, client));
-            //});
-            //// You can do other work here before awaiting.
-            //int[] lengthsParallelForEach = await Task.WhenAll(completedDownloads2);
-            //int totalParallelForEach = lengthsParallelForEach.Sum();
-            // Await the completion of all the running tasks.
-            int[] lengths = await Task.WhenAll(downloadTasks);
-            //// The previous line is equivalent to the following two statements.
-            //Task<int[]> whenAllTask = Task.WhenAll(downloadTasks);
-            //int[] lengths = await whenAllTask;
-            swGlobal.Stop();
-            long elapsedTotalMs = swGlobal.ElapsedMilliseconds;
-            int total = lengths.Sum();
-            // Display the total count for all of the web addresses.
-            Console.WriteLine($"\r\n\r\nTotal bytes returned:  {total}\r\n");
-            Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs}");
-        }
-        static async Task Main(string[] args)
-        {
-            //imposto la dimensione della console - vale solo per Windows
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Console.WindowWidth = 120;
-            }
-            await SumPageSizesAsync();
-        }
-    }
+    /// <summary>
+    /// Scarica un file dalla rete e restituisce la lunghezza in byte
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="client"></param>
+    /// <returns></returns>
+    static async Task<int> ProcessURLAsync(string url, HttpClient client)
+    {
+        var sw = new Stopwatch();
+        sw.Start();
+        var byteArray = await client.GetByteArrayAsync(url);
+        sw.Stop();
+        DisplayResults(url, "https://docs.microsoft.com/en-us/", byteArray, sw.ElapsedMilliseconds);
+        return byteArray.Length;
+    }
+    /// <summary>
+    /// Stampa una parte dell'url, la dimensione in byte di una pagina e il tempo impiegato per il download
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="urlHeadingStrip"></param>
+    /// <param name="content"></param>
+    /// <param name="elapsedMillis"></param>
+    static void DisplayResults(string url, string urlHeadingStrip, byte[] content, long elapsedMillis)
+    {
+        // Display the length of each website.
+        var bytes = content.Length;
+        // Strip off the "urlHeadingStrip" part from url
+        var displayURL = url.Replace(urlHeadingStrip, "");
+        Console.WriteLine($"{Environment.NewLine}{displayURL,-80} bytes: {bytes,-10} ms: {elapsedMillis,-10}");
+    }
+    /// <summary>
+    /// Restituisce una lista di url
+    /// </summary>
+    /// <returns></returns>
+    static List<string> SetUpURLList()
+    {
+        List<string> urls =
+            [
+                "https://docs.microsoft.com/en-us/welcome-to-docs",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-objects",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-and-strings",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-overview",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/async-return-types",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-vs-dom",
+                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection"
+            ];
+        return urls;
+    }
+    /// <summary>
+    /// Effettua il setup di una lista di url e per ognuno di essi avvia un download asincrono su un task separato
+    /// </summary>
+    /// <returns></returns>
+    static async Task SumPageSizesAsync()
+    {
+        // Make a list of web addresses.
+        List<string> urlList = SetUpURLList();
+        //setup del client con eventuale Proxy
+        HttpClient client = new();
+
+        //misuriamo il tempo complessivo per scaricare tutte le pagine
+        var swGlobal = new Stopwatch();
+        swGlobal.Start();
+        //processiamo in parallelo una lista di URL
+        // Materializziamo subito per evitare enumerazioni multiple accidentali.
+        Task<int>[] downloadTasks = [.. urlList.Select(u => ProcessURLAsync(u, client))];
+        
+        //*****************************************************************************
+        // //altro modo per processare in parallelo più attività è il seguente:
+        // // ATTENZIONE: List<T> non è thread-safe. Usiamo un array indicizzato.
+        // var completedDownloads = new Task<int>[urlList.Count];
+        // Parallel.For(0, urlList.Count, index =>
+        // {
+        //     completedDownloads[index] = ProcessURLAsync(urlList[index], client);
+        // });
+        // // You can do other work here before awaiting.
+        // int[] lengthsParallel = await Task.WhenAll(completedDownloads);
+        // int totalParallel = lengthsParallel.Sum();
+        // Console.WriteLine($"{Environment.NewLine}Total bytes returned (Parallel.For): {totalParallel}{Environment.NewLine}");
+        // //altro modo per processare in parallelo più attività è il seguente:
+        // // ATTENZIONE: List<T>.Add non è thread-safe. Usiamo l'overload con indice + array.
+        // var completedDownloads2 = new Task<int>[urlList.Count];
+        // Parallel.ForEach(urlList, (url, _, index) =>
+        // {
+        //     completedDownloads2[(int)index] = ProcessURLAsync(url, client);
+        // });
+        // // You can do other work here before awaiting.
+        // int[] lengthsParallelForEach = await Task.WhenAll(completedDownloads2);
+        // int totalParallelForEach = lengthsParallelForEach.Sum();
+        // Console.WriteLine($"{Environment.NewLine}Total bytes returned (Parallel.ForEach): {totalParallelForEach}{Environment.NewLine}");
+        // Await the completion of all the running tasks.
+        //*****************************************************************************
+
+        int[] lengths = await Task.WhenAll(downloadTasks);
+        //// The previous line is equivalent to the following two statements.
+        //Task<int[]> whenAllTask = Task.WhenAll(downloadTasks);
+        //int[] lengths = await whenAllTask;
+        swGlobal.Stop();
+        long elapsedTotalMs = swGlobal.ElapsedMilliseconds;
+        int total = lengths.Sum();
+        // Display the total count for all of the web addresses.
+        Console.WriteLine($"{Environment.NewLine}Total bytes returned: {total}{Environment.NewLine}");
+        Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs} ms");
+    }
+    static async Task Main(string[] args)
+    {
+        //imposto la dimensione della console - vale solo per Windows
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Console.WindowWidth = 120;
+        }
+        await SumPageSizesAsync();
+    }
 }
+
 ```
 
 #### Analizzare la risposta di una richiesta HTTP GET mediante le proprietà della risposta
 
 ```csharp
-using Microsoft.Win32;
-using System.Net;
-using System.Runtime.InteropServices;
 namespace HttpResponseAnalysisDemo1
 {
-    class Program
-    {
-        /// <summary>
-        /// Effettua il setup del client Http con l'eventuale proxy (se presente)
-        /// Richiede:
-        /// 1) using Microsoft.Win32;
-        /// 2) using System.Runtime.InteropServices;
-        /// 3) using System.Net;
-        /// </summary>
-        /// <param name="setProxy"></param>
-        /// <returns>un oggetto HttpClient con eventuale proxy configurato</returns>
-        public static HttpClient CreateHttpClient(bool setProxy)
-        {
-            if (setProxy)
-            {
-                Uri? proxy;
-                //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
-                //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
-                //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
-                //https://stackoverflow.com/a/63884955
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    //ottengo lo user specific proxy che si ottiene con il comando:
-                    //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-                    //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
-                    RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-                    //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
-                    int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
-                    //impostiamo proxy
-                    proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
-                }
-                else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
-                {
-                    //questa è la procedura per ottenere il system proxy
-                    Uri destinationUri = new("https://www.google.it");
-                    //Ottiene il default proxy quando si prova a contattare la destinationUri
-                    //Se il proxy non è impostato si ottiene null
-                    //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                    //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
-                    //funziona sia che il proxy sia configurato sia che non lo sia
-                    proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                }
-                //con il proxy ottenuto con il codice precedente
-                HttpClientHandler httpHandler = new()
-                {
-                    Proxy = new WebProxy(proxy, true),
-                    UseProxy = true,
-                    PreAuthenticate = false,
-                    UseDefaultCredentials = false,
-                };
-                return new HttpClient(httpHandler);
-            }
-            else
-            {
-                return new HttpClient();
-            }
-        }
-        static async Task Main()
-        {
-            // HttpClient is intended to be instantiated once per application, rather than per-use. See Remarks.
-            HttpClient client = CreateHttpClient(setProxy: true);
-            // Call asynchronous network methods in a try/catch block to handle exceptions.
-            try
-            {
-                //invio richiesta Get in modalità Async e ottengo la risposta
-                HttpResponseMessage response = await client.GetAsync("http://www.istitutogreppi.edu.it");
-                //stampo lo status code
-                Console.WriteLine($"status code = {response.StatusCode}");
-                //stampo gli headers http della risposta
-                Console.WriteLine("\nstampa gli headers http della risposta\n");
-                foreach (var header in response.Headers)
-                {
-                    Console.Write($"{header.Key} : ");
-                    foreach (var val in header.Value)
-                    {
-                        Console.Write($"{val} ");
-                    }
-                    Console.WriteLine();
-                }
-                //stampo gli headers http della risposta usando il response.Headers.toString()
-                //Console.WriteLine($"\nstampa di ToString() di response.Headers \n");
-                //Console.WriteLine( $" { response.Headers.ToString()}\n");
-                //stampo gli headers del content
-                Console.WriteLine("\nstampa degli headers del content della risposta\n");
-                foreach (var header in response.Content.Headers)
-                {
-                    Console.Write($"{header.Key} : ");
-                    foreach (var val in header.Value)
-                    {
-                        Console.Write($"{val} ");
-                    }
-                    Console.WriteLine();
-                }
-                //ottenere il charset
-                Console.Write("\nStampa del charset: ");
-                Console.WriteLine(response.Content.Headers.ContentType?.CharSet);
-                Console.Write("\nStampa del media type: ");
-                Console.WriteLine(response.Content.Headers.ContentType?.MediaType);
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
-                // Above three lines can be replaced with new helper method below
-                // string responseBody = await client.GetStringAsync(uri);
-                Console.WriteLine("\nstampa del contenuto del body del messaggio http\n");
-                Console.WriteLine(responseBody);
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-            }
-        }
-    }
+    class Program
+    {
+        
+        static async Task Main()
+        {
+            // HttpClient is intended to be instantiated once per application, rather than per-use.
+            HttpClient client = new();
+            // Call asynchronous network methods in a try/catch block to handle exceptions.
+            try
+            {
+                //invio richiesta Get in modalità Async e ottengo la risposta
+                HttpResponseMessage response = await client.GetAsync("https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/overview");
+                //stampo lo status code
+                Console.WriteLine($"status code = {response.StatusCode}");
+                //stampo gli headers http della risposta
+                Console.WriteLine($"{Environment.NewLine}stampa gli headers http della risposta{Environment.NewLine}");
+                foreach (var header in response.Headers)
+                {
+                    Console.Write($"{header.Key} : ");
+                    foreach (var val in header.Value)
+                    {
+                        Console.Write($"{val} ");
+                    }
+                    Console.WriteLine();
+                }
+                //stampo gli headers http della risposta usando il response.Headers.toString()
+                //Console.WriteLine($"{Environment.NewLine}stampa di ToString() di response.Headers{Environment.NewLine}");
+                //Console.WriteLine(response.Headers.ToString());
+                //stampo gli headers del content
+                Console.WriteLine($"{Environment.NewLine}stampa degli headers del content della risposta{Environment.NewLine}");
+                foreach (var header in response.Content.Headers)
+                {
+                    Console.Write($"{header.Key} : ");
+                    foreach (var val in header.Value)
+                    {
+                        Console.Write($"{val} ");
+                    }
+                    Console.WriteLine();
+                }
+                //ottenere il charset
+                Console.Write($"{Environment.NewLine}Stampa del charset: ");
+                Console.WriteLine(response.Content.Headers.ContentType?.CharSet);
+                Console.Write($"{Environment.NewLine}Stampa del media type: ");
+                Console.WriteLine(response.Content.Headers.ContentType?.MediaType);
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                // il contenuto di una pagina web può essere ottenuto anche con la seguente istruzione
+                // string responseBody = await client.GetStringAsync(uri);
+                // Console.WriteLine($"{Environment.NewLine}stampa del contenuto del body del messaggio http{Environment.NewLine}");
+                // Console.WriteLine(responseBody);
+                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                await File.WriteAllTextAsync(Path.Combine(desktopPath, nameof(HttpResponseAnalysisDemo1) + ".html"), responseBody);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"{Environment.NewLine}Exception Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+        }
+    }
 }
+
 ```
 
 Confronto tra quanto stampato dal programma C# e quanto riportato da [WireShark](https://www.wireshark.org/).
@@ -372,271 +283,272 @@ La precedente cattura è stata ottenuta attivando l’analizzatore di rete WireS
 
 [C# Read web page example on zetcode](http://zetcode.com/csharp/readwebpage/)
 
-#### Scaricamento e salvataggio di una pagina web
-
-Si modifica l’esempio precedente per salvare su file la pagina web scaricata.
-
-Versione semplice, ma non ottimizzata:
-
-```csharp
-using Microsoft.Win32;
-using System.Runtime.InteropServices;
-using System.Net;
-namespace HttpClientWebPageDownload
-{
-    class Program
-    {
-        /// <summary>
-        /// Effettua il setup del client Http con l'eventuale proxy (se presente)
-        /// Richiede:
-        /// 1) using Microsoft.Win32;
-        /// 2) using System.Runtime.InteropServices;
-        /// 3) using System.Net;
-        /// </summary>
-        /// <param name="setProxy"></param>
-        /// <returns>un oggetto HttpClient con eventuale proxy configurato</returns>
-        public static HttpClient CreateHttpClient(bool setProxy)
-        {
-            if (setProxy)
-            {
-                Uri? proxy;
-                //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
-                //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
-                //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
-                //https://stackoverflow.com/a/63884955
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    //ottengo lo user specific proxy che si ottiene con il comando:
-                    //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-                    //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
-                    RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-                    //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
-                    int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
-                    //impostiamo proxy
-                    proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
-                }
-                else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
-                {
-                    //questa è la procedura per ottenere il system proxy
-                    Uri destinationUri = new("https://www.google.it");
-                    //Ottiene il default proxy quando si prova a contattare la destinationUri
-                    //Se il proxy non è impostato si ottiene null
-                    //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                    //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
-                    //funziona sia che il proxy sia configurato sia che non lo sia
-                    proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                }
-                //con il proxy ottenuto con il codice precedente
-                HttpClientHandler httpHandler = new()
-                {
-                    Proxy = new WebProxy(proxy, true),
-                    UseProxy = true,
-                    PreAuthenticate = false,
-                    UseDefaultCredentials = false,
-                };
-                return new HttpClient(httpHandler);
-            }
-            else
-            {
-                return new HttpClient();
-            }
-        }
-        static async Task Main(string[] args)
-        {
-            HttpClient client = CreateHttpClient(setProxy: true);
-            try
-            {
-                string responseBody = await client.GetStringAsync("http://www.istitutogreppi.edu.it/");
-                //salvataggio su file
-                string path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + System.IO.Path.DirectorySeparatorChar + "pagina.html";
-                File.WriteAllText(path, responseBody);
-                Console.WriteLine("File scaricato, controlla la cartella Desktop");
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-            }
-        }
-    }
-}
-```
-
-Nell’esempio precedente la scrittura del file sul filesystem è sincrona e quindi bloccante. Si considerano di seguito lettura e scrittura su file usando metodi asincroni.
-
 #### Lettura e scrittura di file scaricati da Internet con metodi asincroni
 
 Nel seguente esempio si mostra come scaricare un file da Internet e poi salvarlo sul file system. Il file viene poi aperto e letto a console. Le operazioni di scrittura e lettura del file sono gestite mediante chiamate asincrone.
 
 ```csharp
 //https://docs.microsoft.com/it-it/dotnet/csharp/programming-guide/concepts/async/using-async-for-file-access
-using System;
-using System.IO;
-using System.Net.Http;
+
+//https://docs.microsoft.com/it-it/dotnet/csharp/programming-guide/concepts/async/using-async-for-file-access
+
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Win32;
-using System.Runtime.InteropServices;
-using System.Net;
 namespace FileDownloadAsyncDemo
 {
-    class Program
-    {
-        /// <summary>
-        /// Effettua il setup del client Http con l'eventuale proxy (se presente)
-        /// Richiede:
-        /// 1) using Microsoft.Win32;
-        /// 2) using System.Runtime.InteropServices;
-        /// 3) using System.Net;
-        /// </summary>
-        /// <param name="setProxy"></param>
-        /// <returns>un oggetto HttpClient con eventuale proxy configurato</returns>
-        public static HttpClient CreateHttpClient(bool setProxy)
-        {
-            if (setProxy)
-            {
-                Uri? proxy;
-                //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
-                //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
-                //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
-                //https://stackoverflow.com/a/63884955
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    //ottengo lo user specific proxy che si ottiene con il comando:
-                    //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-                    //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
-                    RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-                    //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
-                    int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
-                    //impostiamo proxy
-                    proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
-                }
-                else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
-                {
-                    //questa è la procedura per ottenere il system proxy
-                    Uri destinationUri = new("https://www.google.it");
-                    //Ottiene il default proxy quando si prova a contattare la destinationUri
-                    //Se il proxy non è impostato si ottiene null
-                    //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                    //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
-                    //funziona sia che il proxy sia configurato sia che non lo sia
-                    proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                }
-                //con il proxy ottenuto con il codice precedente
-                HttpClientHandler httpHandler = new()
-                {
-                    Proxy = new WebProxy(proxy, true),
-                    UseProxy = true,
-                    PreAuthenticate = false,
-                    UseDefaultCredentials = false,
-                };
-                return new HttpClient(httpHandler);
-            }
-            else
-            {
-                return new HttpClient();
-            }
-        }
-        /// <summary>
-        /// Scrive del testo su un file usando la codifica specificata
-        /// https://stackoverflow.com/questions/11774827/writing-to-a-file-asynchronously/
-        /// https://stackoverflow.com/a/22617832
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="text"></param>
-        /// <param name="encoding"></param>
-        /// <returns></returns>
-        static async Task WriteTextAsync(string filePath, string text, Encoding encoding, int writeBufferSize = 4096)
-        {
-            using FileStream sourceStream = new (filePath, FileMode.Create, FileAccess.Write, FileShare.None,
-                bufferSize: writeBufferSize, useAsync: true);
-            using StreamWriter sw = new (sourceStream, encoding);
-            await sw.WriteAsync(text);
-        }
-        /// <summary>
-        /// Legge un file di testo usando la codifica UTF8
-        /// https://stackoverflow.com/questions/11774827/writing-to-a-file-asynchronously/
-        /// https://stackoverflow.com/a/22617832
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
-        static async Task<string> ReadTextUTF8Async(string filePath, int readBufferSize = 4096)
-        {
-            using FileStream sourceStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: readBufferSize, useAsync: true);
-            StringBuilder sb = new ();
-            byte[] buffer = new byte[0x1000];
-            int numRead;
-            while ((numRead = await sourceStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-            {
-                string text = Encoding.UTF8.GetString(buffer, 0, numRead);
-                sb.Append(text);
-            }
-            return sb.ToString();
-        }
-        /// <summary>
-        /// Legge un file di testo usando la codifica specificata
-        /// https://stackoverflow.com/questions/11774827/writing-to-a-file-asynchronously/
-        /// https://stackoverflow.com/a/22617832
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="encoding"></param>
-        /// <returns></returns>
-        static async Task<string> ReadTextAsync(string filePath, Encoding encoding, int readBufferSize = 4096)
-        {
-            using FileStream sourceStream = new (filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: readBufferSize, useAsync: true);
-            using StreamReader sr = new (sourceStream, encoding);
-            //https://docs.microsoft.com/it-it/dotnet/standard/io/how-to-read-text-from-a-file
-            return await sr.ReadToEndAsync();
-        }
-        /// <summary>
-        /// Recupera il nome del file dall'url
-        /// https://stackoverflow.com/a/40361205
-        /// https://stackoverflow.com/questions/1105593/get-file-name-from-uri-string-in-c-sharp
-        /// </summary>
-        /// <param name="url"></param>
-        /// <returns></returns>
-        static string GetFileNameFromUrl(string url)
-        {
-            Uri SomeBaseUri = new("http://canbeanything");
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
-            {
-                uri = new Uri(SomeBaseUri, url);
-            }
-            //Path.GetFileName funziona se ha in input un URL assoluto
-            return Path.GetFileName(uri.LocalPath);
-        }
-        static async Task Main(string[] args)
-        {
-            HttpClient client = CreateHttpClient(setProxy: true);
-            try
-            {
-                //https://www.gutenberg.org/files/1012/1012-0.txt - La Divina Commedia in txt
-                string fileName = GetFileNameFromUrl("https://www.gutenberg.org/files/1012/1012-0.txt");
-                HttpResponseMessage response = await client.GetAsync("https://www.gutenberg.org/files/1012/1012-0.txt");
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
-                //salvataggio su file
-                string path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + System.IO.Path.DirectorySeparatorChar + fileName;
-                //File.WriteAllText(path, responseBody);
-                // https://stackoverflow.com/questions/2223882/whats-the-difference-between-utf-8-and-utf-8-without-bom
-                //encoding senza BOM - https://docs.microsoft.com/en-us/dotnet/api/system.text.encoding.utf8?view=netframework-4.8
-                //BOM https://stackoverflow.com/a/2223926
-                //BOM https://it.wikipedia.org/wiki/Byte_Order_Mark
-                Console.WriteLine("Salvataggio su file in corso...");
-                await WriteTextAsync(path, responseBody, new UTF8Encoding(false));
-                Console.WriteLine("Lettura da file in corso... dei primi 10000 caratteri...tutto non entra nel buffer della console");
-                string testoLettoDaFile = await ReadTextAsync(path, new UTF8Encoding(false));
-                //string testoLettoDaFile = await ReadTextUTF8Async(path);
-                Console.WriteLine(testoLettoDaFile.Substring(0, 10000));
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-            }
-        }
-    }
+    class Program
+    {
+        /// <summary>
+        /// Scrive del testo su un file usando la codifica specificata
+        /// https://stackoverflow.com/questions/11774827/writing-to-a-file-asynchronously/
+        /// https://stackoverflow.com/a/22617832
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="text"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        static async Task WriteTextAsync(string filePath, string text, Encoding encoding, int writeBufferSize = 4096)
+        {
+            using FileStream sourceStream = new(filePath, FileMode.Create, FileAccess.Write, FileShare.None,
+            bufferSize: writeBufferSize, useAsync: true);
+            using StreamWriter sw = new(sourceStream, encoding);
+            await sw.WriteAsync(text);
+        }
+        /// <summary>
+        /// Legge un file di testo usando la codifica specificata
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="encoding"></param>
+        /// <param name="readBufferSize"></param>
+        /// <returns></returns>        
+        static async Task<string> ReadTextAsync2(string filePath, Encoding? encoding = null, int readBufferSize = 4096)
+        {
+            encoding ??= new UTF8Encoding(false);
+            using FileStream sourceStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: readBufferSize, useAsync: true);
+            StringBuilder sb = new();
+            byte[] buffer = new byte[0x1000];
+            int numRead;
+            while ((numRead = await sourceStream.ReadAsync(buffer.AsMemory(0, buffer.Length))) != 0)
+            {
+                string text = encoding.GetString(buffer, 0, numRead);
+                sb.Append(text);
+            }
+            return sb.ToString();
+        }
+        /// <summary>
+        /// Legge un file di testo usando la codifica specificata
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="encoding"></param>
+        /// <returns></returns>
+        static async Task<string> ReadTextAsync(string filePath, Encoding encoding, int readBufferSize = 4096)
+        {
+            using FileStream sourceStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: readBufferSize, useAsync: true);
+            using StreamReader sr = new(sourceStream, encoding);
+            //https://docs.microsoft.com/it-it/dotnet/standard/io/how-to-read-text-from-a-file
+            return await sr.ReadToEndAsync();
+        }
+        /// <summary>
+        /// Recupera il nome del file dall'url
+        /// https://stackoverflow.com/a/40361205
+        /// https://stackoverflow.com/questions/1105593/get-file-name-from-uri-string-in-c-sharp
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        static string GetFileNameFromUrl(string url)
+        {
+            Uri SomeBaseUri = new("http://canbeanything");
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+            {
+                uri = new Uri(SomeBaseUri, url);
+            }
+            //Path.GetFileName funziona se ha in input un URL assoluto
+            return Path.GetFileName(uri.LocalPath);
+        }
+        static async Task Main(string[] args)
+        {
+            HttpClient client = new();
+            try
+            {
+                //https://www.gutenberg.org/files/1012/1012-0.txt - La Divina Commedia in txt
+                string fileName = GetFileNameFromUrl("https://www.gutenberg.org/files/1012/1012-0.txt");
+                HttpResponseMessage response = await client.GetAsync("https://www.gutenberg.org/files/1012/1012-0.txt");
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                //salvataggio su file
+                string path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + Path.DirectorySeparatorChar + fileName;
+                //uso diversi modi per salvare su file
+                //metodo sincrono
+                //File.WriteAllText(path, responseBody);
+                //oppure, metodo asincrono
+                //await File.WriteAllTextAsync(path, responseBody);
+                //metodo sincrono con encoding specificato
+                //File.WriteAllText(path, responseBody, new UTF8Encoding(false));
+                //oppure, metodo asincrono con encoding specificato
+                //await File.WriteAllTextAsync(path, responseBody, new UTF8Encoding(false));
+                
+                // https://stackoverflow.com/questions/2223882/whats-the-difference-between-utf-8-and-utf-8-without-bom
+                //encoding senza BOM - https://docs.microsoft.com/en-us/dotnet/api/system.text.encoding.utf8?view=netframework-4.8
+                //BOM https://stackoverflow.com/a/2223926
+                //BOM https://it.wikipedia.org/wiki/Byte_Order_Mark
+                
+                //Oppure uso le funzioni di lettura/scrittura asincrona definite sopra
+                Console.WriteLine("Salvataggio su file in corso...");
+                await WriteTextAsync(path, responseBody, new UTF8Encoding(false));
+                Console.WriteLine("Lettura da file in corso... dei primi 10000 caratteri...tutto non entra nel buffer della console");
+                string testoLettoDaFile = await ReadTextAsync(path, new UTF8Encoding(false));
+                //oppure usando i metodi di File
+                //string testoLettoDaFile2 = await File.ReadAllTextAsync( path, new UTF8Encoding(false));
+                //oppure usando la seconda versione di ReadTextAsync
+                //string testoLettoDaFile3 = await File.ReadAllTextAsync(path);
+                Console.WriteLine(testoLettoDaFile[..10000]);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"{Environment.NewLine}Exception Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+        }
+    }
 }
+
+```
+
+Seconda versione che mette a confronto diversi modi per scaricare e salvare un file di testo da Internet:
+
+```csharp
+using System.Text;
+namespace FileDownloadAsyncDemo2
+{
+    class Program
+    {
+        static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
+
+        /// <summary>
+        /// Recupera il nome del file dall'url
+        /// https://stackoverflow.com/a/40361205
+        /// https://stackoverflow.com/questions/1105593/get-file-name-from-uri-string-in-c-sharp
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        static string GetFileNameFromUrl(string url)
+        {
+            Uri SomeBaseUri = new("http://canbeanything");
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+            {
+                uri = new Uri(SomeBaseUri, url);
+            }
+            //Path.GetFileName funziona se ha in input un URL assoluto
+            return Path.GetFileName(uri.LocalPath);
+        }
+
+        static string GetDesktopPathForUrl(string url)
+        {
+            string fileName = GetFileNameFromUrl(url);
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), fileName);
+        }
+
+        static async Task WriteTextToFileAsync(string path, string text, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await File.WriteAllTextAsync(path, text, Utf8NoBom, cancellationToken);
+                Console.WriteLine("File salvato in: {0}", path);
+            }
+            catch (OperationCanceledException e) when (cancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine("Scrittura file annullata o timeout!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+            catch (UnauthorizedAccessException e)
+            {
+                Console.WriteLine("Errore file: accesso negato (permessi)!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+            catch (DirectoryNotFoundException e)
+            {
+                Console.WriteLine("Errore file: cartella non trovata!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine("Errore I/O durante la scrittura del file!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+        }
+
+        static async Task DownloadAndSaveWithGetAsync(HttpClient client, string url)
+        {
+            string path = GetDesktopPathForUrl(url);
+            Console.WriteLine("Metodo 1: HttpClient.GetAsync + ReadAsStringAsync");
+            Console.WriteLine("Download in corso...");
+
+            try
+            {
+                using HttpResponseMessage response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("Scrittura su file in corso...");
+                await WriteTextToFileAsync(path, responseBody);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("Errore di rete durante il download!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+        }
+
+        static async Task DownloadAndSaveWithGetStringAsync(HttpClient client, string url, TimeSpan timeout)
+        {
+            string path = GetDesktopPathForUrl(url);
+            Console.WriteLine("Metodo 2: HttpClient.GetStringAsync + CancellationToken (timeout)");
+            Console.WriteLine("Download in corso...");
+
+            using CancellationTokenSource cts = new(timeout);
+            try
+            {
+                string downloadedText = await client.GetStringAsync(url, cts.Token);
+                Console.WriteLine("Scrittura su file in corso...");
+                await WriteTextToFileAsync(path, downloadedText, cts.Token);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("Errore di rete durante il download!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+            catch (OperationCanceledException e) when (cts.IsCancellationRequested)
+            {
+                Console.WriteLine("Download annullato o timeout!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+        }
+
+        static async Task Main(string[] args)
+        {
+            const string url = "https://www.gutenberg.org/files/1012/1012-0.txt";
+            using HttpClient client = new();
+
+            Console.WriteLine("Scegli il metodo di scaricamento:");
+            Console.WriteLine("1) HttpClient.GetAsync + ReadAsStringAsync");
+            Console.WriteLine("2) HttpClient.GetStringAsync + CancellationToken (timeout)");
+            Console.Write("Scelta (1/2): ");
+            string? choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "1":
+                    await DownloadAndSaveWithGetAsync(client, url);
+                    break;
+                case "2":
+                    await DownloadAndSaveWithGetStringAsync(client, url, TimeSpan.FromSeconds(10));
+                    break;
+                default:
+                    Console.WriteLine("Scelta non valida.");
+                    break;
+            }
+        }
+    }
+}
+
 ```
 
 ##### Riportare lo stato di avanzamento del download di un file
@@ -693,174 +605,495 @@ Nel seguente esempio viene scaricato un file binario di dimensione superiore a 1
 
 Il metodo `WriteBinaryAsync` salva il file nel percorso specificato, mentre il metodo `WriteBinaryAsyncWithProgress` fa la stessa cosa, ma permette anche di stampare la percentuale di progresso di download.
 
-```csharp
-using System;
+```csharp showLineNumbers {138-141, 204, 212, 267, 272}
+
+
 using System.Diagnostics;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.Win32;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Net;
 namespace BinaryBigFileDownloadAsyncDemo
 {
-    class Program
-    {
-        /// <summary>
-        /// Effettua il setup del client Http con l'eventuale proxy (se presente)
-        /// Richiede:
-        /// 1) using Microsoft.Win32;
-        /// 2) using System.Runtime.InteropServices;
-        /// 3) using System.Net;
-        /// </summary>
-        /// <param name\="setProxy"></param>
-        /// <returns>un oggetto HttpClient con eventuale proxy configurato</returns>
-        public static HttpClient CreateHttpClient(bool setProxy)
-        {
-            if (setProxy)
-            {
-                Uri? proxy;
-                //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
-                //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
-                //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
-                //https://stackoverflow.com/a/63884955
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    //ottengo lo user specific proxy che si ottiene con il comando:
-                    //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-                    //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
-                    RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-                    //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
-                    int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
-                    //impostiamo proxy
-                    proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
-                }
-                else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
-                {
-                    //questa è la procedura per ottenere il system proxy
-                    Uri destinationUri = new("https://www.google.it");
-                    //Ottiene il default proxy quando si prova a contattare la destinationUri
-                    //Se il proxy non è impostato si ottiene null
-                    //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                    //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
-                    //funziona sia che il proxy sia configurato sia che non lo sia
-                    proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                }
-                //con il proxy ottenuto con il codice precedente
-                HttpClientHandler httpHandler = new()
-                {
-                    Proxy = new WebProxy(proxy, true),
-                    UseProxy = true,
-                    PreAuthenticate = false,
-                    UseDefaultCredentials = false,
-                };
-                return new HttpClient(httpHandler);
-            }
-            else
-            {
-                return new HttpClient();
-            }
-        }
-        static long bytesRecieved = 0;
-        static long? totalBytes;
-        static int left;
-        static int top;
-        /// <summary>
-        /// Scrive un file nel percorso di destinazione a partire da uno stream di input
-        /// </summary>
-        /// <param name\="filePathDestination"></param>
-        /// <param name\="inputStream"></param>
-        /// <returns></returns>
-        static async Task WriteBinaryAsync(string filePathDestination, Stream inputStream, int writeBufferSize = 4096)
-        {
-            using FileStream outputStream = new(filePathDestination, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: writeBufferSize, useAsync: true);
-            await inputStream.CopyToAsync(outputStream);
-        }
-        /// <summary>
-        /// Scrive un file nel percorso destinazione a partire da uno stream di input.
-        /// Questa versione stampa a console la percentuale di progress.
-        /// Utilizza le variabili totalBytes e butesReceived
-        /// </summary>
-        /// <param name\="filePathDestination"></param>
-        /// <param name\="inputStream"></param>
-        /// <returns></returns>
-        static async Task WriteBinaryAsyncWithProgress(string filePathDestination, Stream inputStream)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Console.CursorVisible = false;
-            }
-            using FileStream outputStream = new(filePathDestination,
-            FileMode.Create, FileAccess.Write, FileShare.None,
-            bufferSize: 4096, useAsync: true);
-            byte[] buffer = new byte[1_000_000];//1MB di buffer
-            int numRead;
-            while ((numRead = await inputStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-            {
-                await outputStream.WriteAsync(buffer, 0, numRead);
-                bytesRecieved += numRead;
-                double? percentComplete = (double)bytesRecieved / totalBytes;
-                Console.SetCursorPosition(left, top);
-                Console.WriteLine($"download al {percentComplete \* 100:F2}%");
-            }
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Console.CursorVisible = true;
-            }
-        }
-        /// <summary>
-        /// Recupera il nome del file dall'url
-        /// https://stackoverflow.com/a/40361205
-        /// https://stackoverflow.com/questions/1105593/get-file-name-from-uri-string-in-c-sharp
-        /// </summary>
-        /// <param name\="url"></param>
-        /// <returns></returns>
-        static string GetFileNameFromUrl(string url)
-        {
-            Uri SomeBaseUri = new("http://canbeanything");
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
-                uri = new Uri(SomeBaseUri, url);
-            //Path.GetFileName funziona se ha in input un URL assoluto
-            return Path.GetFileName(uri.LocalPath);
-        }
-        static async Task Main(string[] args)
-        {
-            //const string url = "https://download.visualstudio.microsoft.com/download/pr/9e753d68-7701-4ddf-b358-79d64e776945/2a58564c6d0779a7b443a692c520782f/dotnet-sdk-8.0.203-win-x64.exe";
-            const string url = "https://github.com/tugberkugurlu/ASPNETWebAPISamples/archive/master.zip";
-            HttpClient client = CreateHttpClient(setProxy: true);
-            try
-            {
-                //leggo solo l'header HTTP, il resto verrà scaricato successivamente in maniera asincrona
-                HttpResponseMessage response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-                response.EnsureSuccessStatusCode();
-                var sw = new Stopwatch();
-                sw.Start();
-                Console.WriteLine("Salvataggio su file in corso...");
-                //ottengo il nome del file dall'url
-                string fileName = GetFileNameFromUrl(url);
-                //definisco il path complessivo del file
-                string path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + Path.DirectorySeparatorChar + fileName;
-                using (Stream streamToReadFrom = await response.Content.ReadAsStreamAsync())
-                {
-                    //copio in modalità async il file
-                    //await WriteBinaryAsync(path, streamToReadFrom);
-                    totalBytes = response.Content.Headers.ContentLength;
-                    left = Console.CursorLeft;
-                    top = Console.CursorTop;
-                    await WriteBinaryAsyncWithProgress(path, streamToReadFrom);
-                }
-                long elapsedMs = sw.ElapsedMilliseconds;
-                Console.WriteLine($"Salvataggio terminato...in {elapsedMs} ms");
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-            }
-        }
-    }
+    class Program
+    {
+
+        const int DefaultCopyBufferSize = 128 * 1024; // 128 KB: buon compromesso per rete+disco
+        const int DefaultMaxRetries = 3;
+
+        static string FormatBytes(long bytes)
+        {
+            string[] suffixes = ["B", "KB", "MB", "GB", "TB"];
+            double value = bytes;
+            int order = 0;
+            while (value >= 1024 && order < suffixes.Length - 1)
+            {
+                order++;
+                value /= 1024;
+            }
+            return $"{value:0.##} {suffixes[order]}";
+        }
+
+        static string? TryFormatSpeed(double? bytesPerSecond)
+        {
+            if (bytesPerSecond is null)
+                return null;
+            if (double.IsNaN(bytesPerSecond.Value) || double.IsInfinity(bytesPerSecond.Value) || bytesPerSecond.Value <= 0)
+                return null;
+            return $"{FormatBytes((long)bytesPerSecond.Value)}/s";
+        }
+
+        static string? TryFormatTime(TimeSpan? time)
+        {
+            if (time is null)
+                return null;
+            if (time.Value.TotalHours >= 1)
+                return time.Value.ToString(@"hh\:mm\:ss");
+            return time.Value.ToString(@"mm\:ss");
+        }
+
+        static void RenderProgressLine(long bytesReceived, long? totalBytes, double? bytesPerSecond, TimeSpan? eta)
+        {
+            string line;
+
+            string? speedText = TryFormatSpeed(bytesPerSecond);
+            string? etaText = TryFormatTime(eta);
+
+            if (totalBytes is > 0)
+            {
+                double percent = Math.Clamp(bytesReceived / (double)totalBytes.Value, 0, 1);
+                const int barWidth = 30;
+                int filled = (int)Math.Round(percent * barWidth);
+                string bar = new string('#', filled).PadRight(barWidth, '-');
+
+                line = $"[{bar}] {percent * 100,6:0.00}%  {FormatBytes(bytesReceived),10}/{FormatBytes(totalBytes.Value),10}";
+                if (speedText is not null)
+                    line += $"  {speedText,10}";
+                if (etaText is not null && speedText is not null)
+                    line += $"  ETA {etaText}";
+            }
+            else
+            {
+                line = $"Scaricati {FormatBytes(bytesReceived)}";
+                if (speedText is not null)
+                    line += $"  {speedText}";
+            }
+
+            if (Console.IsOutputRedirected)
+            {
+                Console.WriteLine(line);
+                return;
+            }
+
+            int width;
+            try
+            {
+                width = Console.WindowWidth;
+            }
+            catch
+            {
+                width = 120;
+            }
+
+            // \r per restare sulla stessa riga; PadRight per pulire residui di output precedente.
+            Console.Write("\r" + line.PadRight(Math.Max(0, width - 1)));
+        }
+        /// <summary>
+        /// Scrive un file nel percorso di destinazione a partire da uno stream di input
+        /// </summary>
+        /// <param name\="filePathDestination"></param>
+        /// <param name\="inputStream"></param>
+        /// <returns></returns>
+        static async Task WriteBinaryAsync(string filePathDestination, Stream inputStream, int writeBufferSize = 4096)
+        {
+            using FileStream outputStream = new(filePathDestination, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: writeBufferSize, useAsync: true);
+            await inputStream.CopyToAsync(outputStream);
+        }
+        /// <summary>
+        /// Scrive un file nel percorso destinazione a partire da uno stream di input.
+        /// Questa versione stampa a console la percentuale di progress.
+        /// Utilizza le variabili totalBytes e butesReceived
+        /// </summary>
+        /// <param name\="filePathDestination"></param>
+        /// <param name\="inputStream"></param>
+        /// <returns></returns>
+        static async Task WriteBinaryAsyncWithProgress(
+            string filePathDestination,
+            Stream inputStream,
+            long? totalBytes,
+            long initialBytesReceived = 0,
+            FileMode fileMode = FileMode.Create,
+            int bufferSize = DefaultCopyBufferSize,
+            CancellationToken cancellationToken = default)
+        {
+            long bytesReceived = initialBytesReceived;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Console.CursorVisible = false;
+            }
+            using FileStream outputStream = new(filePathDestination,
+            fileMode, FileAccess.Write, FileShare.None,
+            bufferSize: bufferSize, useAsync: true);
+
+            byte[] buffer = new byte[bufferSize];
+            int numRead;
+
+            var sw = Stopwatch.StartNew();
+            var lastRender = Stopwatch.StartNew();
+            long lastBytes = 0;
+            TimeSpan lastTime = TimeSpan.Zero;
+
+            // Prima stampa, così si vede subito il formato.
+            RenderProgressLine(bytesReceived, totalBytes, bytesPerSecond: null, eta: null);
+
+            while ((numRead = await inputStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) != 0)
+            {
+                await outputStream.WriteAsync(buffer, 0, numRead, cancellationToken);
+                bytesReceived += numRead;
+
+                // Aggiorna la console al massimo ~5 volte al secondo.
+                if (lastRender.ElapsedMilliseconds >= 200)
+                {
+                    TimeSpan now = sw.Elapsed;
+                    double deltaSeconds = (now - lastTime).TotalSeconds;
+                    double? speed = null;
+                    TimeSpan? eta = null;
+
+                    if (deltaSeconds > 0)
+                    {
+                        speed = (bytesReceived - lastBytes) / deltaSeconds;
+                        if (totalBytes is > 0 && speed > 1)
+                        {
+                            double remainingBytes = totalBytes.Value - bytesReceived;
+                            eta = TimeSpan.FromSeconds(Math.Max(0, remainingBytes / speed.Value));
+                        }
+                    }
+
+                    RenderProgressLine(bytesReceived, totalBytes, speed, eta);
+                    lastBytes = bytesReceived;
+                    lastTime = now;
+                    lastRender.Restart();
+                }
+            }
+
+            // Ultimo refresh + newline.
+            RenderProgressLine(bytesReceived, totalBytes, bytesPerSecond: null, eta: TimeSpan.Zero);
+            if (!Console.IsOutputRedirected)
+            {
+                Console.WriteLine();
+            }
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Console.CursorVisible = true;
+            }
+        }
+
+        static async Task DownloadWithRetryAndResumeAsync(
+            HttpClient client,
+            string url,
+            string destinationPath,
+            int maxRetries = DefaultMaxRetries,
+            int bufferSize = DefaultCopyBufferSize,
+            CancellationToken cancellationToken = default)
+        {
+            // Nota: non tutti i server supportano Range. Se Range viene ignorato, ripartiamo da zero.
+            for (int attempt = 0; attempt <= maxRetries; attempt++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                long existingLength = 0;
+                if (File.Exists(destinationPath))
+                {
+                    existingLength = new FileInfo(destinationPath).Length;
+                }
+
+                if (existingLength > 0)
+                {
+                    Console.WriteLine($"Resume: file parziale trovato ({FormatBytes(existingLength)}). Riprendo da lì...");
+                }
+
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                if (existingLength > 0)
+                {
+                    request.Headers.Range = new RangeHeaderValue(existingLength, null);
+                }
+
+                try
+                {
+                    using HttpResponseMessage response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+                    // 416: Range non valido (es. file già completo). Consideriamo finito.
+                    if (response.StatusCode == HttpStatusCode.RequestedRangeNotSatisfiable)
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine("Download già completo (server ha risposto 416 Range Not Satisfiable).");
+                        return;
+                    }
+
+                    if (response.StatusCode != HttpStatusCode.OK && response.StatusCode != HttpStatusCode.PartialContent)
+                    {
+                        response.EnsureSuccessStatusCode();
+                    }
+
+                    bool isPartial = response.StatusCode == HttpStatusCode.PartialContent;
+
+                    if (existingLength > 0)
+                    {
+                        if (isPartial)
+                        {
+                            long? serverFrom = response.Content.Headers.ContentRange?.From;
+                            if (serverFrom is not null)
+                            {
+                                Console.WriteLine($"Server ha accettato Range: ripartenza da {FormatBytes(serverFrom.Value)} (HTTP 206).");
+                            }
+                            else
+                            {
+                                Console.WriteLine("Server ha accettato Range (HTTP 206).");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Server ha ignorato Range (HTTP 200): ricomincio da zero.");
+                        }
+                    }
+
+                    // Se avevamo un file parziale ma il server NON risponde 206, ha ignorato Range: ricominciamo.
+                    if (existingLength > 0 && !isPartial)
+                    {
+                        existingLength = 0;
+                        try { File.Delete(destinationPath); } catch { /* ignore */ }
+                    }
+
+                    long? totalBytes = null;
+                    if (response.Content.Headers.ContentRange?.Length is long totalFromRange && totalFromRange > 0)
+                    {
+                        totalBytes = totalFromRange;
+                    }
+                    else if (response.Content.Headers.ContentLength is long contentLen && contentLen > 0)
+                    {
+                        // Se stiamo riprendendo, Content-Length è la parte rimanente.
+                        totalBytes = existingLength > 0 ? existingLength + contentLen : contentLen;
+                    }
+
+                    await using Stream streamToReadFrom = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+                    FileMode fileMode = existingLength > 0 ? FileMode.Append : FileMode.Create;
+                    await WriteBinaryAsyncWithProgress(
+                        destinationPath,
+                        streamToReadFrom,
+                        totalBytes,
+                        initialBytesReceived: existingLength,
+                        fileMode: fileMode,
+                        bufferSize: bufferSize,
+                        cancellationToken: cancellationToken);
+
+                    return; // completato
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex) when (attempt < maxRetries)
+                {
+                    // Eccezioni tipiche: HttpIOException(ResponseEnded), HttpRequestException, IOException.
+                    Console.WriteLine();
+                    Console.WriteLine($"Tentativo {attempt + 1}/{maxRetries} fallito: {ex.GetType().Name}: {ex.Message}");
+                    int backoffMs = 500 * (attempt + 1);
+                    Console.WriteLine($"Riprovo tra {backoffMs} ms...");
+                    await Task.Delay(backoffMs, cancellationToken);
+                }
+            }
+
+            throw new Exception($"Download fallito dopo {maxRetries + 1} tentativi.");
+        }
+        /// <summary>
+        /// Recupera il nome del file dall'url
+        /// https://stackoverflow.com/a/40361205
+        /// https://stackoverflow.com/questions/1105593/get-file-name-from-uri-string-in-c-sharp
+        /// </summary>
+        /// <param name\="url"></param>
+        /// <returns></returns>
+        static string GetFileNameFromUrl(string url)
+        {
+            Uri SomeBaseUri = new("http://canbeanything");
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+                uri = new Uri(SomeBaseUri, url);
+            //Path.GetFileName funziona se ha in input un URL assoluto
+            return Path.GetFileName(uri.LocalPath);
+        }
+        static async Task Main(string[] args)
+        {
+            const string url = "https://download.visualstudio.microsoft.com/download/pr/9e753d68-7701-4ddf-b358-79d64e776945/2a58564c6d0779a7b443a692c520782f/dotnet-sdk-8.0.203-win-x64.exe";
+            //const string url = "https://github.com/tugberkugurlu/ASPNETWebAPISamples/archive/master.zip";
+            using var cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (_, e) =>
+            {
+                e.Cancel = true;
+                cts.Cancel();
+            };
+
+            using HttpClient client = new();
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            try
+            {
+                var sw = new Stopwatch();
+                sw.Start();
+                Console.WriteLine("Salvataggio su file in corso...");
+                //ottengo il nome del file dall'url
+                string fileName = GetFileNameFromUrl(url);
+                //definisco il path complessivo del file
+                string path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + Path.DirectorySeparatorChar + fileName;
+
+                await DownloadWithRetryAndResumeAsync(
+                    client,
+                    url,
+                    path,
+                    maxRetries: DefaultMaxRetries,
+                    bufferSize: DefaultCopyBufferSize,
+                    cancellationToken: cts.Token);
+
+                long elapsedMs = sw.ElapsedMilliseconds;
+                Console.WriteLine($"Salvataggio terminato...in {elapsedMs} ms");
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine($"{Environment.NewLine}Exception Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine($"{Environment.NewLine}Operazione annullata.");
+            }
+        }
+    }
 }
 ```
+
+###### Spiegazione del codice di download con ripresa (resume) e progress in console
+
+Il programma scarica un file binario via HTTP in modalità “streaming” (senza caricare tutto in memoria), lo salva su disco e mostra l’avanzamento in console. Inoltre, in caso di interruzioni di rete o chiusure premature della risposta, tenta automaticamente di riprendere il download dal punto in cui si era fermato, usando le richieste HTTP con header `Range` (quando supportate dal server).
+
+Di seguito sono spiegati i punti chiave del codice:
+
+1) **Download “streaming” e perché si usa `ResponseHeadersRead`**
+
+    Il download viene avviato con una richiesta HTTP che legge immediatamente solo gli header della risposta, lasciando che il contenuto venga letto gradualmente:
+
+    - `HttpCompletionOption.ResponseHeadersRead` evita di bufferizzare l’intero body in memoria.
+    - Lo stream ottenuto da `response.Content.ReadAsStreamAsync(...)` viene letto a blocchi (chunk) e scritto su `FileStream` in modo asincrono.
+
+    Questa impostazione è corretta per file grandi perché:
+
+    - riduce l’uso di RAM;
+    - consente di aggiornare l’avanzamento mentre i dati arrivano;
+    - permette di gestire meglio errori e riprese.
+
+    ---
+
+2) **Scelta del buffer: perché 128 KB**
+
+    Il codice usa un buffer costante, ad esempio `128 KB`, sia per la lettura dallo stream di rete sia per la scrittura sul file. La dimensione del buffer influenza il comportamento:
+
+    - Un buffer troppo piccolo (es. 4 KB) può aumentare overhead e chiamate di I/O, peggiorando le prestazioni.
+    - Un buffer eccessivamente grande (es. 1 MB) non è “sbagliato”, ma può produrre un andamento più “a scatti” e non sempre porta benefici proporzionali; inoltre aumenta la quantità di dati “in volo” per singola operazione.
+
+    Un valore intermedio (64–256 KB) è spesso un buon compromesso tra efficienza e stabilità. Nel codice è stato adottato `128 KB`.
+
+    ---
+
+3) **Progress in console: percentuale, velocità, ETA (Estimated Time of Arrival)**
+
+    La funzione di scrittura:
+
+    - legge e scrive a chunk in un ciclo,
+    - aggiorna i byte scaricati,
+    - stampa una singola riga di progress nella console (usando `\r` per restare sulla stessa riga),
+    - limita la frequenza di aggiornamento (throttling) a circa 5 volte al secondo per evitare flickering e overhead.
+
+    La percentuale si può calcolare solo se è nota la dimensione totale del file. Questa informazione può arrivare da:
+
+    - `Content-Length` (dimensione del contenuto trasferito),
+    - oppure `Content-Range` (quando si usa `Range`, contiene anche la dimensione totale).
+
+    Se la velocità non è ancora stimabile (tipicamente all’inizio), il codice non la mostra: viene visualizzata solo quando esiste un valore significativo.
+
+    ---
+
+4) **Perché può verificarsi l’eccezione “Response ended prematurely”**
+
+    L’eccezione:
+
+    `The response ended prematurely ... additional bytes expected`
+
+    si verifica quando:
+    - il server ha indicato un `Content-Length` (quindi ci si aspetta un certo numero di byte),
+    - ma la connessione viene chiusa prima che tutti i byte dichiarati arrivino (rete instabile, reset, timeout intermedi, CDN, ecc.).
+
+    In questi casi lo stream termina “troppo presto”, e la lettura fallisce. Il comportamento è coerente con il protocollo: non essendo arrivati tutti i byte promessi, il client deve considerare il trasferimento incompleto.
+
+    ---
+
+5) **Meccanismo di retry e resume: come funziona la ripresa**
+
+    La logica di ripresa è implementata in una routine dedicata che:
+
+    1. Controlla se esiste già un file di destinazione.
+    2. Se esiste, calcola la sua dimensione in byte (quanto è già stato scaricato).
+    3. Invia una nuova richiesta HTTP includendo l’header `Range`, chiedendo i byte rimanenti a partire dall’offset già presente su disco.
+    4. Se il server accetta la richiesta (risposta `206 Partial Content`), il programma apre il file in append e continua a scrivere in coda.
+    5. Se il server non supporta `Range` e risponde `200 OK` (contenuto completo), la ripresa non è possibile: il programma elimina il file parziale e ricomincia da zero.
+
+    In caso di errore (es. risposta interrotta), il programma effettua alcuni tentativi (`maxRetries`) con un breve backoff (ritardo crescente) tra un tentativo e il successivo.
+
+    In console vengono stampati messaggi espliciti, ad esempio:
+    - quando viene trovato un file parziale e si tenta la ripresa;
+    - quando il server accetta `Range` (HTTP 206);
+    - quando il server ignora `Range` e si ricomincia (HTTP 200);
+    - quando un tentativo fallisce e viene pianificato un retry.
+
+    ---
+
+6) **HTTP Range: spiegazione formale**
+
+    L’header HTTP `Range` permette al client di richiedere solo una porzione di risorsa, invece dell’intero contenuto. È particolarmente utile per:
+
+    - riprendere download interrotti (resume),
+    - scaricare parti specifiche di un file.
+
+    **Formato tipico:**
+    - `Range: bytes=START-`
+    - richiede i byte da `START` fino alla fine.
+    - `Range: bytes=START-END`
+    - richiede un intervallo specifico.
+
+    **Risposte possibili:**
+    - `206 Partial Content`: il server ha accettato la richiesta parziale e invia solo la porzione richiesta.
+    - In questo caso il server include spesso `Content-Range`, ad esempio:
+        - `Content-Range: bytes 1000-1999/5000`
+        - che indica: “sto inviando i byte 1000–1999, su un totale di 5000 byte”.
+    - `200 OK`: il server ignora `Range` e invia l’intero file.
+    - In questo caso la ripresa non può essere effettuata in modo sicuro tramite append, perché si rischierebbe di duplicare dati.
+    - `416 Requested Range Not Satisfiable`: l’intervallo richiesto non è valido.
+    - Può accadere se il client chiede di riprendere oltre la fine del file (per esempio file già completo, oppure risorsa diversa da quella attesa).
+
+    **Implicazione pratica nel programma:**
+    - Se è presente un file parziale, il client prova `Range`.
+    - Se la risposta è `206`, il file viene aperto in append e il download continua.
+    - Se la risposta è `200`, il file parziale viene scartato e il download ricomincia.
+    - Se la risposta è `416`, il programma conclude che (per quella risorsa) non ha senso riprendere con quel range; spesso significa che il file locale è già completo rispetto alla dimensione riconosciuta dal server.
+
+    ---
+
+7) **Gestione dell’annullamento (Ctrl+C)**
+
+    Il programma collega `Console.CancelKeyPress` a un `CancellationTokenSource`. In questo modo:
+    - premendo `Ctrl+C` l’operazione viene annullata in modo controllato;
+    - il file rimane “parziale” su disco e può essere ripreso al successivo avvio tramite `Range` (se supportato).
+
+    ---
+
+:::note
+Non tutti i server supportano `Range`, e la ripresa “affidabile” dipende dal supporto del server e dalla stabilità dell’URL (la risorsa deve restare la stessa tra un tentativo e l’altro).
+:::
 
 ### Metodi di estensione e librerie
 
@@ -890,41 +1123,38 @@ Si noti che il primo parametro non viene fornito esplicitamente nel punto di chi
 
 ##### Esempio di Extension Method
 
-Il seguente esempio implementa un metodo di estensione `WordCount` nella classe `CustomExtensions.StringExtension`. Il metodo opera sulla classe `String` e viene richiamato nel `Main` dopo l’importazione del namespace `CustomExtensions`.
+Il seguente esempio implementa un metodo di estensione `WordCount` nella classe `CustomExtensions.StringExtension`. Il metodo opera sulla classe `string` e viene richiamato nel `Main` dopo l’importazione del namespace `CustomExtensions`.
 
 ```csharp
 //file StringExtensions.cs
-using System;
-using System.Collections.Generic;
-using System.Linq;
-namespace CustomExtensions
+
+namespace CustomExtensions;
+
+public static class StringExtension
 {
-    public static class StringExtension
-    {
-        // This is the extension method.
-        // The first parameter takes the "this" modifier
-        // and specifies the type for which the method is defined.
-        public static int WordCount(this String str)
-        {
-            return str.Split(new char[] { ' ', '.', '?' }, StringSplitOptions.RemoveEmptyEntries).Length;
-        }
-    }
+    // This is the extension method.
+    // The first parameter takes the "this" modifier
+    // and specifies the type for which the method is defined.
+    public static int WordCount(this String str)
+    {
+        return str.Split([' ', '.', '?'], StringSplitOptions.RemoveEmptyEntries).Length;
+    }
 }
 //file: Program.cs
 using CustomExtensions;
 namespace ExtensionMethodsDemo
 {
-    internal class Program
-    {
-        static void Main(string[] args)
-        {
-            string s = "The quick brown fox jumped over the lazy dog.";
-            int i = s.WordCount();
-            Console.WriteLine("Word count of s is {0}", i);
-            int[] array = {1,2,3,4,5};
-            int totale = array.Sum();
-        }
-    }
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            string s = "The quick brown fox jumped over the lazy dog.";
+            int i = s.WordCount();
+            Console.WriteLine("Word count of s is {0}", i);
+            int[] array = [1, 2, 3, 4, 5];
+            int totale = array.Sum();
+        }
+    }
 }
 ```
 
@@ -938,15 +1168,13 @@ IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, cl
 in[] lengths = await Task.WhenAll(downloadTasks);
 ```
 
-Per gestire il grado di parallelismo massimo dei task che sono eseguiti in parallelo su una collection di oggetti è possibile implementare un paio di semplici metodi che utilizzano una coda Thrade-safe per processare gli elementi della collection. Svilupperemo questo progetto come libreria con metodi di estensione per poter poi includere la libreria nei nostri progetti.
+Per gestire il grado di parallelismo massimo dei task che sono eseguiti in parallelo su una collection di oggetti è possibile implementare un paio di semplici metodi che utilizzano una coda Thread-safe per processare gli elementi della collection. Svilupperemo questo progetto come libreria con metodi di estensione per poter poi includere la libreria nei nostri progetti.
 
 ##### Step N1: creazione di un progetto di tipo libreria
 
-In Visual Studio:
+In Visual Studio Code:
 
-![Visual Studio Panel](http-requests-and-responses/vs-studio-panel.png)
-
-Creiamo un progetto chiamato TaskParallelismControl e al suo interno creiamo la classe TaskConcurrencyHelper.
+Creiamo un progetto di tipo `Class Library` chiamato `TaskParallelismControl` e al suo interno creiamo la classe `TaskConcurrencyHelper`.
 
 ```csharp
 using System.Collections.Concurrent;
@@ -1010,499 +1238,472 @@ namespace TaskParallelismControl
 }
 ```
 
-Compiliamo la libreria con il comando Build.
+Compiliamo la libreria con il comando:
 
-##### Step N2: utilizzo della libreria in un altro progetto di Visual Studio
+```ps1
+dotnet build .\TaskParallelismControl\TaskParallelismControl.csproj
+```
 
-Creiamo il progetto MultipleWebRequestDemo3 che utilizza la libreria TaskParallelismControl. Dopo aver creato un progetto Console chiamato MultipleWebRequestDemo3, aggiungiamo la dipendenza dal progetto libreria appena creato:
+##### Step N2: utilizzo della libreria in un altro progetto di Visual Studio Code
 
-![Visual Studio - add project reference](http-requests-and-responses/vs-studio-add-project-reference.png)
+Creiamo il progetto Console HttpClientDemo3 che utilizza la libreria TaskParallelismControl. Dopo aver creato un progetto Console chiamato HttpClientDemo3, aggiungiamo la dipendenza dal progetto libreria appena creato:
 
-Quindi scegliamo il progetto TaskParallelismControl.
+In Visual Studio Code è possibile aggiungere il riferimento alla libreria anche da terminale, posizionandosi nella cartella del progetto Console HttpClientDemo3 e lanciando il comando `dotnet add reference` seguito dal percorso completo del file `.csproj` della libreria TaskParallelismControl:
 
-![Visual Studio - reference manager](http-requests-and-responses/vs-studio-reference-manager.png)
+```ps1
+dotnet add reference ..\TaskParallelismControl\TaskParallelismControl.csproj
+```
 
-Nel caso di Visual Studio Code:
-
-Da terminale eseguire:
-
-dotnet add reference "C:\percorso\alla\libreria\MyLibrary\MyLibrary.csproj"
+In alternativa è possibile usare i comandi dell'interfaccia grafica, selezionando il progetto Console e scegliendo "Add Project Reference".
 
 Per effetto del comando precedente il file `.csproj` dovrebbe contenere:
 
 ```xml
-<ItemGroup>
-    <ProjectReference Include="C:\percorso\alla\libreria\MyLibrary\MyLibrary.csproj" />
-</ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TaskParallelismControl\TaskParallelismControl.csproj" />
+  </ItemGroup>
 ```
 
-Nel file della classe Program aggiungiamo il namespace della libreria TaskParallelismControl e scriviamo il codice della classe:
+Nel file della classe Program si aggiunga il namespace della libreria TaskParallelismControl e si scriva il codice della classe:
 
 ```csharp
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
-using Microsoft.Win32;
-using System.Net;
 //namespace della libreria creata
 using TaskParallelismControl;
-namespace MultipleWebRequestsDemo3
+namespace HttpClientDemo3;
+
+class Program
 {
-    class Program
-    {
-        /// <summary>
-        /// Effettua il setup del client Http con l'eventuale proxy (se presente)
-        /// Richiede:
-        /// 1) using Microsoft.Win32;
-        /// 2) using System.Runtime.InteropServices;
-        /// 3) using System.Net;
-        /// </summary>
-        /// <param name="setProxy"></param>
-        /// <returns>un oggetto HttpClient con eventuale proxy configurato</returns>
-        public static HttpClient CreateHttpClient(bool setProxy)
-        {
-            if (setProxy)
-            {
-                Uri? proxy;
-                //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
-                //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
-                //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
-                //https://stackoverflow.com/a/63884955
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    //ottengo lo user specific proxy che si ottiene con il comando:
-                    //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-                    //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
-                    RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-                    //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
-                    int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
-                    //impostiamo proxy
-                    proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
-                }
-                else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
-                {
-                    //questa è la procedura per ottenere il system proxy
-                    Uri destinationUri = new("https://www.google.it");
-                    //Ottiene il default proxy quando si prova a contattare la destinationUri
-                    //Se il proxy non è impostato si ottiene null
-                    //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                    //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
-                    //funziona sia che il proxy sia configurato sia che non lo sia
-                    proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                }
-                //con il proxy ottenuto con il codice precedente
-                HttpClientHandler httpHandler = new()
-                {
-                    Proxy = new WebProxy(proxy, true),
-                    UseProxy = true,
-                    PreAuthenticate = false,
-                    UseDefaultCredentials = false,
-                };
-                return new HttpClient(httpHandler);
-            }
-            else
-            {
-                return new HttpClient();
-            }
-        }
-        /// <summary>
-        /// Scarica un file dalla rete e restituisce la lunghezza in byte
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="client"></param>
-        /// <returns></returns>
-        static async Task<int> ProcessURLAsync(string url, HttpClient client)
-        {
-            var sw = new Stopwatch();
-            sw.Start();
-            var byteArray = await client.GetByteArrayAsync(url);
-            sw.Stop();
-            DisplayResults(url, "https://docs.microsoft.com/en-us/", byteArray, sw.ElapsedMilliseconds);
-            return byteArray.Length;
-        }
-        /// <summary>
-        /// Stampa una parte dell'url, la dimensione in byte di una pagina e il tempo impiegato per il download
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="urlHeadingStrip"></param>
-        /// <param name="content"></param>
-        /// <param name="elapsedMillis"></param>
-        static void DisplayResults(string url, string urlHeadingStrip, byte[] content, long elapsedMillis)
-        {
-            // Display the length of each website.
-            var bytes = content.Length;
-            // Strip off the "urlHeadingStrip" part from url
-            var displayURL = url.Replace(urlHeadingStrip, "");
-            Console.WriteLine($"\n{displayURL,-80} bytes: {bytes,-10} ms: {elapsedMillis,-10}");
-        }
-        /// <summary>
-        /// Restituisce una lista di url
-        /// </summary>
-        /// <returns></returns>
-        static List<string> SetUpURLList()
-        {
-            List<string> urls = new ()
-            {
-                "https://docs.microsoft.com/en-us/welcome-to-docs",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-objects",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-and-strings",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-overview",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/async-return-types",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-vs-dom",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection"
-            };
-            return urls;
-        }
-        /// <summary>
-        /// Effettua il setup di una lista di url e per ognuno di essi avvia un download asincrono su un task separato
-        /// </summary>
-        /// <returns></returns>
-        static async Task SumPageSizesAsync()
-        {
-            // Make a list of web addresses.
-            List<string> urlList = SetUpURLList();
-            //setup del client con eventuale Proxy
-            HttpClient client = CreateHttpClient(setProxy: true);
-            //misuriamo il tempo complessivo per scaricare tutte le pagine
-            var swGlobal = new Stopwatch();
-            swGlobal.Start();
-            //processiamo in parallelo una lista di URL
-            //IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, client));
-            //ConcurrentBag<int> bag = new ConcurrentBag<int>();
-            //await urlList.ExecuteInParallel(async u => { bag.Add(await ProcessURLAsync(u, client)); }, 10);
-            //var theTotal = bag.ToArray().Sum();
-            //await urlList.ExecuteInParallel(async u => { await Task.Delay(10); }, 10);
-            //definiamo il grado di parallelismo
-            const int numberOfParallelThreads = 5;
-            //processiamo tutti gli oggetti della collection con il grado di parallelismo massimo predefinito
-            ConcurrentBag<int> concurrentBagOfResults = await urlList.ExecuteInParallel(u => ProcessURLAsync(u, client), numberOfParallelThreads);
-            //sommiamo tutti i valori restituiti dai thread
-            var theTotal = concurrentBagOfResults.ToArray().Sum();
-            Console.WriteLine($"Somma = {theTotal}");
-            swGlobal.Stop();
-            long elapsedTotalMs = swGlobal.ElapsedMilliseconds;
-            // Display the total count for all of the web addresses.
-            Console.WriteLine($"\r\n\r\nTotal bytes returned:  {theTotal}\r\n");
-            Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs}");
-        }
-        static async Task Main(string[] args)
-        {
-            //imposto la dimensione della console - vale solo per Windows
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Console.WindowWidth = 120;
-            }
-            await SumPageSizesAsync();
-        }
-    }
+    
+    /// <summary>
+    /// Scarica un file dalla rete e restituisce la lunghezza in byte
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="client"></param>
+    /// <returns></returns>
+    static async Task<int> ProcessURLAsync(string url, HttpClient client)
+    {
+        var sw = new Stopwatch();
+        sw.Start();
+        var byteArray = await client.GetByteArrayAsync(url);
+        sw.Stop();
+        DisplayResults(url, "https://docs.microsoft.com/en-us/", byteArray, sw.ElapsedMilliseconds);
+        return byteArray.Length;
+    }
+    /// <summary>
+    /// Stampa una parte dell'url, la dimensione in byte di una pagina e il tempo impiegato per il download
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="urlHeadingStrip"></param>
+    /// <param name="content"></param>
+    /// <param name="elapsedMillis"></param>
+    static void DisplayResults(string url, string urlHeadingStrip, byte[] content, long elapsedMillis)
+    {
+        // Display the length of each website.
+        var bytes = content.Length;
+        // Strip off the "urlHeadingStrip" part from url
+        var displayURL = url.Replace(urlHeadingStrip, "");
+        Console.WriteLine($"{Environment.NewLine}{displayURL,-80} bytes: {bytes,-10} ms: {elapsedMillis,-10}");
+    }
+    /// <summary>
+    /// Restituisce una lista di url
+    /// </summary>
+    /// <returns></returns>
+    static List<string> SetUpURLList()
+    {
+        List<string> urls =
+        [
+        "https://docs.microsoft.com/en-us/welcome-to-docs",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-objects",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-and-strings",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-overview",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/async-return-types",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-vs-dom",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection"
+        ];
+        return urls;
+    }
+    /// <summary>
+    /// Effettua il setup di una lista di url e per ognuno di essi avvia un download asincrono su un task separato
+    /// </summary>
+    /// <returns></returns>
+    static async Task SumPageSizesAsync()
+    {
+        // Make a list of web addresses.
+        List<string> urlList = SetUpURLList();
+        HttpClient client = new ();
+        //misuriamo il tempo complessivo per scaricare tutte le pagine
+        var swGlobal = new Stopwatch();
+        swGlobal.Start();
+        //processiamo in parallelo una lista di URL
+        IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, client));
+        //attendiamo il completamento di tutti i download
+        
+        await Task.WhenAll(downloadTasks);
+        //sommiamo i risultati
+        int total = downloadTasks.Sum(t => t.Result);
+        Console.WriteLine($"{Environment.NewLine}Total bytes returned: {total}{Environment.NewLine}");
+        swGlobal.Stop();
+        long elapsedTotalMs = swGlobal.ElapsedMilliseconds;
+        Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs}");
+        //ora facciamo la stessa cosa ma limitando il grado di parallelismo
+        Console.WriteLine($"{Environment.NewLine}Esecuzione con grado di parallelismo limitato:");
+        swGlobal.Restart();
+        
+        //ConcurrentBag<int> bag = [];
+        //await urlList.ExecuteInParallel(async u => { bag.Add(await ProcessURLAsync(u, client)); }, 10);
+        //var theTotal = bag.ToArray().Sum();
+        //await urlList.ExecuteInParallel(async u => { await Task.Delay(10); }, 10);
+        //definiamo il grado di parallelismo
+        const int numberOfParallelThreads = 5;
+        //processiamo tutti gli oggetti della collection con il grado di parallelismo massimo predefinito
+        ConcurrentBag<int> concurrentBagOfResults = await urlList.ExecuteInParallel(u => ProcessURLAsync(u, client), numberOfParallelThreads);
+        //sommiamo tutti i valori restituiti dai thread
+        var theTotal = concurrentBagOfResults.ToArray().Sum();
+        Console.WriteLine($"Somma = {theTotal}");
+        swGlobal.Stop();
+        elapsedTotalMs = swGlobal.ElapsedMilliseconds;
+        // Display the total count for all of the web addresses.
+        Console.WriteLine($"{Environment.NewLine}Total bytes returned: {theTotal}{Environment.NewLine}");
+        Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs}");
+    }
+    static async Task Main(string[] args)
+    {
+        //imposto la dimensione della console - vale solo per Windows
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Console.WindowWidth = 120;
+        }
+        await SumPageSizesAsync();
+    }
 }
+
+
 ```
 
 ##### Libreria per la gestione del Proxy con l'oggetto HttpClient
 
-Il codice per il setup del proxy e le relative dipendenze può utilmente essere inserito all'interno di una libreria richiamata in tutti i progetti che ne fanno uso.
+In alcune circostanze è necessario configurare il proxy per le richieste HTTP nell'oggetto HttpClient. Il codice per il setup del proxy e le relative dipendenze può utilmente essere inserito all'interno di una libreria richiamata in tutti i progetti che ne fanno uso.
 
-Creiamo la libreria `HttpProxyControl` da usare per i futuri progetti.
+Creiamo la libreria `HttpProxyControl` da usare per i futuri progetti. Creiamo un progetto di tipo Class Library chiamato `HttpProxyControl`.
 
 ```csharp
+namespace HttpProxyControl;
+
 using Microsoft.Win32;
 using System.Net;
 using System.Runtime.InteropServices;
-namespace HttpProxyControl
+
+public struct ProxyParams
 {
-    public struct ProxyParams
-    {
-        public string ProxyAddress { get; set; }
-        public int ProxyPort { get; set; }
-    }
-    public class ProxyHelperException : Exception
-    {
-        //https://docs.microsoft.com/en-us/dotnet/standard/exceptions/how-to-create-user-defined-exceptions
-        public ProxyHelperException()
-        {
-        }
-        public ProxyHelperException(string message)
-            : base(message)
-        {
-        }
-        public ProxyHelperException(string message, Exception inner)
-            : base(message, inner)
-        {
-        }
-    }
-    /// Richiede:
+    public string ProxyAddress { get; set; }
+    public int ProxyPort { get; set; }
+}
+public class ProxyHelperException : Exception
+{
+    //https://docs.microsoft.com/en-us/dotnet/standard/exceptions/how-to-create-user-defined-exceptions
+    public ProxyHelperException()
+    {
+    }
+    public ProxyHelperException(string message)
+    : base(message)
+    {
+    }
+    public ProxyHelperException(string message, Exception inner)
+    : base(message, inner)
+    {
+    }
+}
+/// Richiede:
     /// 1) using Microsoft.Win32;
     /// 2) using System.Runtime.InteropServices;
     /// 3) using System.Net;
-    public static class HttpProxyHelper
-    {
-        /// <summary>
-        ///  
-        /// Restituisce il proxy attualmente in uso (se presente)
-        /// Il proxy è un Uri nella forma proxy_address:proxy_port
-        /// </summary>
-        /// <returns>Il proxy attualmente in uso. Restituisce null se nessun proxy è in uso</returns>
-        public static Uri? GetHttpClientProxy()
-        {
-            Uri? proxy;
-            //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
-            //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
-            //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
-            //https://stackoverflow.com/a/63884955
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                //ottengo lo user specific proxy che si ottiene con il comando:
-                //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-                //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
-                RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-                //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
-                int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
-                //impostiamo proxy
-                proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
-            }
-            else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
-            {
-                //questa è la procedura per ottenere il system proxy
-                Uri destinationUri = new ("https://www.google.it");
-                //Ottiene il default proxy quando si prova a contattare la destinationUri
-                //Se il proxy non è impostato si ottiene null
-                //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-                //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
-                //funziona sia che il proxy sia configurato sia che non lo sia
-                proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-            }
-            return proxy;
-        }
-        ///// <summary>
-        ///// Effettua il setup del client Http con l'eventuale proxy (se impostato)
-        ///// </summary>
-        ///// <param name="client"></param>
-        //public static void HttpClientProxySetup(out HttpClient client)
-        //{
-        //    Uri? proxy = GetHttpClientProxy();
-        //    if (proxy != null)
-        //    {
-        //        HttpClientHandler httpHandler = new HttpClientHandler()
-        //        {
-        //            Proxy = new WebProxy(proxy, true),
-        //            UseProxy = true,
-        //            PreAuthenticate = false,
-        //            UseDefaultCredentials = false,
-        //        };
-        //        client = new HttpClient(httpHandler);
-        //    }
-        //    else
-        //    {
-        //        client = new HttpClient();
-        //    }
-        //}
-      /// <summary>
-      /// Restituisce un oggetto HttpClient con un handler per gestire il proxy, se impostato.
-      /// Se il proxy non è impostato restituisce un HttpClient senza handler per proxy
-      /// </summary>
-      /// <param name="setProxy">true se si vuole impostare un handler per il proxy; false se si vuole un HttpClient senza handler per il proxy</param>
-      /// <returns>un oggetto HttpProxy con handler per gestire il proxy</returns>
-        public static HttpClient CreateHttpClient(bool setProxy)
-        {
-            if(setProxy)
-            {
-                Uri? proxy = GetHttpClientProxy();
-                if (proxy != null)
-                {
-                    HttpClientHandler httpHandler = new ()
-                    {
-                        Proxy = new WebProxy(proxy, true),
-                        UseProxy = true,
-                        PreAuthenticate = false,
-                        UseDefaultCredentials = false,
-                    };
-                    return new HttpClient(httpHandler);
-                }
-                else
-                {
-                    return new HttpClient();
-                }
-            }
-            else
-            {
-                return new HttpClient();
-            }
-        }
-        /// <summary>
-        /// Restituisce i parametri del proxy attualmente in uso, altrimenti null
-        /// </summary>
-        /// <returns></returns>
-        public static ProxyParams? GetHttpClientProxyParams()
-        {
-            Uri? proxy = GetHttpClientProxy();
-            if (proxy != null)
-            {
-                string proxyString = proxy.ToString();
-                //rimuovo eventuale slash finale
-                int lastSlash = proxyString.LastIndexOf('/');
-                //https://learn.microsoft.com/en-us/dotnet/csharp/tutorials/ranges-indexes
-                //https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-8.0/ranges
-                proxyString = (lastSlash > -1) ? proxyString[..lastSlash] : proxyString;
-                //rimuovo eventuale http:// oppure https:// iniziale
-                List<string> protocolSchemas = new () { "http://", "https://" };
-                protocolSchemas.ForEach( _ =>
-                {
-                    if (proxyString.StartsWith(_))
-                    {
-                        proxyString = proxyString[_.Length..];
-                    }
-                });
-                //individuo la posizione del :
-                int positionOfColons = proxyString.LastIndexOf(":");
-                string proxyAddress = (positionOfColons != -1) ? proxyString[..positionOfColons] : proxyString;
-                //estraggo il numero di porta proxyPort
-                if (int.TryParse(proxyString[(positionOfColons + 1)..], out int proxyPort))
-                {
-                    return new ProxyParams() { ProxyAddress = proxyAddress, ProxyPort = proxyPort };
-                }
-                else
-                {
-                    //se non trovo il proxyPort c'è stato un errore nella ricerca del proxy
-                    throw new ProxyHelperException("Could not retrieve proxy port");
-                }
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
+public static class HttpProxyHelper
+{
+    /// <summary>
+            ///  
+            /// Restituisce il proxy attualmente in uso (se presente)
+            /// Il proxy è un Uri nella forma proxy_address:proxy_port
+            /// </summary>
+            /// <returns>Il proxy attualmente in uso. Restituisce null se nessun proxy è in uso</returns>
+    public static Uri? GetHttpClientProxy()
+    {
+        Uri? proxy;
+        //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
+        //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
+        //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
+        //https://stackoverflow.com/a/63884955
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            //ottengo lo user specific proxy che si ottiene con il comando:
+            //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
+            //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
+            RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
+            //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
+            int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
+            //impostiamo proxy
+            proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
+        }
+        else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
+        {
+            //questa è la procedura per ottenere il system proxy
+            Uri destinationUri = new("https://www.google.it");
+            //Ottiene il default proxy quando si prova a contattare la destinationUri
+            //Se il proxy non è impostato si ottiene null
+            //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
+            //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
+            //funziona sia che il proxy sia configurato sia che non lo sia
+            proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
+        }
+        return proxy;
+    }
+    ///// <summary>
+    ///// Effettua il setup del client Http con l'eventuale proxy (se impostato)
+    ///// </summary>
+    ///// <param name="client"></param>
+    //public static void HttpClientProxySetup(out HttpClient client)
+    //{
+    //    Uri? proxy = GetHttpClientProxy();
+    //    if (proxy != null)
+    //    {
+    //        HttpClientHandler httpHandler = new HttpClientHandler()
+    //        {
+    //            Proxy = new WebProxy(proxy, true),
+    //            UseProxy = true,
+    //            PreAuthenticate = false,
+    //            UseDefaultCredentials = false,
+    //        };
+    //        client = new HttpClient(httpHandler);
+    //    }
+    //    else
+    //    {
+    //        client = new HttpClient();
+    //    }
+    //}
+    /// <summary>
+          /// Restituisce un oggetto HttpClient con un handler per gestire il proxy, se impostato.
+          /// Se il proxy non è impostato restituisce un HttpClient senza handler per proxy
+          /// </summary>
+          /// <param name="setProxy">true se si vuole impostare un handler per il proxy; false se si vuole un HttpClient senza handler per il proxy</param>
+          /// <returns>un oggetto HttpProxy con handler per gestire il proxy</returns>
+    public static HttpClient CreateHttpClient(bool setProxy)
+    {
+        if (setProxy)
+        {
+            Uri? proxy = GetHttpClientProxy();
+            if (proxy != null)
+            {
+                HttpClientHandler httpHandler = new()
+                {
+                    Proxy = new WebProxy(proxy, true),
+                    UseProxy = true,
+                    PreAuthenticate = false,
+                    UseDefaultCredentials = false,
+                };
+                return new HttpClient(httpHandler);
+            }
+            else
+            {
+                return new HttpClient();
+            }
+        }
+        else
+        {
+            return new HttpClient();
+        }
+    }
+    /// <summary>
+            /// Restituisce i parametri del proxy attualmente in uso, altrimenti null
+            /// </summary>
+            /// <returns></returns>
+    public static ProxyParams? GetHttpClientProxyParams()
+    {
+        Uri? proxy = GetHttpClientProxy();
+        if (proxy != null)
+        {
+            string proxyString = proxy.ToString();
+            //rimuovo eventuale slash finale
+            int lastSlash = proxyString.LastIndexOf('/');
+            //https://learn.microsoft.com/en-us/dotnet/csharp/tutorials/ranges-indexes
+            //https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-8.0/ranges
+            proxyString = (lastSlash > -1) ? proxyString[..lastSlash] : proxyString;
+            //rimuovo eventuale http:// oppure https:// iniziale
+            List<string> protocolSchemas = new() { "http://", "https://" };
+            protocolSchemas.ForEach(_ =>
+            {
+                if (proxyString.StartsWith(_))
+                {
+                    proxyString = proxyString[_.Length..];
+                }
+            });
+            //individuo la posizione del :
+            int positionOfColons = proxyString.LastIndexOf(":");
+            string proxyAddress = (positionOfColons != -1) ? proxyString[..positionOfColons] : proxyString;
+            //estraggo il numero di porta proxyPort
+            if (int.TryParse(proxyString[(positionOfColons + 1)..], out int proxyPort))
+            {
+                return new ProxyParams() { ProxyAddress = proxyAddress, ProxyPort = proxyPort };
+            }
+            else
+            {
+                //se non trovo il proxyPort c'è stato un errore nella ricerca del proxy
+                throw new ProxyHelperException("Could not retrieve proxy port");
+            }
+        }
+        else
+        {
+            return null;
+        }
+    }
 }
+
 ```
 
 Usiamo la libreria `HttpProxyControl` per una versione aggiornata del progetto precedente che, oltre ad utilizzare la libreria `TaskParallelismControl` utilizza anche la libreria `HttpProxyControl`.
 
-Il programma seguente MultipleWebRequestsDemo4 scarica in parallelo le pagine di più URL, gestendo il proxy http e fissando il massimo grado di parallelismo dei Task, mediante l'utilizzo di due librerie specifiche.
+Il programma seguente HttpClientDemo4 scarica in parallelo le pagine di più URL, gestendo il proxy http e fissando il massimo grado di parallelismo dei Task, mediante l'utilizzo di due librerie specifiche.
 
 ```csharp
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-//using di librerie proprie
+using System.Collections.Concurrent;
+//namespace della libreria creata
 using TaskParallelismControl;
 using HttpProxyControl;
-namespace MultipleWebRequestsDemo4
-{
-    class Program
-    {
-        /// <summary>
-        /// Scarica un file dalla rete e restituisce la lunghezza in byte
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="client"></param>
-        /// <returns></returns>
-        static async Task<int> ProcessURLAsync(string url, HttpClient client)
-        {
-            var sw = new Stopwatch();
-            sw.Start();
-            var byteArray = await client.GetByteArrayAsync(url);
-            sw.Stop();
-            DisplayResults(url, "https://docs.microsoft.com/en-us/", byteArray, sw.ElapsedMilliseconds);
-            return byteArray.Length;
-        }
-        /// <summary>
-        /// Stampa una parte dell'url, la dimensione in byte di una pagina e il tempo impiegato per il download
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="urlHeadingStrip"></param>
-        /// <param name="content"></param>
-        /// <param name="elapsedMillis"></param>
-        static void DisplayResults(string url, string urlHeadingStrip, byte[] content, long elapsedMillis)
-        {
-            // Display the length of each website.
-            var bytes = content.Length;
-            // Strip off the "urlHeadingStrip" part from url
-            var displayURL = url.Replace(urlHeadingStrip, "");
-            Console.WriteLine($"\n{displayURL,-80} bytes: {bytes,-10} ms: {elapsedMillis,-10}");
-        }
-        /// <summary>
-        /// Restituisce una lista di url
-        /// </summary>
-        /// <returns></returns>
-        static List<string> SetUpURLList()
-        {
-            List<string> urls = new ()
-            {
-                "https://docs.microsoft.com/en-us/welcome-to-docs",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-objects",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-and-strings",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-overview",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/async-return-types",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-vs-dom",
-                "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection"
-            };
-            return urls;
-        }
-        /// <summary>
-        /// Effettua il setup di una lista di url e per ognuno di essi avvia un download asincrono su un task separato
-        /// </summary>
-        /// <returns></returns>
-        static async Task SumPageSizesAsync()
-        {
-            // Make a list of web addresses.
-            List<string> urlList = SetUpURLList();
-            //setup del client con eventuale Proxy
-            HttpClient client = HttpProxyHelper.CreateHttpClient(setProxy: true);
-            //misuriamo il tempo complessivo per scaricare tutte le pagine
-            var swGlobal = new Stopwatch();
-            swGlobal.Start();
-            //processiamo in parallelo una lista di URL
-            //IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, client));
-            //ConcurrentBag<int> bag = new ConcurrentBag<int>();
-            //await urlList.ExecuteInParallel(async u => { bag.Add(await ProcessURLAsync(u, client)); }, 10);
-            //var theTotal = bag.ToArray().Sum();
-            //await urlList.ExecuteInParallel(async u => { await Task.Delay(10); }, 10);
-            //definiamo il grado di parallelismo
-            const int numberOfParallelThreads = 5;
-            //processiamo tutti gli oggetti della collection con il grado di parallelismo massimo predefinito
-            ConcurrentBag<int> concurrentBagOfResults = await urlList.ExecuteInParallel(u => ProcessURLAsync(u, client), numberOfParallelThreads);
-            //sommiamo tutti i valori restituiti dai thread
-            var theTotal = concurrentBagOfResults.ToArray().Sum();
-            Console.WriteLine($"Somma = {theTotal}");
-            swGlobal.Stop();
-            long elapsedTotalMs = swGlobal.ElapsedMilliseconds;
-            // Display the total count for all of the web addresses.
-            Console.WriteLine($"\r\n\r\nTotal bytes returned:  {theTotal}\r\n");
-            Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs}");
-        }
-        static async Task Main(string[] args)
-        {
-            //imposto la dimensione della console - vale solo per Windows
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                Console.WindowWidth = 120;
-            }
-            await SumPageSizesAsync();
-        }
-    }
-}
-```
+namespace HttpClientDemo4;
 
-![MultipleWebRequestsDemo4](http-requests-and-responses/MultipleWebRequestsDemo4.png)
+class Program
+{
+
+    /// <summary>
+    /// Scarica un file dalla rete e restituisce la lunghezza in byte
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="client"></param>
+    /// <returns></returns>
+    static async Task<int> ProcessURLAsync(string url, HttpClient client)
+    {
+        var sw = new Stopwatch();
+        sw.Start();
+        var byteArray = await client.GetByteArrayAsync(url);
+        sw.Stop();
+        DisplayResults(url, "https://docs.microsoft.com/en-us/", byteArray, sw.ElapsedMilliseconds);
+        return byteArray.Length;
+    }
+    /// <summary>
+    /// Stampa una parte dell'url, la dimensione in byte di una pagina e il tempo impiegato per il download
+    /// </summary>
+    /// <param name="url"></param>
+    /// <param name="urlHeadingStrip"></param>
+    /// <param name="content"></param>
+    /// <param name="elapsedMillis"></param>
+    static void DisplayResults(string url, string urlHeadingStrip, byte[] content, long elapsedMillis)
+    {
+        // Display the length of each website.
+        var bytes = content.Length;
+        // Strip off the "urlHeadingStrip" part from url
+        var displayURL = url.Replace(urlHeadingStrip, "");
+        Console.WriteLine($"{Environment.NewLine}{displayURL,-80} bytes: {bytes,-10} ms: {elapsedMillis,-10}");
+    }
+    /// <summary>
+    /// Restituisce una lista di url
+    /// </summary>
+    /// <returns></returns>
+    static List<string> SetUpURLList()
+    {
+        List<string> urls =
+        [
+        "https://docs.microsoft.com/en-us/welcome-to-docs",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-objects",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-and-strings",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-overview",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/async-return-types",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/linq-to-xml-vs-dom",
+        "https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection"
+        ];
+        return urls;
+    }
+    /// <summary>
+    /// Effettua il setup di una lista di url e per ognuno di essi avvia un download asincrono su un task separato
+    /// </summary>
+    /// <returns></returns>
+    static async Task SumPageSizesAsync()
+    {
+        // Make a list of web addresses.
+        List<string> urlList = SetUpURLList();
+        //setup del client con eventuale Proxy
+        HttpClient client = HttpProxyHelper.CreateHttpClient(setProxy: true);
+        //misuriamo il tempo complessivo per scaricare tutte le pagine
+        var swGlobal = new Stopwatch();
+        swGlobal.Start();
+        //processiamo in parallelo una lista di URL
+        IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, client));
+        //attendiamo il completamento di tutti i download
+
+        await Task.WhenAll(downloadTasks);
+        //sommiamo i risultati
+        int total = downloadTasks.Sum(t => t.Result);
+        Console.WriteLine($"{Environment.NewLine}Total bytes returned: {total}{Environment.NewLine}");
+        swGlobal.Stop();
+        long elapsedTotalMs = swGlobal.ElapsedMilliseconds;
+        Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs}");
+        //ora facciamo la stessa cosa ma limitando il grado di parallelismo
+        Console.WriteLine($"{Environment.NewLine}Esecuzione con grado di parallelismo limitato:");
+        swGlobal.Restart();
+
+        //ConcurrentBag<int> bag = [];
+        //await urlList.ExecuteInParallel(async u => { bag.Add(await ProcessURLAsync(u, client)); }, 10);
+        //var theTotal = bag.ToArray().Sum();
+        //await urlList.ExecuteInParallel(async u => { await Task.Delay(10); }, 10);
+        //definiamo il grado di parallelismo
+        const int numberOfParallelThreads = 5;
+        //processiamo tutti gli oggetti della collection con il grado di parallelismo massimo predefinito
+        ConcurrentBag<int> concurrentBagOfResults = await urlList.ExecuteInParallel(u => ProcessURLAsync(u, client), numberOfParallelThreads);
+        //sommiamo tutti i valori restituiti dai thread
+        var theTotal = concurrentBagOfResults.ToArray().Sum();
+        Console.WriteLine($"Somma = {theTotal}");
+        swGlobal.Stop();
+        elapsedTotalMs = swGlobal.ElapsedMilliseconds;
+        // Display the total count for all of the web addresses.
+        Console.WriteLine($"{Environment.NewLine}Total bytes returned: {theTotal}{Environment.NewLine}");
+        Console.WriteLine($"Tempo complessivo di scaricamento = {elapsedTotalMs}");
+    }
+    static async Task Main(string[] args)
+    {
+        //imposto la dimensione della console - vale solo per Windows
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Console.WindowWidth = 120;
+        }
+        await SumPageSizesAsync();
+    }
+}
+
+```
 
 Si osservi il file di configurazione di un progetto che utilizza i riferimenti a progetti di tipo libreria:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HttpProxyControl\HttpProxyControl.csproj" />
-    <ProjectReference Include="..\TaskParallelismControl\TaskParallelismControl.csproj" />
-  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HttpProxyControl\HttpProxyControl.csproj" />
+    <ProjectReference Include="..\TaskParallelismControl\TaskParallelismControl.csproj" />
+  </ItemGroup>
+
 </Project>
 ```
 
@@ -1510,56 +1711,175 @@ Si osservi il file di configurazione di un progetto che utilizza i riferimenti a
 
 Quando si crea un progetto di tipo libreria (.NET Standard/.NET Core) e si effettua il Build del progetto, viene creato un file con estensione `.DLL` che contiene il codice compilato della libreria. Questo file può essere collegato direttamente a un progetto che usa tale libreria come assembly compilato.
 
-Ad esempio, il progetto MultipleWebRequest5 utilizza direttamente i riferimenti alle DLL. Per aggiungere una DLL precompilata si può procedere come segue.
-
-Per Visual Studio:
-
-![MultipleWebRequestsDemo5](http-requests-and-responses/MultipleWebRequestsDemo5.png)
-
-![ReferenceManager](http-requests-and-responses/ReferenceManager.png)
+Ad esempio, il progetto HttpClientDemo5 è uguale a HttpClientDemo4, eccetto che per il fatto che utilizza i riferimenti alle librerie precompilate al posto di usare i riferimenti ai progetti. Per aggiungere una DLL precompilata si può procedere come segue.
 
 Si osservi che il file di configurazione di un progetto utilizza direttamente gli assembly precompilati di tipo DLL:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="HttpProxyControl">
-      <HintPath>..\HttpProxyControl\bin\Debug\net9.0\HttpProxyControl.dll</HintPath>
-    </Reference>
-    <Reference Include="TaskParallelismControl">
-      <HintPath>..\TaskParallelismControl\bin\Debug\net9.0\TaskParallelismControl.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="TaskParallelismControl">
+      <HintPath>..\TaskParallelismControl\bin\Debug\net9.0\TaskParallelismControl.dll</HintPath>
+    </Reference>
+
+    <Reference Include="HttpProxyControl">
+      <HintPath>..\HttpProxyControl\bin\Debug\net9.0\HttpProxyControl.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
+
 ```
 
-Per Visual Studio Code, eseguire da terminale:
-
-```bash
-dotnet add reference "C:\percorso\alla\mia\libreria\MyLibrary.dll"
-```
-
-Oppure, in alternativa, editare direttamente il file `.csproj` e aggiungere il seguente `ItemGroup`:
-
-```xml
-<ItemGroup>
-    <Reference Include="MyLibrary">
-        <HintPath>C:\percorso\alla\mia\libreria\MyLibrary.dll</HintPath>
-    </Reference>
-</ItemGroup>
-```
+:::note
+Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precompilate tramite l'interfaccia grafica, ma occorre modificare manualmente il file `.csproj` del progetto.
+:::
 
 ##### Creazione di una libreria e pubblicazione su NuGet
 
-[Creare e pubblicare un pacchetto Nuget con Visual Studio](https://docs.microsoft.com/en-us/nuget/quickstart/create-and-publish-a-package-using-visual-studio?tabs=netcore-cli)
+[Quickstart: Create and publish a package with the dotnet CLI](https://learn.microsoft.com/en-us/nuget/quickstart/create-and-publish-a-package-using-the-dotnet-cli)
 
-[Creare e pubblicare una libreria di classi in NuGet](https://www.c-sharpcorner.com/article/create-and-publish-a-net-core-class-library-package-into-nuget-org/)
+###### Guida – creare un pacchetto NuGet per una propria libreria in locale (esempio: HttpProxyControl)
+
+1) **Prerequisiti**
+
+   - La libreria deve essere un *Class Library* (non un exe). In pratica: progetto SDK style, con `<TargetFramework>...`.
+   - Il progetto di esempio è HttpProxyControl.csproj.
+
+2) **Aggiungere i metadati NuGet nel `.csproj`**
+
+    Dentro il `<PropertyGroup>` di HttpProxyControl.csproj aggiungere (o completare) campi come questi:
+
+      - `PackageId` (nome del pacchetto; su nuget.org deve essere UNICO globalmente)
+      - `Version` (es. `1.0.0`)
+      - `Authors`, `Company` (opzionale), `Description`
+      - `RepositoryUrl` (consigliato)
+      - `PackageReadmeFile` (consigliato)
+      - `PackageLicenseExpression` (es. `MIT`) **oppure** `PackageLicenseFile` (se hai un file)
+      - facoltativi ma utili: `GeneratePackageOnBuild`, `IncludeSymbols`, `SymbolPackageFormat`
+
+3) **(Consigliato) Aggiungere un README del pacchetto**
+
+    Creare un file `README.md` nella cartella del progetto (es. `HttpProxyControl/README.md`) e poi in csproj:
+    - `<PackageReadmeFile>README.md</PackageReadmeFile>`
+    e aggiungere anche:
+    - `<None Include="README.md" Pack="true" PackagePath="" />`
+  
+    - esempio:
+
+        ```xml
+            <Project Sdk="Microsoft.NET.Sdk">
+
+            <PropertyGroup>
+                <TargetFramework>net9.0</TargetFramework>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+
+                <!-- NuGet packaging (local + publish-ready) -->
+                <IsPackable>true</IsPackable>
+                <PackageId>HttpProxyControl</PackageId>
+                <Version>1.0.0</Version>
+                <Authors>GreppiDev</Authors>
+                <Company>Info4IA</Company>
+                <Description>Helper per creare HttpClient con supporto proxy (esempi didattici di NetworkProgramming).</Description>
+                <PackageTags>http;httpclient;proxy;networking;didattica</PackageTags>
+                <RepositoryUrl>https://github.com/GreppiDev/Info4IA2526NetworkProgramming</RepositoryUrl>
+                <RepositoryType>git</RepositoryType>
+
+                <!-- Docs + symbols -->
+                <GenerateDocumentationFile>true</GenerateDocumentationFile>
+                <IncludeSymbols>true</IncludeSymbols>
+                <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+                <!-- README inside the package -->
+                <PackageReadmeFile>README.md</PackageReadmeFile>
+            </PropertyGroup>
+
+            <ItemGroup>
+                <None Include="README.md" Pack="true" PackagePath="" />
+            </ItemGroup>
+
+        </Project>
+
+        ```
+
+4) **Generare il pacchetto in locale**
+    Dalla cartella della solution (dove c’è NetworkProgramming.sln) eseguire:
+    - `dotnet pack .\HttpProxyControl\HttpProxyControl.csproj -c Release -o .\LocalNuget -v minimal`
+
+        Risultato: una `.nupkg` in `.\LocalNuget`.
+
+5) **Usare il pacchetto NuGet locale in altri progetti**
+
+    Sono possibili 2 approcci.
+
+    A) **Repository-wide (consigliato): NuGet.Config nel repo**. Creare un `NuGet.Config` nella cartella della solution con:
+        - una source che punta a `.\LocalNuget`
+        - esempio di `NuGet.Config`:
+
+    ```xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+            <packageSources>
+                <!-- Feed locale per pacchetti creati con dotnet pack -o .\LocalNuget -->
+                <add key="LocalNuget" value="LocalNuget" />
+                <!-- Feed pubblico -->
+                <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            </packageSources>
+        </configuration>
+    ```
+
+    Poi, nel progetto consumer (es. `HttpClientDemo6`):
+    - `dotnet add package HttpProxyControl --version 1.0.0`
+
+    Oppure:
+
+    - `dotnet add package HttpProxyControl --version 1.0.0 --source "..\LocalNuget"`
+
+    B) **Sorgente registrata sulla macchina**
+    - `dotnet nuget add source "<percorso-assoluto-a-LocalNuget>" -n LocalNuget`
+    poi:
+    - `dotnet add package HttpProxyControl --version 1.0.0 --source "..\LocalNuget"`
+
+6) **Aggiornare versione**
+    Quando si cambia la libreria e si vuole rigenerare il pacchetto:
+    - incrementare `Version` (es. `1.0.1`)
+    - rifare `dotnet pack ...`
+
+    ---
+
+###### Pubblicare su NuGet.org (nuget.org) – indicazioni operative
+
+:::note
+Su [nuget.org](https://www.nuget.org/) il `PackageId` deve essere unico. Se, ad esempio, `HttpProxyControl` è già preso, occorre usare qualcosa del tipo `GreppiDev.HttpProxyControl` oppure `Info4IA.HttpProxyControl`.
+:::
+
+1) **Creare account su nuget.org**
+
+   - Registrarsi su `https://www.nuget.org/`
+
+2) **Creare una API Key**
+
+   - NuGet.org → account → **API Keys** → `Create`
+   - Dare i permessi di `Push` per il package id desiderato (es. `HttpProxyControl` oppure `GreppiDev.HttpProxyControl`).
+
+3) **Push del pacchetto**
+    Se si ha la `.nupkg` in `bin/Release`:
+    - `dotnet nuget push .\LocalNuget\HttpProxyControl.<versione>.nupkg --api-key <LA_PROPRIA_API_KEY> --source https://api.nuget.org/v3/index.json`
+    (evitare di fare la commit dell’API key; usare variabile d’ambiente o secret manager.)
+
+4) **Versioning**
+    Ogni push su nuget.org richiede una versione nuova (non è possibile sovrascrivere `1.0.0` con un contenuto diverso). Usare SemVer:
+    - `MAJOR.MINOR.PATCH` (es. `1.2.3`)
+    - pre-release: `1.1.0-beta.1`
 
 ### JSON (JavaScript Object Notation)
 
@@ -1755,87 +2075,89 @@ using System.Text.Json;
 // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/how-to
 namespace JSONDemo1
 {
-    //il modello dei dati
-    public class WeatherForecast
-    {
-        public DateTimeOffset Date { get; set; }
-        public int TemperatureCelsius { get; set; }
-        public string? Summary { get; set; }
-    }
-    class Program
-    {
-        static async Task Main(string[] args)
-        {
-            //versione sincrona
-            //JSONDemoEsempio1();
-            //Versione asincrona
-            await JSONDemoAsyncEsempio1();
-        }
-        private static void JSONDemoEsempio1()
-        {
-            var weatherForecast = new WeatherForecast
-            {
-                Date = DateTime.Parse("2019-08-01"),
-                TemperatureCelsius = 25,
-                Summary = "Hot"
-            };
-            var weatherForecast2 = new WeatherForecast
-            {
-                Date = DateTime.Parse("2019-08-02"),
-                TemperatureCelsius = 30,
-                Summary = "Very Hot"
-            };
-            List<WeatherForecast> previsioni = new() { weatherForecast, weatherForecast2 };
-            //serializzazione: da oggetto .NET a oggetto JSON
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string jsonString = JsonSerializer.Serialize(weatherForecast, options);
-            Console.WriteLine(jsonString);
-            //serializzazione di una collection in JSON
-            Console.WriteLine("\n");
-            string jsonCollectionString = JsonSerializer.Serialize(previsioni, options);
-            Console.WriteLine(jsonCollectionString);
-            //salviamo su file la collection
-            string fileName = "WeatherForecasts.json";
-            File.WriteAllText(fileName, jsonCollectionString);
-            //leggo dal file e stampo a console
-            Console.WriteLine("Lettura del JSON da file");
-            Console.WriteLine(File.ReadAllText(fileName));
-        }
-        private static async Task JSONDemoAsyncEsempio1()
-        {
-            var weatherForecast = new WeatherForecast
-            {
-                Date = DateTime.Parse("2019-08-01"),
-                TemperatureCelsius = 25,
-                Summary = "Hot"
-            };
-            var weatherForecast2 = new WeatherForecast
-            {
-                Date = DateTime.Parse("2019-08-02"),
-                TemperatureCelsius = 30,
-                Summary = "Very Hot"
-            };
-            List<WeatherForecast> previsioni = new() { weatherForecast, weatherForecast2 };
-            //serializzazione: da oggetto .NET a oggetto JSON
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string jsonString = JsonSerializer.Serialize(weatherForecast, options);
-            Console.WriteLine(jsonString);
-            //serializzazione di una collection in JSON
-            Console.WriteLine("\n");
-            string jsonCollectionString = JsonSerializer.Serialize(previsioni, options);
-            Console.WriteLine(jsonCollectionString);
-            //salviamo su file la collection
-            string fileName = "WeatherForecasts.json";
-            FileStream fileStream = File.Create(fileName);
-            //Impostiamo il flusso di serializzazione JSON direttamente sullo stream che punta al file
-            await JsonSerializer.SerializeAsync(fileStream, previsioni, options);
-            await fileStream.DisposeAsync();
-            //File.WriteAllText(fileName, jsonCollectionString);
-            //leggo dal file e stampo a console
-            Console.WriteLine("Lettura del JSON da file");
-            Console.WriteLine(await File.ReadAllTextAsync(fileName));
-        }
-    }
+    //il modello dei dati
+    public class WeatherForecast
+    {
+        public DateTimeOffset Date { get; set; }
+        public int TemperatureCelsius { get; set; }
+        public string? Summary { get; set; }
+    }
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            //versione sincrona
+            //JSONDemoEsempio1();
+            //Versione asincrona
+            await JSONDemoAsyncEsempio1();
+        }
+        private static void JSONDemoEsempio1()
+        {
+            var weatherForecast = new WeatherForecast
+            {
+                Date = DateTime.Parse("2019-08-01"),
+                TemperatureCelsius = 25,
+                Summary = "Hot"
+            };
+            var weatherForecast2 = new WeatherForecast
+            {
+                Date = DateTime.Parse("2019-08-02"),
+                TemperatureCelsius = 30,
+                Summary = "Very Hot"
+            };
+            List<WeatherForecast> previsioni = new() { weatherForecast, weatherForecast2 };
+            //serializzazione: da oggetto .NET a oggetto JSON
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            string jsonString = JsonSerializer.Serialize(weatherForecast, options);
+            Console.WriteLine(jsonString);
+            //serializzazione di una collection in JSON
+            Console.WriteLine();
+            Console.WriteLine();
+            string jsonCollectionString = JsonSerializer.Serialize(previsioni, options);
+            Console.WriteLine(jsonCollectionString);
+            //salviamo su file la collection
+            string fileName = "WeatherForecasts.json";
+            File.WriteAllText(fileName, jsonCollectionString);
+            //leggo dal file e stampo a console
+            Console.WriteLine("Lettura del JSON da file");
+            Console.WriteLine(File.ReadAllText(fileName));
+        }
+        private static async Task JSONDemoAsyncEsempio1()
+        {
+            var weatherForecast = new WeatherForecast
+            {
+                Date = DateTime.Parse("2019-08-01"),
+                TemperatureCelsius = 25,
+                Summary = "Hot"
+            };
+            var weatherForecast2 = new WeatherForecast
+            {
+                Date = DateTime.Parse("2019-08-02"),
+                TemperatureCelsius = 30,
+                Summary = "Very Hot"
+            };
+            List<WeatherForecast> previsioni = new() { weatherForecast, weatherForecast2 };
+            //serializzazione: da oggetto .NET a oggetto JSON
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            string jsonString = JsonSerializer.Serialize(weatherForecast, options);
+            Console.WriteLine(jsonString);
+            //serializzazione di una collection in JSON
+            Console.WriteLine();
+            Console.WriteLine();
+            string jsonCollectionString = JsonSerializer.Serialize(previsioni, options);
+            Console.WriteLine(jsonCollectionString);
+            //salviamo su file la collection
+            string fileName = "WeatherForecasts.json";
+            FileStream fileStream = File.Create(fileName);
+            //Impostiamo il flusso di serializzazione JSON direttamente sullo stream che punta al file
+            await JsonSerializer.SerializeAsync(fileStream, previsioni, options);
+            await fileStream.DisposeAsync();
+            //File.WriteAllText(fileName, jsonCollectionString);
+            //leggo dal file e stampo a console
+            Console.WriteLine("Lettura del JSON da file");
+            Console.WriteLine(await File.ReadAllTextAsync(fileName));
+        }
+    }
 }
 ```
 
@@ -1848,81 +2170,83 @@ using System.Text.Json;
 //<https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/deserialization>
 namespace JSONDemo2
 {
-    public class WeatherForecast
-    {
-        public DateTimeOffset Date { get; set; }
-        public int TemperatureCelsius { get; set; }
-        public string? Summary { get; set; }
-        public string? SummaryField;
-        public IList<DateTimeOffset>? DatesAvailable { get; set; }
-        public Dictionary<string, HighLowTemps>? TemperatureRanges { get; set; }
-        public string[]? SummaryWords { get; set; }
-    }
-    public class HighLowTemps
-    {
-        public int High { get; set; }
-        public int Low { get; set; }
-    }
-    class Program
-    {
-        static async Task Main(string[] args)
-        {
-            //DeserializzazioneJSONEsempio1();
-            //DeserializzazioneJSONDaFileEsempio1();
-            await DeserializzazioneJSONDaFileAsyncEsempio1();
-        }
-        private static async Task DeserializzazioneJSONDaFileAsyncEsempio1()
-        {
-            //il file WeatherForecasts.json deve esistere e deve contenere un array di oggetti JSON di tipo WeatherForecasts
-            try
-            {
-                string fileName = "WeatherForecasts.json";
-                using FileStream fileStream = File.OpenRead(fileName);
-                List<WeatherForecast>? weatherForecasts =
-                    await JsonSerializer.DeserializeAsync<List<WeatherForecast>>(fileStream);
-                //List<WeatherForecast>? weatherForecasts = JsonSerializer.Deserialize<List<WeatherForecast>>(jsonString);
-                if(weatherForecasts != null)
-                {
-                    foreach (var weatherForecast in weatherForecasts)
-                    {
-                        Console.WriteLine($"Date: {weatherForecast.Date}");
-                        Console.WriteLine($"TemperatureCelsius: {weatherForecast.TemperatureCelsius}");
-                        Console.WriteLine($"Summary: {weatherForecast.Summary}");
-                        Console.WriteLine("-----");
-                    }
-                }
-            }
-            catch (JsonException e)
-            {
-                Debug.WriteLine(e.Message);
-            }
-        }
-        private static void DeserializzazioneJSONDaFileEsempio1()
-        {
-            //il file WeatherForecasts.json deve esistere e deve contenere un array di oggetti JSON di tipo WeatherForecasts
-            try
-            {
-                string fileName = "WeatherForecasts.json";
-                string jsonString = File.ReadAllText(fileName);
-                List<WeatherForecast>? weatherForecasts = JsonSerializer.Deserialize<List<WeatherForecast>>(jsonString);
-                if(weatherForecasts!= null)
-                {
-                    foreach (var weatherForecast in weatherForecasts)
-                    {
-                        Console.WriteLine($"Date: {weatherForecast.Date}");
-                        Console.WriteLine($"TemperatureCelsius: {weatherForecast.TemperatureCelsius}");
-                        Console.WriteLine($"Summary: {weatherForecast.Summary}");
-                        Console.WriteLine("-----");
-                    }
-                }
-            }
-            catch (JsonException e)
-            {
-                Debug.WriteLine(e.Message);
-            }
-        }
-        private static void DeserializzazioneJSONEsempio1()
-        {
+    public class WeatherForecast
+    {
+        public DateTimeOffset Date { get; set; }
+        public int TemperatureCelsius { get; set; }
+        public string? Summary { get; set; }
+        public string? SummaryField;
+        public IList<DateTimeOffset>? DatesAvailable { get; set; }
+        public Dictionary<string, HighLowTemps>? TemperatureRanges { get; set; }
+        public string[]? SummaryWords { get; set; }
+    }
+    public class HighLowTemps
+    {
+        public int High { get; set; }
+        public int Low { get; set; }
+    }
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            //DeserializzazioneJSONEsempio();
+            //DeserializzazioneJSONDaFileEsempio();
+            await DeserializzazioneJSONDaFileAsyncEsempio();
+        }
+        private static async Task DeserializzazioneJSONDaFileAsyncEsempio()
+        {
+            //il file WeatherForecasts.json deve esistere e deve contenere un array di oggetti JSON di tipo WeatherForecasts
+            //il file è stato creato nell'esempio di serializzazione JSONDemo1 e si trova nella cartella bin/Debug/net9.0
+            try
+            {
+                string fileName = "WeatherForecasts.json";
+                using FileStream fileStream = File.OpenRead(fileName);
+                List<WeatherForecast>? weatherForecasts =
+                await JsonSerializer.DeserializeAsync<List<WeatherForecast>>(fileStream);
+                //List<WeatherForecast>? weatherForecasts = JsonSerializer.Deserialize<List<WeatherForecast>>(jsonString);
+                if (weatherForecasts != null)
+                {
+                    foreach (var weatherForecast in weatherForecasts)
+                    {
+                        Console.WriteLine($"Date: {weatherForecast.Date}");
+                        Console.WriteLine($"TemperatureCelsius: {weatherForecast.TemperatureCelsius}");
+                        Console.WriteLine($"Summary: {weatherForecast.Summary}");
+                        Console.WriteLine("-----");
+                    }
+                }
+            }
+            catch (JsonException e)
+            {
+                Debug.WriteLine(e.Message);
+            }
+        }
+        private static void DeserializzazioneJSONDaFileEsempio()
+        {
+            //il file WeatherForecasts.json deve esistere e deve contenere un array di oggetti JSON di tipo WeatherForecasts
+            //il file è stato creato nell'esempio di serializzazione JSONDemo1 e si trova nella cartella bin/Debug/net9.0
+            try
+            {
+                string fileName = "WeatherForecasts.json";
+                string jsonString = File.ReadAllText(fileName);
+                List<WeatherForecast>? weatherForecasts = JsonSerializer.Deserialize<List<WeatherForecast>>(jsonString);
+                if (weatherForecasts != null)
+                {
+                    foreach (var weatherForecast in weatherForecasts)
+                    {
+                        Console.WriteLine($"Date: {weatherForecast.Date}");
+                        Console.WriteLine($"TemperatureCelsius: {weatherForecast.TemperatureCelsius}");
+                        Console.WriteLine($"Summary: {weatherForecast.Summary}");
+                        Console.WriteLine("-----");
+                    }
+                }
+            }
+            catch (JsonException e)
+            {
+                Debug.WriteLine(e.Message);
+            }
+        }
+        private static void DeserializzazioneJSONEsempio()
+        {
             string jsonString = """
             {
               "Date": "2019-08-01T00:00:00-07:00",
@@ -1950,13 +2274,13 @@ namespace JSONDemo2
             }
             """;
 
-            WeatherForecast? weatherForecast =
-                JsonSerializer.Deserialize<WeatherForecast>(jsonString);
-            Console.WriteLine($"Date: {weatherForecast?.Date}");
-            Console.WriteLine($"TemperatureCelsius: {weatherForecast?.TemperatureCelsius}");
-            Console.WriteLine($"Summary: {weatherForecast?.Summary}");
-        }
-    }
+            WeatherForecast? weatherForecast =
+            JsonSerializer.Deserialize<WeatherForecast>(jsonString);
+            Console.WriteLine($"Date: {weatherForecast?.Date}");
+            Console.WriteLine($"TemperatureCelsius: {weatherForecast?.TemperatureCelsius}");
+            Console.WriteLine($"Summary: {weatherForecast?.Summary}");
+        }
+    }
 }
 ```
 
@@ -1966,22 +2290,21 @@ namespace JSONDemo2
 
 Quando si deserializza JSON, si applicano i seguenti comportamenti:
 
-- Per impostazione predefinita, il matching dei nomi delle proprietà è case-sensitive; è possibile configurare la non sensibilità al maiuscolo/minuscolo.
-- Se JSON contiene un valore per una proprietà di sola lettura, tale valore viene ignorato senza generare eccezioni.
-- I costruttori non pubblici vengono ignorati dal serializer.
-- È supportata la deserializzazione verso oggetti immutabili o proprietà senza `set` pubblico.
-- Gli enum sono supportati di default come numeri; è possibile serializzare i nomi degli enum come stringhe.
-- I campi (fields) sono ignorati di default; è possibile includerli tramite opzioni.
-- Commenti o trailing commas nel JSON generano eccezioni per impostazione predefinita; è possibile abilitarne la tolleranza.
-- La profondità massima predefinita è 64.
+- **By default, property name matching is case-sensitive**. You can [specify case-insensitivity](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/character-casing).
+- **Non-public constructors are ignored by the serializer**.
+- **Deserialization to immutable objects or properties that don't have public `set` accessors is supported but not enabled by default**. See [Immutable types and records](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/immutability).
+- **By default, enums are supported as numbers**. You can [deserialize string enum fields](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/customize-properties#enums-as-strings).
+- **By default, fields are ignored**. You can [include fields](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/fields).
+- **By default, comments or trailing commas in the JSON throw exceptions**. You can [allow comments and trailing commas](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/invalid-json).
+- The [default maximum depth](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.jsonreaderoptions.maxdepth#system-text-json-jsonreaderoptions-maxdepth) is 64.
 
-Quando `System.Text.Json` è usato indirettamente in ASP.NET Core, alcune impostazioni predefinite differiscono. Per approfondire, vedere “Web defaults for JsonSerializerOptions”.
+Quando `System.Text.Json` è usato indirettamente in ASP.NET Core, alcune impostazioni predefinite differiscono. Per approfondire, vedere [Web defaults for JsonSerializerOptions](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/configure-options#web-defaults-for-jsonserializeroptions).
 
 È inoltre possibile implementare converter personalizzati per supportare funzionalità non presenti nei converter integrati.
 
 ##### Serializzare JSON formattato
 
-```csharp
+```csharp showLineNumbers {20}
 using System.Text.Json;
 namespace SerializeWriteIndented
 {
@@ -2021,45 +2344,47 @@ La serializzazione e deserializzazione di payload JSON provenienti dalla rete so
 
 Un esempio di Serializzazione e Deserializzazione con HttpClient:
 
-```csharp
+```csharp showLineNumbers {16-20,22,28}
+// Example of using HttpClient extension methods to send and receive JSON data.
 //https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/how-to
 using System.Net.Http.Json;
-using HttpProxyControl;
 namespace HttpClientExtensionMethods
 {
-    public class User
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-        public string? Username { get; set; }
-        public string? Email { get; set; }
-    }
-    public class Program
-    {
-        public static async Task Main()
-        {
-            HttpClient client = HttpProxyHelper.CreateHttpClient(setProxy:true);
-            client.BaseAddress = new Uri("https://jsonplaceholder.typicode.com");
-            // Get the user information.
-            User? user = await client.GetFromJsonAsync<User>("users/1");
-            Console.WriteLine($"Id: {user?.Id}");
-            Console.WriteLine($"Name: {user?.Name}");
-            Console.WriteLine($"Username: {user?.Username}");
-            Console.WriteLine($"Email: {user?.Email}");
-            // Post a new user.
-            HttpResponseMessage response = await client.PostAsJsonAsync("users", user);
-            Console.WriteLine(
-                $"{(response.IsSuccessStatusCode ? "Success" : "Error")} - {response.StatusCode}");
-        }
-    }
+    public class User
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+    }
+    public class Program
+    {
+        public static async Task Main()
+        {
+            HttpClient client = new()
+            {
+                BaseAddress = new Uri("https://jsonplaceholder.typicode.com")
+            };
+            // Get the user information.
+            User? user = await client.GetFromJsonAsync<User>("users/1");
+            Console.WriteLine($"Id: {user?.Id}");
+            Console.WriteLine($"Name: {user?.Name}");
+            Console.WriteLine($"Username: {user?.Username}");
+            Console.WriteLine($"Email: {user?.Email}");
+            // Post a new user.
+            HttpResponseMessage response = await client.PostAsJsonAsync("users", user);
+            Console.WriteLine(
+            $"{(response.IsSuccessStatusCode ? "Success" : "Error")} - {response.StatusCode}");
+        }
+    }
 }
 // Produces output like the following example but with different names:
-//
-//Id: 1
-//Name: Tyler King
-//Username: Tyler
-//Email: Tyler @contoso.com
-//Success - Created
+// Id: 1
+// Name: Leanne Graham
+// Username: Bret
+// Email: Sincere @april.biz
+// Success - Created
+
 ```
 
 ##### Metodi di estensione per inviare e ricevere contenuto HTTP sotto forma di oggetti JSON
@@ -2074,25 +2399,902 @@ namespace HttpClientExtensionMethods
 
 #### Esercizi sulla serializzazione e de-serializzazione di oggetti JSON
 
-Esercizio N. 1
+##### Esercizio N. 1
 
 Seguendo l'esempio riportato in [How to write .NET objects as JSON (serialize)](https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/how-to)
 
-Scrivere un programma C# che scarica dall'endpoint  [https://jsonplaceholder.typicode.com/todos](https://jsonplaceholder.typicode.com/todos) gli oggetti Todo e li inserisce nella lista **`List<Todo> todoList`**. Il programma stampa a console la lista ottenuta.
+Scrivere un programma C# che scarica dall'endpoint  [https://jsonplaceholder.typicode.com/todos](https://jsonplaceholder.typicode.com/todos) gli oggetti `Todo` e li inserisce nella lista **`List<Todo> todoList`**. Il programma stampa a console la lista ottenuta.
 
-Esercizio N. 2
+Svolgimento:
 
-Il programma si comporta come nell'esercizio precedente, con la differenza che la lista **`List<Todo> todoList`** degli oggetti Todo, anziché essere stampata a console, è salvata (in modo asincrono) su un file di testo chiamato **`todos.json`**
+```csharp showLineNumbers {6-9,12,28-31,44,51,67-72}
+//file: Program.cs
+using System.Net.Http.Json;
+using System.Text.Json;
+using Esercizio1JSON;
 
-Esercizio N.3
+HttpClient client = new()
+{
+    BaseAddress = new Uri("https://jsonplaceholder.typicode.com")
+};
+//possiamo fare direttamente la deserializzazione in una collection di oggetti Todo
+Console.WriteLine("Facciamo la GET e la deserializzazione in una lista di Todo con il metodo di estensione GetFromJsonAsync...");
+var lista = await client.GetFromJsonAsync<List<Todo>>("/todos");
+//stampiamo la lista
+if (lista != null)
+{
+    Console.WriteLine("Stampa della lista di Todo ottenuta con GetFromJsonAsync");
+    foreach (var todo in lista)
+    {
+        Console.WriteLine($"Id: {todo.Id}, Title: {todo.Title}, Completed: {todo.Completed}");
+    }
+}
+Console.WriteLine("Premere un tasto per continuare...");
+Console.ReadKey();
+//oppure possiamo fare la GET e gestire manualmente la risposta
+try
+{
+    Console.WriteLine("Facciamo la GetAsync e controlliamo la risposta per gestire eventuali errori...");
+    HttpResponseMessage response = await client.GetAsync("todos");
+    Console.WriteLine($"Codice di stato: {response.StatusCode}");
+    response.EnsureSuccessStatusCode(); // Lancia eccezione se lo status code è 4xx/5xx
+    string responseBody1 = await response.Content.ReadAsStringAsync();
+    Console.WriteLine("Contenuto JSON:");
+    Console.WriteLine(responseBody1);
+}
+catch (Exception ex)
+{
+    Console.WriteLine("Errore durante la richiesta:");
+    Console.WriteLine(ex.Message);
+}
+Console.WriteLine("Premere un tasto per continuare...");
+Console.ReadKey();
+//scarichiamo il JSON come stringa
+Console.WriteLine("Facciamo la GetStringAsync per ottenere tutta la collection come stringa...");
+string responseBody = await client.GetStringAsync("todos");
+Console.WriteLine("Stampa della JSON string senza de-serializzazione");
+Console.WriteLine(responseBody);
+Console.WriteLine("Premere un tasto per continuare...");
+Console.ReadKey();
+//usiamo un metodo di estensione di HttpClient che fa la deserializzazione rispetto a List<Todo>
+Console.WriteLine("Facciamo la GetFromJsonAsync per ottenere tutta la collection come oggetti Todo e poi stampare separatamente le componenti dei singoli oggetti Todo...");
+var toDoList = await client.GetFromJsonAsync<List<Todo>>("todos");
+if (toDoList != null)
+{
+    Console.WriteLine("Stampa degli oggetti Todo");
+    foreach (var todoItem in toDoList)
+    {
+        Console.WriteLine($"id = {todoItem.Id}");
+        Console.WriteLine($"title = {todoItem.Title}");
+        Console.WriteLine($"userId = {todoItem.UserId}");
+        Console.WriteLine($"completed = {todoItem.Completed}");
+    }
+}
+Console.WriteLine("Premere un tasto per continuare...");
+Console.ReadKey();
+Console.WriteLine("Stampa degli oggetti convertiti nuovamente in JSON");
+//volendo possiamo trasformare la collection in una JSON string
+var options = new JsonSerializerOptions
+{
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+};
+var toDoListJson = JsonSerializer.Serialize(toDoList, options);
+Console.WriteLine(toDoListJson);
+```
 
-Scrivere un programma C# che scarica dall'endpoint [https://jsonplaceholder.typicode.com/photos](https://jsonplaceholder.typicode.com/photos) l'array JSON delle foto e di queste processa solo i primi 10 oggetti JSON deserializzandoli nella lista **`List<Photo> photos`**. Il programma crea anche la lista **`List<Photo> cachedPhotos`** che contiene per i campi url e thumbnailUrl degli URI che puntano a risorse locali anziché alle risorse web. Suggerimento: scaricare le immagini in una cartella cachedPhotos e le thumbnails in una cartella cachedThumbnails, conservando lo stesso nome del file. Ad esempio, la foto descritta dall'URI:  [https://via.placeholder.com/600/92c952](https://via.placeholder.com/600/92c952) viene mappata nel file locale descritto dall'URI: [file:///C:/ProgramWorkingDir/cachedPhotos/600/92c952.png](file:///C:/ProgramWorkingDir/cachedPhotos/600/92c952.png) .
+```csharp
+//file: Todo.cs
+using System.Text.Json.Serialization;
 
-Risorse per l'esercizio:
+namespace Esercizio1JSON;
 
-- [https://learn.microsoft.com/en-us/dotnet/api/system.uri](https://learn.microsoft.com/en-us/dotnet/api/system.uri)
+public class Todo
+{
+    [JsonPropertyName("userId")]
+    public int? UserId { get; set; }
 
-- [https://stackoverflow.com/a/1546420](https://stackoverflow.com/a/1546420)
+    [JsonPropertyName("id")]
+    public int? Id { get; set; }
 
-- [https://stackoverflow.com/questions/1546419/convert-file-path-to-a-file-uri](https://stackoverflow.com/questions/1546419/convert-file-path-to-a-file-uri)
-- [https://zetcode.com/csharp/httpclient/](https://zetcode.com/csharp/httpclient/) (per l'esempio di download di un'immagine)
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
+
+    [JsonPropertyName("completed")]
+    public bool? Completed { get; set; }
+}
+
+```
+
+##### Esercizio N. 2
+
+Il programma si comporta come nell'esercizio precedente, con la differenza che la lista **`List<Todo> todoList`** degli oggetti `Todo`, anziché essere stampata a console, è salvata (in modo asincrono) su un file di testo chiamato **`todos.json`**
+
+Svolgimento:
+
+Versione semplificata senza gestione avanzata delle eccezioni:
+
+```csharp showLineNumbers {5-9,12-15,17-18}
+using System.Net.Http.Json;
+using System.Text.Json;
+using Esercizio2JSON;
+
+HttpClient client = new()
+{
+    BaseAddress = new Uri("https://jsonplaceholder.typicode.com")
+};
+var lista = await client.GetFromJsonAsync<List<Todo>>("/todos");
+if (lista != null)
+{
+    var json = JsonSerializer.Serialize(lista, new JsonSerializerOptions
+    {
+        WriteIndented = true
+    });
+
+    var outputPath = Path.Combine(AppContext.BaseDirectory,"../../../", "todos.json");
+    await File.WriteAllTextAsync(outputPath, json);
+    Console.WriteLine($"File scritto correttamente: {outputPath}");
+}
+```
+
+```csharp
+using System.Text.Json.Serialization;
+
+namespace Esercizio2JSON;
+
+
+public class Todo
+{
+    [JsonPropertyName("userId")]
+    public int? UserId { get; set; }
+
+    [JsonPropertyName("id")]
+    public int? Id { get; set; }
+
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
+
+    [JsonPropertyName("completed")]
+    public bool? Completed { get; set; }
+}
+```
+
+Versione con gestione avanzata delle eccezioni:
+
+```csharp
+using System.Net.Http.Json;
+using System.Text.Json;
+using Esercizio2JSON;
+
+using var client = new HttpClient
+{
+    BaseAddress = new Uri("https://jsonplaceholder.typicode.com")
+};
+
+// Timeout separati: la rete può essere lenta/instabile, la scrittura su disco invece
+// potrebbe richiedere tempo diverso.
+using var networkCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+using var fileCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+try
+{
+    var lista = await client.GetFromJsonAsync<List<Todo>>("/todos", networkCts.Token);
+    if (lista is null)
+    {
+        Console.WriteLine("Nessun dato ricevuto dal server.");
+        return;
+    }
+
+    var json = JsonSerializer.Serialize(lista, JsonOptionsCache.WriteIndented);
+
+    var outputPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../", "todos.json"));
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+    await WriteAllTextAtomicAsync(outputPath, json, fileCts.Token);
+    Console.WriteLine($"File scritto correttamente: {outputPath}");
+}
+catch (OperationCanceledException) when (networkCts.IsCancellationRequested)
+{
+    Console.WriteLine("Timeout durante il download (rete).");
+}
+catch (OperationCanceledException) when (fileCts.IsCancellationRequested)
+{
+    Console.WriteLine("Timeout durante la scrittura su file.");
+}
+
+static async Task WriteAllTextAtomicAsync(string path, string content, CancellationToken token)
+{
+    // Scrittura atomica: scrive su file temporaneo e poi lo sposta sul file finale.
+    // Così non resta un file 'mezzo scritto' se arriva cancellazione/errore.
+    var directory = Path.GetDirectoryName(path) ?? ".";
+    var tempPath = Path.Combine(directory, $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
+
+    try
+    {
+        await File.WriteAllTextAsync(tempPath, content, token);
+        File.Move(tempPath, path, overwrite: true);
+    }
+    finally
+    {
+        try
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+        catch
+        {
+            // best-effort cleanup
+        }
+    }
+}
+
+static class JsonOptionsCache
+{
+    public static readonly JsonSerializerOptions WriteIndented = new()
+    {
+        WriteIndented = true
+    };
+}
+```
+
+##### Esercizio N.3
+
+Scrivere un programma C# che scarica dall’endpoint [https://dummyjson.com/recipes](https://dummyjson.com/recipes) l’array JSON delle ricette e di queste processa solo i primi 10 oggetti JSON de-serializzandoli nella lista `List<Recipe> recipes`. Il programma crea anche la lista `List<Photo> cachedPhotos` che contiene per i campi url e imagelUrl degli URI che puntano a risorse locali anziché alle risorse web. Suggerimento: scaricare le immagini in una cartella cachedPhotos, conservando lo stesso nome del file. Ad esempio, la foto descritta dall’URI: [https://cdn.dummyjson.com/recipe-images/1.webp](https://cdn.dummyjson.com/recipe-images/1.webp), viene mappata nel file locale descritto da un URI del tipi: `file:///C:/ProgramWorkingDir/cachedPhotos/1.webp` .
+
+Svolgimento:
+
+```csharp
+//file: Program.cs
+using System.Net.Http.Json;
+using Esercizio3JSON;
+
+using var client = new HttpClient
+{
+    BaseAddress = new Uri("https://dummyjson.com")
+};
+
+var programWorkingDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../"));
+var cachedPhotosDir = Path.Combine(programWorkingDir, "cachedPhotos");
+Directory.CreateDirectory(cachedPhotosDir);
+
+RecipesResponse? response = await client.GetFromJsonAsync<RecipesResponse>("/recipes");
+
+List<Recipe> recipes = response?.Recipes?.Take(10).ToList() ?? [];
+List<Photo> cachedPhotos = [];
+List<Recipe> recipesWithCachedImages = [];
+
+foreach (var recipe in recipes)
+{
+    if (string.IsNullOrWhiteSpace(recipe.Image))
+    {
+        recipesWithCachedImages.Add(CloneRecipeWithImage(recipe, recipe.Image));
+        continue;
+    }
+
+    var fileName = GetFileNameFromUrl(recipe.Image);
+    var localPath = Path.GetFullPath(Path.Combine(cachedPhotosDir, fileName));
+
+    if (!File.Exists(localPath))
+    {
+        await DownloadFileAsync(client, recipe.Image, localPath);
+    }
+
+    var localUri = new Uri(localPath).AbsoluteUri;
+    cachedPhotos.Add(new Photo
+    {
+        Url = localUri,
+        ImagelUrl = localUri
+    });
+
+    recipesWithCachedImages.Add(CloneRecipeWithImage(recipe, localUri));
+}
+
+Console.WriteLine($"Working dir: {programWorkingDir}");
+Console.WriteLine($"Ricette caricate: {recipes.Count}");
+Console.WriteLine($"Foto in cache: {cachedPhotos.Count} (cartella: {cachedPhotosDir})");
+
+Console.WriteLine("\n--- Ricette (remote) ---");
+foreach (var recipe in recipes)
+{
+    Console.WriteLine($"[{recipe.Id}] {recipe.Name} | {recipe.Image}");
+}
+
+Console.WriteLine("\n--- Ricette (immagini locali) ---");
+foreach (var recipe in recipesWithCachedImages)
+{
+    Console.WriteLine($"[{recipe.Id}] {recipe.Name} | {recipe.Image}");
+}
+
+/// <summary>
+/// Crea una nuova istanza di <see cref="Recipe"/> copiando i dati della ricetta originale,
+/// ma sostituendo il campo <see cref="Recipe.Image"/> con un valore specifico.
+/// </summary>
+/// <remarks>
+/// Serve per mantenere due liste separate:
+/// una che conserva l'URL remoto originale (lista <c>recipes</c>) e una che punta alle immagini
+/// salvate in locale (lista <c>recipesWithCachedImages</c>), senza modificare gli oggetti originali.
+/// </remarks>
+/// <param name="recipe">Ricetta di origine da clonare.</param>
+/// <param name="image">Valore da impostare in <see cref="Recipe.Image"/> (es. URI locale <c>file:///...</c>).</param>
+/// <returns>Una nuova <see cref="Recipe"/> con gli stessi dati e <see cref="Recipe.Image"/> sostituito.</returns>
+static Recipe CloneRecipeWithImage(Recipe recipe, string? image)
+{
+    return new Recipe
+    {
+        Id = recipe.Id,
+        Name = recipe.Name,
+        Ingredients = recipe.Ingredients,
+        Instructions = recipe.Instructions,
+        PrepTimeMinutes = recipe.PrepTimeMinutes,
+        CookTimeMinutes = recipe.CookTimeMinutes,
+        Servings = recipe.Servings,
+        Difficulty = recipe.Difficulty,
+        Cuisine = recipe.Cuisine,
+        CaloriesPerServing = recipe.CaloriesPerServing,
+        Tags = recipe.Tags,
+        UserId = recipe.UserId,
+        Image = image,
+        Rating = recipe.Rating,
+        ReviewCount = recipe.ReviewCount,
+        MealType = recipe.MealType
+    };
+}
+
+static async Task DownloadFileAsync(HttpClient client, string url, string filePath)
+{
+    using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+    response.EnsureSuccessStatusCode();
+
+    await using var httpStream = await response.Content.ReadAsStreamAsync();
+    await using var fileStream = File.Create(filePath);
+    await httpStream.CopyToAsync(fileStream);
+}
+
+static string GetFileNameFromUrl(string url)
+{
+    Uri someBaseUri = new("http://canbeanything");
+    if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
+    {
+        uri = new Uri(someBaseUri, url);
+    }
+
+    // Path.GetFileName funziona se ha in input un URL assoluto
+    return Path.GetFileName(uri.LocalPath);
+}
+```
+
+```csharp
+//file: Models.cs
+using System.Text.Json.Serialization;
+
+namespace Esercizio3JSON;
+
+public sealed class RecipesResponse
+{
+    [JsonPropertyName("recipes")]
+    public List<Recipe>? Recipes { get; set; }
+
+    [JsonPropertyName("total")]
+    public int? Total { get; set; }
+
+    [JsonPropertyName("skip")]
+    public int? Skip { get; set; }
+
+    [JsonPropertyName("limit")]
+    public int? Limit { get; set; }
+}
+
+public sealed class Recipe
+{
+    [JsonPropertyName("id")]
+    public int? Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("ingredients")]
+    public List<string>? Ingredients { get; set; }
+
+    [JsonPropertyName("instructions")]
+    public List<string>? Instructions { get; set; }
+
+    [JsonPropertyName("prepTimeMinutes")]
+    public int? PrepTimeMinutes { get; set; }
+
+    [JsonPropertyName("cookTimeMinutes")]
+    public int? CookTimeMinutes { get; set; }
+
+    [JsonPropertyName("servings")]
+    public int? Servings { get; set; }
+
+    [JsonPropertyName("difficulty")]
+    public string? Difficulty { get; set; }
+
+    [JsonPropertyName("cuisine")]
+    public string? Cuisine { get; set; }
+
+    [JsonPropertyName("caloriesPerServing")]
+    public int? CaloriesPerServing { get; set; }
+
+    [JsonPropertyName("tags")]
+    public List<string>? Tags { get; set; }
+
+    [JsonPropertyName("userId")]
+    public int? UserId { get; set; }
+
+    [JsonPropertyName("image")]
+    public string? Image { get; set; }
+
+    [JsonPropertyName("rating")]
+    public double? Rating { get; set; }
+
+    [JsonPropertyName("reviewCount")]
+    public int? ReviewCount { get; set; }
+
+    [JsonPropertyName("mealType")]
+    public List<string>? MealType { get; set; }
+}
+
+public sealed class Photo
+{
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
+
+    // Nome mantenuto come nel testo dell'esercizio ("imagelUrl")
+    [JsonPropertyName("imagelUrl")]
+    public string? ImagelUrl { get; set; }
+}
+```
+
+##### Esercizio N.4 (semplice)
+
+Scrivere un programma C# che scarica un singolo **oggetto JSON** usando esplicitamente `HttpRequestMessage` ("HttpRequest") e `HttpClient.SendAsync`.
+
+- Endpoint: [https://dummyjson.com/users/1](https://dummyjson.com/users/1)
+- Requisiti minimi:
+    - Creare un `HttpRequestMessage` con metodo `GET` e header `Accept: application/json`.
+    - Inviare la richiesta con `SendAsync` e chiamare `EnsureSuccessStatusCode()`.
+    - De-serializzare la risposta in un tipo `User` (record/class) con `System.Text.Json`.
+    - Stampare in console almeno 5 proprietà significative (es. `id`, `firstName`, `lastName`, `email`, `age`).
+
+Suggerimento: usare `await response.Content.ReadAsStreamAsync()` + `JsonSerializer.DeserializeAsync<T>()`.
+
+Svolgimento:
+
+```csharp showLineNumbers {9,11,13,17,19}
+//file: Program.cs
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Esercizio4JSON;
+var url = "https://dummyjson.com/users/1";
+
+using var client = new HttpClient();
+
+using var request = new HttpRequestMessage(HttpMethod.Get, url);
+//impostiamo l'header Accept per richiedere JSON
+request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+using var response = await client.SendAsync(request);
+//verifichiamo che la risposta sia di successo
+response.EnsureSuccessStatusCode();
+//leggiamo il contenuto della risposta come stream
+await using var stream = await response.Content.ReadAsStreamAsync();
+
+User? user = await JsonSerializer.DeserializeAsync<User>(stream, JsonOptionsCache.CaseInsensitive);
+
+if (user is null)
+{
+    Console.WriteLine("Risposta vuota o JSON non valido.");
+    return;
+}
+
+Console.WriteLine($"Id: {user.Id}");
+Console.WriteLine($"FirstName: {user.FirstName}");
+Console.WriteLine($"LastName: {user.LastName}");
+Console.WriteLine($"Email: {user.Email}");
+Console.WriteLine($"Age: {user.Age}");
+
+```
+
+```csharp
+//file: JsonOptionsCache.cs
+using System.Text.Json;
+
+namespace Esercizio4JSON;
+
+public static class JsonOptionsCache
+{
+    public static JsonSerializerOptions CaseInsensitive { get; } = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+}
+```
+
+```csharp
+//file: User.cs
+namespace Esercizio4JSON;
+
+public sealed record User
+{
+    public int Id { get; init; }
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+    public string? Email { get; init; }
+    public int Age { get; init; }
+}
+```
+
+##### Esercizio N.5 (intermedio)
+
+Scrivere un programma C# che scarica una **collection JSON** (array) mediante `HttpRequestMessage` e poi esegue una piccola elaborazione.
+
+- Endpoint: [https://jsonplaceholder.typicode.com/posts](https://jsonplaceholder.typicode.com/posts)
+- Requisiti minimi:
+    - Usare `SendAsync` con `HttpCompletionOption.ResponseHeadersRead`.
+    - De-serializzare l’array in `List<Post>`.
+    - Filtrare solo i post con `userId == 1` e ordinarli per `id`.
+    - Salvare su file (es. `posts-user-1.json`) l’elenco filtrato (serializzandolo di nuovo in JSON) e stampare quante righe/post sono stati scritti.
+
+Extra (facoltativo): gestire in modo esplicito `StatusCode != 200` stampando `StatusCode` e un estratto del body.
+
+Svolgimento:
+
+```csharp showLineNumbers {10-15,27,35,39-42,44}
+using System.Net.Http.Headers;
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Esercizio5JSON;
+
+var url = "https://jsonplaceholder.typicode.com/posts";
+var outputPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../", "posts-user-1.json"));
+
+using var client = new HttpClient();
+
+using var request = new HttpRequestMessage(HttpMethod.Get, url);
+request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+
+// Extra (facoltativo): gestione esplicita StatusCode != 200
+if (response.StatusCode != HttpStatusCode.OK)
+{
+    var body = await response.Content.ReadAsStringAsync();
+    var snippet = body.Length > 300 ? body[..300] + "..." : body;
+    Console.WriteLine($"Errore: {(int)response.StatusCode} {response.StatusCode}");
+    Console.WriteLine($"Body (estratto): {snippet}");
+    return;
+}
+
+await using var stream = await response.Content.ReadAsStreamAsync();
+
+var options = new JsonSerializerOptions
+{
+    PropertyNameCaseInsensitive = true,
+    WriteIndented = true
+};
+
+List<Post>? posts = await JsonSerializer.DeserializeAsync<List<Post>>(stream, options);
+
+posts ??= new List<Post>();
+
+var filtered = posts
+    .Where(p => p.UserId == 1)
+    .OrderBy(p => p.Id)
+    .ToList();
+
+var json = JsonSerializer.Serialize(filtered, options);
+
+Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+await File.WriteAllTextAsync(outputPath, json, Encoding.UTF8);
+
+var lineCount = File.ReadLines(outputPath).Count();
+
+Console.WriteLine($"Post totali scaricati: {posts.Count}");
+Console.WriteLine($"Post filtrati (userId=1): {filtered.Count}");
+Console.WriteLine($"File scritto: {outputPath}");
+Console.WriteLine($"Righe scritte: {lineCount}");
+
+```
+
+```csharp
+namespace Esercizio5JSON;
+
+public sealed record Post
+{
+    public int UserId { get; init; }
+    public int Id { get; init; }
+    public string? Title { get; init; }
+    public string? Body { get; init; }
+}
+```
+
+:::note
+**Domanda**: ***Se il codice inviato dal server è diverso da 200 cosa ci aspettiamo di trovare nel body?***
+
+**Risposta**: dipende dall’API, ma in generale quando `StatusCode != 200` nel body ci si può aspettare uno di questi casi:
+
+- **Un JSON di errore “strutturato”** (molto comune):  
+  es. `{"error":"Not Found"}`, oppure con campi tipo `message`, `code`, `details`.  
+  In questo caso lo “snippet” fa capire subito *che errore* e spesso *perché*.
+
+- **Una pagina HTML di errore** (capita con server/proxy, IIS/nginx, gateway):  
+  es. un HTML con “404 Not Found” o “502 Bad Gateway”. Lo snippet mostra che non è JSON.
+
+- **Testo semplice**:  
+  es. `"Too many requests"` oppure `"Unauthorized"`.
+
+- **Vuoto**:  
+  alcuni endpoint rispondono solo con status code e nessun contenuto (body vuoto), oppure con header `Content-Length: 0`.
+
+    Esempi pratici (per avere un’idea):
+    - `404 Not Found`: spesso body con messaggio “not found” o JSON `{ "error": "Not Found" }`
+    - `401/403`: può contenere messaggio o dettagli “token missing/invalid” (oppure vuoto)
+    - `429 Too Many Requests`: spesso include testo o JSON e magari header `Retry-After`
+    - `500/503`: spesso HTML o JSON, dipende da come è configurata l’API
+
+:::
+
+##### Esercizio N.6 (avanzato)
+
+Scrivere un programma C# che scarica una **collection paginata** e la ricompone in memoria, usando una nuova `HttpRequestMessage` per ogni pagina.
+
+- Endpoint (paginazione con `limit`/`skip`): [https://dummyjson.com/products?limit=10&skip=0](https://dummyjson.com/products?limit=10&skip=0)
+- Requisiti minimi:
+    - Implementare un ciclo che richiede le pagine fino a scaricare tutti i prodotti (`total`).
+    - De-serializzare ogni risposta in un tipo `ProductsResponse` che contenga almeno `products`, `total`, `skip`, `limit`.
+    - Aggregare tutti i prodotti in un’unica `List<Product>`.
+    - Calcolare e stampare: numero totale prodotti scaricati, prezzo medio, prodotto più costoso.
+    - Supportare cancellazione: usare un `CancellationTokenSource` con timeout (es. 10–15 secondi) e propagare il token a `SendAsync`.
+
+Extra (facoltativo): gestire retry su `429`/`503` con backoff (es. 3 tentativi, attese crescenti).
+Extra (facoltativo): salvare la lista completa su file JSON.
+
+Svolgimento:
+
+```csharp
+//file: Program.cs
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Esercizio6JSON;
+
+using var client = new HttpClient
+{
+    BaseAddress = new Uri("https://dummyjson.com")
+};
+
+// Timeout separati:
+// - overallCts: tempo massimo totale per scaricare TUTTE le pagine
+// - perPageTimeout: tempo massimo per una singola pagina (request + lettura + deserialize)
+using var overallCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+var overallToken = overallCts.Token;
+var perPageTimeout = TimeSpan.FromSeconds(10);
+
+var options = new JsonSerializerOptions
+{
+    PropertyNameCaseInsensitive = true,
+    WriteIndented = true
+};
+
+var allProducts = new List<Product>();
+
+int limit = 10;
+int skip = 0;
+int total = int.MaxValue; // verrà aggiornato alla prima risposta
+
+try
+{
+    while (skip < total)
+    {
+        // Per ogni pagina creiamo un token “figlio” dell'overall token e gli applichiamo
+        // un timeout più aggressivo: così evitiamo che una singola richiesta lenta consumi
+        // tutto il tempo disponibile per il download completo.
+        using var pageCts = CancellationTokenSource.CreateLinkedTokenSource(overallToken);
+        pageCts.CancelAfter(perPageTimeout);
+        var pageToken = pageCts.Token;
+
+        var relativeUrl = $"/products?limit={limit}&skip={skip}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, relativeUrl);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        // Extra: SendWithRetryAsync gestisce 429/503 con backoff. Il token viene propagato
+        // a SendAsync, alla lettura dello stream e alla deserializzazione JSON.
+        using var response = await SendWithRetryAsync(client, request, pageToken);
+        response.EnsureSuccessStatusCode();
+
+        await using var stream = await response.Content.ReadAsStreamAsync(pageToken);
+        var page = await JsonSerializer.DeserializeAsync<ProductsResponse>(stream, options, pageToken);
+
+        if (page?.Products is null)
+            break;
+
+        total = page.Total;
+        allProducts.AddRange(page.Products);
+
+        skip += page.Limit; // oppure skip += limit;
+    }
+}
+catch (OperationCanceledException) when (overallCts.IsCancellationRequested)
+{
+    Console.WriteLine("Timeout totale: download paginato annullato.");
+}
+catch (OperationCanceledException)
+{
+    // Se non è scaduto l'overall, è molto probabile che sia scaduto il timeout per pagina.
+    Console.WriteLine("Timeout su una singola pagina (request/lettura/deserializzazione).");
+}
+
+Console.WriteLine($"Prodotti scaricati: {allProducts.Count}");
+
+// Percorso di output (stampato sempre per chiarezza)
+// Nota: quando esegui da VS Code il working directory può variare; qui cerchiamo il .csproj
+// risalendo da AppContext.BaseDirectory così scriviamo accanto al progetto.
+var outputProjectDir = FindProjectDirectory("Esercizio6JSON.csproj") ?? AppContext.BaseDirectory;
+var outputPath = Path.GetFullPath(Path.Combine(outputProjectDir, "products.json"));
+Console.WriteLine($"Percorso file JSON: {outputPath}");
+
+if (allProducts.Count > 0)
+{
+    var averagePrice = allProducts.Average(p => p.Price);
+    var mostExpensive = allProducts.OrderByDescending(p => p.Price).First();
+
+    Console.WriteLine($"Prezzo medio: {averagePrice:0.00}");
+    Console.WriteLine($"Più costoso: {mostExpensive.Title} (id={mostExpensive.Id}) - {mostExpensive.Price:0.00}");
+}
+
+// Extra: salva la lista COMPLETA su file JSON (solo se il download è completo).
+// Verifica “completezza”: dopo la prima pagina conosciamo total; se Count == total abbiamo
+// ricomposto tutta la collection in memoria e possiamo salvarla.
+if (total != int.MaxValue && allProducts.Count == total)
+{
+    try
+    {
+        var json = JsonSerializer.Serialize(allProducts, options);
+
+        // Timeout separato per la parte “file”: anche se l'overall è ancora valido,
+        // non vogliamo bloccarci troppo a lungo sulla scrittura su disco.
+        using var fileCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await WriteAllTextAtomicAsync(outputPath, json, fileCts.Token);
+        Console.WriteLine($"Lista completa salvata in: {outputPath}");
+    }
+    catch (OperationCanceledException)
+    {
+        Console.WriteLine("Timeout durante il salvataggio su file JSON.");
+    }
+    catch (IOException ex)
+    {
+        Console.WriteLine($"Errore I/O durante il salvataggio su file JSON: {ex.Message}");
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        Console.WriteLine($"Permessi insufficienti per scrivere il file JSON: {ex.Message}");
+    }
+}
+else
+{
+    Console.WriteLine("Download non completo: non salvo su file JSON.");
+}
+
+static async Task<HttpResponseMessage> SendWithRetryAsync(
+HttpClient client, 
+HttpRequestMessage request, 
+CancellationToken token)
+{
+    // Extra: retry semplice su 429/503 con backoff.
+    // Nota: HttpRequestMessage non è riutilizzabile dopo l'invio -> lo cloniamo.
+    const int maxAttempts = 3;
+
+    for (int attempt = 1; attempt <= maxAttempts; attempt++)
+    {
+        using var req = CloneRequest(request);
+
+        var response = await client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, token);
+
+        if (response.StatusCode is not HttpStatusCode.TooManyRequests and not HttpStatusCode.ServiceUnavailable)
+            return response;
+
+        response.Dispose();
+
+        if (attempt == maxAttempts)
+            throw new HttpRequestException($"Retry falliti: {(int)response.StatusCode} {response.StatusCode}");
+
+        var delay = TimeSpan.FromMilliseconds(300 * attempt * attempt);
+        await Task.Delay(delay, token);
+    }
+
+    throw new InvalidOperationException("Impossibile inviare richiesta.");
+}
+
+static HttpRequestMessage CloneRequest(HttpRequestMessage original)
+{
+    // Serve per i retry: dopo SendAsync la request originale non è riutilizzabile.
+    var clone = new HttpRequestMessage(original.Method, original.RequestUri);
+
+    foreach (var header in original.Headers)
+        clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+
+    // qui non abbiamo body (GET), ma lo lascio per completezza
+    if (original.Content is not null)
+        clone.Content = original.Content;
+
+    return clone;
+}
+
+static async Task WriteAllTextAtomicAsync(string path, string content, CancellationToken token)
+{
+    // Scrittura “atomica”:
+    // 1) scrivo su file temporaneo
+    // 2) sposto (Move) sul file definitivo con overwrite
+    // Così evitiamo file finali parziali se l'operazione viene interrotta.
+    var directory = Path.GetDirectoryName(path);
+    if (!string.IsNullOrEmpty(directory))
+        Directory.CreateDirectory(directory);
+
+    var tempPath = path + ".tmp";
+
+    try
+    {
+        await File.WriteAllTextAsync(tempPath, content, token);
+        File.Move(tempPath, path, overwrite: true);
+    }
+    finally
+    {
+        try
+        {
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+        catch
+        {
+            // Pulizia “best effort”: se non riesco a cancellare il .tmp (file in uso / permessi)
+            // non voglio che questa eccezione mascheri quella principale.
+        }
+    }
+}
+
+static string? FindProjectDirectory(string csprojFileName)
+{
+    // Cerca risalendo dalle directory di output (bin/Debug/...) fino a trovare il .csproj.
+    // In questo modo il file viene salvato accanto al progetto, non nella cartella di output.
+    var dir = new DirectoryInfo(AppContext.BaseDirectory);
+
+    while (dir is not null)
+    {
+        var candidate = Path.Combine(dir.FullName, csprojFileName);
+        if (File.Exists(candidate))
+            return dir.FullName;
+
+        dir = dir.Parent;
+    }
+
+    return null;
+}
+```
+
+```csharp
+//file: Product.cs
+namespace Esercizio6JSON;
+
+public sealed record Product
+{
+    public int Id { get; init; }
+    public string? Title { get; init; }
+    public decimal Price { get; init; }
+}
+```
+
+```csharp
+//file: ProductsResponse.cs
+namespace Esercizio6JSON;
+
+public sealed record ProductsResponse
+{
+    public List<Product> Products { get; init; } = [];
+    public int Total { get; init; }
+    public int Skip { get; init; }
+    public int Limit { get; init; }
+}
+```

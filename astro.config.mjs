@@ -143,7 +143,7 @@ export default defineConfig({
           autogenerate: { directory: "guides" },
         },
       ],
-      tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+      tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 5 },
       components: {
         //Header: "./src/components/CustomHeader.astro",
         Footer: "./src/components/CustomFooter.astro",
