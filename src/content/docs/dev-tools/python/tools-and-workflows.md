@@ -5,6 +5,11 @@ sidebar:
   label: "Tools and Workflows for Python Development"
   order: 30
 ---
+<style>
+img {display: block; margin: 0 auto;}
+</style>
+
+![Overview Image](./tools-and-workflows/python_tools_workflows_3d_gem.png)
 
 ## Gestione degli Ambienti di Sviluppo Python, il Controllo di Versione e le Metodologie Operative Moderne
 
@@ -306,7 +311,7 @@ Una volta predisposti i compilatori, la procedura di installazione differisce da
     ```ps1
     # Windows
     python -m venv .venv
-    .venv\Scripts\activate su Windows
+    .venv\Scripts\activate
     ```
 
     ```bash
@@ -742,7 +747,7 @@ Procedura dettagliata per l'inizializzazione di un repository incontaminato e co
 
 ## 8. Metodologie di nuova generazione: L'adozione di `uv`
 
-Introdotto nel 2024, `uv` rappresenta un cambiamento paradigmatico e un salto evolutivo nel packaging Python. Sviluppato in Rust da Astral (creatori del linter `ruff`), è progettato per offrire prestazioni superiori da 10 a 100 volte rispetto a `pip` e `pip-tools`, unificando funzionalità che precedentemente richiedevano l'impiego di molteplici strumenti distinti (gestione versioni Python, gestione venv, gestione dipendenze).
+Introdotto nel 2024, [`uv`](https://docs.astral.sh/uv/) rappresenta un cambiamento paradigmatico e un salto evolutivo nel packaging Python. Sviluppato in Rust da Astral (creatori del linter `ruff`), è progettato per offrire prestazioni superiori da 10 a 100 volte rispetto a `pip` e `pip-tools`, unificando funzionalità che precedentemente richiedevano l'impiego di molteplici strumenti distinti (gestione versioni Python, gestione venv, gestione dipendenze).
 
 ### 8.1 Superiorità tecnologica di `uv`
 
@@ -770,13 +775,13 @@ Questo metodo garantisce che uv si aggiorni autonomamente e non entri in conflit
 - **Windows (PowerShell):**
 
     ```ps1
-    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
     ```
 
 Metodo Alternativo (PyPI):
 
-Sebbene possibile, l'installazione via pip è sconsigliata per l'uso sistemico poiché lega uv a uno specifico interprete Python.
+**Sebbene possibile, l'installazione via pip è sconsigliata per l'uso sistemico poiché lega uv a uno specifico interprete Python**.
 
 ```bash
 pip install uv
@@ -791,7 +796,7 @@ uv --version
 
 ```
 
-**Aggiornamento:**
+**Aggiornamento di uv:**
 
 ```bash
 uv self update
@@ -891,7 +896,7 @@ Attualmente, l'ecosistema Python sta vivendo una transizione tra una **toolchain
 ### 9.1 Analisi Comparativa: Toolchain Classica vs Moderna
 
 | **Caratteristica** | **Toolchain Classica (Python-based)** | **Toolchain Moderna (Ruff)** |
-| --- |  --- |  --- |
+| --- | --- | --- |
 | **Componenti** | `Black` (Formattazione), `isort` (Ordinamento import), `Pylint` (Linting profondo), `Flake8` (Linting stilistico) | **Ruff** (Tutto incluso) |
 | **Prestazioni** | Lente (secondi/minuti su codebase grandi). Single-core per default. | Estreme (millisecondi). Scritto in Rust, parallelizzato nativamente. |
 | **Configurazione** | Frammentata (multipli file o sezioni diverse nel `pyproject.toml`). Conflitti frequenti tra Black e isort/Flake8. | Centralizzata in un'unica sezione `[tool.ruff]`. Compatibilità garantita by design. |
@@ -964,6 +969,7 @@ Di seguito la configurazione consigliata per `settings.json`, che imposta Ruff c
   },
   // Configurazione opzionale: Definizione regole direttamente in VS Code
   // (Utile se non si desidera usare pyproject.toml)
+  "ruff.lineLength": 88,
   "ruff.lint.select": [
     "E", // pycodestyle errors
     "W", // pycodestyle warnings

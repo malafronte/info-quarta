@@ -135,6 +135,20 @@ export default defineConfig({
               },
               collapsed: true,
             },
+            {
+              label: "☸️ DevOps",
+              autogenerate: {
+                directory: "dev-tools/devops",
+              },
+              collapsed: true,
+            },
+            {
+              label: "🐳 Docker",
+              autogenerate: {
+                directory: "dev-tools/docker",
+              },
+              collapsed: true,
+            },
           ],
         },
         {
