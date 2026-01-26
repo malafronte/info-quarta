@@ -5,6 +5,11 @@ sidebar:
   label: "Rest API in C#"
   order: 1
 ---
+<style>
+img {display: block; margin: 0 auto;}
+</style>
+
+![Overview Image](rest_api_overview_gem.png)
 
 ## Presentazione generale
 

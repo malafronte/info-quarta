@@ -10,6 +10,8 @@ sidebar:
 img {display: block; margin: 0 auto;}
 </style>
 
+![Overview Image](./rest-services-examples/rest_services_examples_gem.png)
+
 ## Open-Meteo API
 
 <https://open-meteo.com/>

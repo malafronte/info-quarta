@@ -10,6 +10,8 @@ sidebar:
 img {display: block; margin: 0 auto;}
 </style>
 
+![Overview Image](./rest-architecture/rest_architecture_gem.png)
+
 ## REST API
 
 ### REST 101

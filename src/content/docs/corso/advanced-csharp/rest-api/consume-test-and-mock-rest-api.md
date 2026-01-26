@@ -10,6 +10,8 @@ sidebar:
 img {display: block; margin: 0 auto;}
 </style>
 
+![Overview Image](./consume-test-and-mock-rest-api/api_integration_workbench_gem.png)
+
 ## Postman
 
 Postman è uno strumento per l’invio di richieste HTTP e per il collaudo (testing) di API, utile sia in fase di sviluppo sia in fase di verifica funzionale.

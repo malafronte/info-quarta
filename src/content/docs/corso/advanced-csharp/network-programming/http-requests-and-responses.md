@@ -10,7 +10,9 @@ sidebar:
 img {display: block; margin: 0 auto;}
 </style>
 
-## Richieste e risposte HTTP in .NET
+![Overview Image](./http-requests-and-responses/dotnet_networking_data_processing_gem.png)
+
+## Applicazioni client in .NET che gestiscono richieste e risposte HTTP
 
 [Network programming in .NET](https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/overview)
 
@@ -576,7 +578,7 @@ using (var response = await client.GetAsync(uri, HttpCompletionOption.ResponseHe
 
 Se un’applicazione che utilizza `HttpClient` e le classi correlate in `System.Net.Http` deve scaricare grandi quantità di dati (indicativamente 50 MB o più), è opportuno adottare un approccio a streaming e non affidarsi al buffering predefinito. In caso di buffering, l’utilizzo di memoria del client può diventare molto elevato, con conseguente degrado prestazionale.
 
-Ad esempio, per effettuare il download di un file molto grande si può utilizzare l’approccio mostrato [qui](http://www.tugberkugurlu.com/archive/efficiently-streaming-large-http-responses-with-httpclient)
+Ad esempio, per effettuare il download di un file molto grande si può utilizzare il seguente metodo:
 
 ```csharp
 static async Task HttpGetForLargeFileInRightWay()
@@ -606,6 +608,7 @@ Nel seguente esempio viene scaricato un file binario di dimensione superiore a 1
 Il metodo `WriteBinaryAsync` salva il file nel percorso specificato, mentre il metodo `WriteBinaryAsyncWithProgress` fa la stessa cosa, ma permette anche di stampare la percentuale di progresso di download.
 
 ```csharp showLineNumbers {138-141, 204, 212, 267, 272}
+
 
 
 using System.Diagnostics;
@@ -922,7 +925,7 @@ namespace BinaryBigFileDownloadAsyncDemo
         }
         static async Task Main(string[] args)
         {
-            const string url = "https://download.visualstudio.microsoft.com/download/pr/9e753d68-7701-4ddf-b358-79d64e776945/2a58564c6d0779a7b443a692c520782f/dotnet-sdk-8.0.203-win-x64.exe";
+            const string url = "https://builds.dotnet.microsoft.com/dotnet/Sdk/9.0.310/dotnet-sdk-9.0.310-win-x64.exe";
             //const string url = "https://github.com/tugberkugurlu/ASPNETWebAPISamples/archive/master.zip";
             using var cts = new CancellationTokenSource();
             Console.CancelKeyPress += (_, e) =>
@@ -1397,99 +1400,230 @@ namespace HttpProxyControl;
 using Microsoft.Win32;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
+/// <summary>
+/// Parametri del proxy HTTP (indirizzo e porta).
+/// </summary>
 public struct ProxyParams
 {
-    public string ProxyAddress { get; set; }
+    /// <summary>
+    /// Inizializza i parametri con valori di default.
+    /// </summary>
+    public ProxyParams()
+    {
+        ProxyAddress = string.Empty;
+        ProxyPort = 0;
+    }
+
+    /// <summary>
+    /// Indirizzo (host o IP) del proxy.
+    /// </summary>
+    public string ProxyAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Porta TCP del proxy.
+    /// </summary>
     public int ProxyPort { get; set; }
 }
+/// <summary>
+/// Eccezione specifica per errori nella gestione/determinazione del proxy.
+/// </summary>
 public class ProxyHelperException : Exception
 {
-    //https://docs.microsoft.com/en-us/dotnet/standard/exceptions/how-to-create-user-defined-exceptions
+    /// <summary>
+    /// Crea una nuova eccezione per errori legati alla gestione del proxy.
+    /// </summary>
     public ProxyHelperException()
     {
     }
+
+    /// <summary>
+    /// Crea una nuova eccezione per errori legati alla gestione del proxy.
+    /// </summary>
+    /// <param name="message">Messaggio descrittivo dell'errore.</param>
     public ProxyHelperException(string message)
     : base(message)
     {
     }
+
+    /// <summary>
+    /// Crea una nuova eccezione per errori legati alla gestione del proxy.
+    /// </summary>
+    /// <param name="message">Messaggio descrittivo dell'errore.</param>
+    /// <param name="inner">Eccezione originale che ha causato l'errore.</param>
     public ProxyHelperException(string message, Exception inner)
     : base(message, inner)
     {
     }
 }
+
+/// <summary>
+/// Metodi di utilità per determinare e usare il proxy di sistema con <see cref="HttpClient"/>.
+/// </summary>
+/// <remarks>
 /// Richiede:
-    /// 1) using Microsoft.Win32;
-    /// 2) using System.Runtime.InteropServices;
-    /// 3) using System.Net;
+/// 1) <c>using Microsoft.Win32;</c>
+/// 2) <c>using System.Runtime.InteropServices;</c>
+/// 3) <c>using System.Net;</c>
+/// </remarks>
 public static class HttpProxyHelper
 {
+    // Uri “fittizia” usata solo per interrogare il proxy di sistema.
+    // Non viene effettuata alcuna richiesta HTTP: serve esclusivamente come input a IsBypassed/GetProxy.
+    private static readonly Uri ProxyDetectionUri = new("http://example.com");
+
     /// <summary>
-            ///  
-            /// Restituisce il proxy attualmente in uso (se presente)
-            /// Il proxy è un Uri nella forma proxy_address:proxy_port
-            /// </summary>
-            /// <returns>Il proxy attualmente in uso. Restituisce null se nessun proxy è in uso</returns>
+    /// Restituisce il proxy attualmente in uso (se presente).
+    /// </summary>
+    /// <remarks>
+    /// Su Windows la determinazione prova prima a leggere l'impostazione utente dal registro.
+    /// In fallback (e su Linux/macOS) usa <see cref="HttpClient.DefaultProxy"/>, che tipicamente deriva
+    /// da variabili d'ambiente (es. <c>HTTP_PROXY</c>/<c>HTTPS_PROXY</c>/<c>ALL_PROXY</c> e <c>NO_PROXY</c>).
+    /// </remarks>
+    /// <returns>
+    /// Il proxy attualmente in uso; <see langword="null"/> se nessun proxy è in uso.
+    /// </returns>
     public static Uri? GetHttpClientProxy()
     {
-        Uri? proxy;
-        //https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient.defaultproxy?view=net-6.0
-        //https://medium.com/@sddkal/net-core-interaction-with-registry-4d7fcabc7a6b
-        //https://www.shellhacks.com/windows-show-proxy-settings-cmd-powershell/
-        //https://stackoverflow.com/a/63884955
+        // Windows: prima proviamo a leggere le impostazioni dell'utente dal registro (Internet Options).
+        // Se non troviamo nulla/è disabilitato, facciamo fallback al meccanismo cross-platform (DefaultProxy).
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            //ottengo lo user specific proxy che si ottiene con il comando:
-            //C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-            //leggiamo lo user specific proxy direttamente dal registro di sistema di Windows
-            RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
-            //il proxy viene abilitato mediante il valore della chiave di registro ProxyEnable
-            int? proxyEnable = internetSettings?.GetValue("ProxyEnable") as int?;
-            //impostiamo proxy
-            proxy = (proxyEnable > 0 && internetSettings?.GetValue("ProxyServer") is string userProxy) ? new Uri(userProxy) : null;
+            Uri? proxyFromRegistry = GetWindowsUserProxyFromRegistry();
+            if (proxyFromRegistry is not null)
+            {
+                return proxyFromRegistry;
+            }
         }
-        else //se il sistema operativo è diverso da Windows procediamo con la determinazione del system wide proxy (se impostato)
-        {
-            //questa è la procedura per ottenere il system proxy
-            Uri destinationUri = new("https://www.google.it");
-            //Ottiene il default proxy quando si prova a contattare la destinationUri
-            //Se il proxy non è impostato si ottiene null
-            //Uri proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-            //Con il proxy calcolato in automatico si crea l'handler da passare all'oggetto HttpClient e
-            //funziona sia che il proxy sia configurato sia che non lo sia
-            proxy = HttpClient.DefaultProxy.GetProxy(destinationUri);
-        }
-        return proxy;
+
+        // Linux/macOS (e fallback su Windows): DefaultProxy è la fonte “standard” per .NET.
+        // Tipicamente è configurato via variabili d'ambiente (HTTP(S)_PROXY/ALL_PROXY/NO_PROXY).
+        return GetProxyFromDefaultProxy();
     }
-    ///// <summary>
-    ///// Effettua il setup del client Http con l'eventuale proxy (se impostato)
-    ///// </summary>
-    ///// <param name="client"></param>
-    //public static void HttpClientProxySetup(out HttpClient client)
-    //{
-    //    Uri? proxy = GetHttpClientProxy();
-    //    if (proxy != null)
-    //    {
-    //        HttpClientHandler httpHandler = new HttpClientHandler()
-    //        {
-    //            Proxy = new WebProxy(proxy, true),
-    //            UseProxy = true,
-    //            PreAuthenticate = false,
-    //            UseDefaultCredentials = false,
-    //        };
-    //        client = new HttpClient(httpHandler);
-    //    }
-    //    else
-    //    {
-    //        client = new HttpClient();
-    //    }
-    //}
+
+    [SupportedOSPlatform("windows")]
+    private static Uri? GetWindowsUserProxyFromRegistry()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return null;
+        }
+
+        try
+        {
+            // C:\> reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
+            using RegistryKey? internetSettings = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
+
+            // ProxyEnable: 0 = disabilitato, 1 = abilitato (valore intero nel registro).
+            int proxyEnable = internetSettings?.GetValue("ProxyEnable") as int? ?? 0;
+            if (proxyEnable <= 0)
+            {
+                return null;
+            }
+
+            // ProxyServer contiene la configurazione del proxy.
+            // Può essere un singolo valore "host:port" oppure una lista per schema "http=...;https=...".
+            if (internetSettings?.GetValue("ProxyServer") is not string proxyServerValue)
+            {
+                return null;
+            }
+
+            return TryParseProxyServerValue(proxyServerValue);
+        }
+        catch
+        {
+            // In caso di errori (permessi, chiavi mancanti, formati inattesi), meglio non bloccare:
+            // l'utente può comunque usare DefaultProxy.
+            return null;
+        }
+    }
+
+    private static Uri? GetProxyFromDefaultProxy()
+    {
+        IWebProxy systemProxy = HttpClient.DefaultProxy;
+
+        // NO_PROXY (o regole equivalenti) può indicare che la destinazione vada bypassata.
+        // In tal caso, per il nostro “probe” consideriamo che non c'è un proxy applicabile.
+        if (systemProxy.IsBypassed(ProxyDetectionUri))
+        {
+            return null;
+        }
+
+        // Attenzione: per molte implementazioni, GetProxy(uri) restituisce la stessa uri di input
+        // quando NON c'è un proxy configurato (è un “sentinella”, non un vero proxy).
+        Uri? proxyUri = systemProxy.GetProxy(ProxyDetectionUri);
+        return proxyUri is null || proxyUri == ProxyDetectionUri ? null : proxyUri;
+    }
+
+    private static Uri? TryParseProxyServerValue(string proxyServerValue)
+    {
+        // Formati tipici su Windows:
+        // - "host:port"
+        // - "http=host:port;https=host:port" (o anche con URI completi)
+        // - "http://host:port"
+
+        if (string.IsNullOrWhiteSpace(proxyServerValue))
+        {
+            return null;
+        }
+
+        string trimmed = proxyServerValue.Trim();
+
+        // Scelta del candidato:
+        // 1) se presente un proxy esplicito per http
+        // 2) altrimenti se presente un proxy esplicito per https
+        // 3) altrimenti prendiamo la prima entry (best-effort)
+        string? candidate = ExtractProxyCandidate(trimmed, "http")
+                            ?? ExtractProxyCandidate(trimmed, "https")
+                            ?? trimmed.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(candidate))
+        {
+            return null;
+        }
+
+        // Se manca lo schema, aggiungiamo "http://" per rendere la Uri assoluta.
+        // (Uri richiede uno schema per poter valorizzare correttamente Host/Port.)
+        if (!candidate.Contains("://", StringComparison.Ordinal))
+        {
+            candidate = $"http://{candidate}";
+        }
+
+        return Uri.TryCreate(candidate, UriKind.Absolute, out Uri? proxyUri) ? proxyUri : null;
+    }
+
+    private static string? ExtractProxyCandidate(string proxyServerValue, string protocolKey)
+    {
+        // Estrae la parte "protocol=value" (es. "http=proxy:3128").
+        foreach (string part in proxyServerValue.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int eq = part.IndexOf('=');
+            if (eq <= 0)
+            {
+                continue;
+            }
+
+            string key = part[..eq].Trim();
+            if (!key.Equals(protocolKey, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string value = part[(eq + 1)..].Trim();
+            return string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+
+        return null;
+    }
+
     /// <summary>
-          /// Restituisce un oggetto HttpClient con un handler per gestire il proxy, se impostato.
-          /// Se il proxy non è impostato restituisce un HttpClient senza handler per proxy
-          /// </summary>
-          /// <param name="setProxy">true se si vuole impostare un handler per il proxy; false se si vuole un HttpClient senza handler per il proxy</param>
-          /// <returns>un oggetto HttpProxy con handler per gestire il proxy</returns>
+    /// Crea un <see cref="HttpClient"/> configurato per usare il proxy (se presente).
+    /// </summary>
+    /// <param name="setProxy">
+    /// <see langword="true"/> per creare un client con handler proxy; <see langword="false"/> per creare un client senza proxy.
+    /// </param>
+    /// <returns>Un <see cref="HttpClient"/> pronto all'uso.</returns>
     public static HttpClient CreateHttpClient(bool setProxy)
     {
         if (setProxy)
@@ -1497,6 +1631,8 @@ public static class HttpProxyHelper
             Uri? proxy = GetHttpClientProxy();
             if (proxy != null)
             {
+                // Configura HttpClientHandler con un WebProxy esplicito.
+                // Nota: qui non usiamo DefaultCredentials per mantenere comportamento prevedibile.
                 HttpClientHandler httpHandler = new()
                 {
                     Proxy = new WebProxy(proxy, true),
@@ -1517,49 +1653,36 @@ public static class HttpProxyHelper
         }
     }
     /// <summary>
-            /// Restituisce i parametri del proxy attualmente in uso, altrimenti null
-            /// </summary>
-            /// <returns></returns>
+    /// Restituisce i parametri del proxy attualmente in uso.
+    /// </summary>
+    /// <returns>
+    /// I parametri del proxy; <see langword="null"/> se nessun proxy è in uso.
+    /// </returns>
     public static ProxyParams? GetHttpClientProxyParams()
     {
         Uri? proxy = GetHttpClientProxy();
-        if (proxy != null)
-        {
-            string proxyString = proxy.ToString();
-            //rimuovo eventuale slash finale
-            int lastSlash = proxyString.LastIndexOf('/');
-            //https://learn.microsoft.com/en-us/dotnet/csharp/tutorials/ranges-indexes
-            //https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/proposals/csharp-8.0/ranges
-            proxyString = (lastSlash > -1) ? proxyString[..lastSlash] : proxyString;
-            //rimuovo eventuale http:// oppure https:// iniziale
-            List<string> protocolSchemas = new() { "http://", "https://" };
-            protocolSchemas.ForEach(_ =>
-            {
-                if (proxyString.StartsWith(_))
-                {
-                    proxyString = proxyString[_.Length..];
-                }
-            });
-            //individuo la posizione del :
-            int positionOfColons = proxyString.LastIndexOf(":");
-            string proxyAddress = (positionOfColons != -1) ? proxyString[..positionOfColons] : proxyString;
-            //estraggo il numero di porta proxyPort
-            if (int.TryParse(proxyString[(positionOfColons + 1)..], out int proxyPort))
-            {
-                return new ProxyParams() { ProxyAddress = proxyAddress, ProxyPort = proxyPort };
-            }
-            else
-            {
-                //se non trovo il proxyPort c'è stato un errore nella ricerca del proxy
-                throw new ProxyHelperException("Could not retrieve proxy port");
-            }
-        }
-        else
+        if (proxy is null)
         {
             return null;
         }
+
+        // Manteniamo un controllo esplicito: ci aspettiamo una Uri assoluta (con schema) per poter usare Host/Port.
+        if (!proxy.IsAbsoluteUri)
+        {
+            throw new ProxyHelperException("Proxy URI must be absolute");
+        }
+
+        // Port: se non è valorizzata, non possiamo restituire parametri utili.
+        if (proxy.Port <= 0)
+        {
+            throw new ProxyHelperException("Could not retrieve proxy port");
+        }
+
+        // Usiamo i componenti della Uri invece di fare parsing manuale su stringhe.
+        return new ProxyParams { ProxyAddress = proxy.Host, ProxyPort = proxy.Port };
     }
 }
+
 
 ```
 
@@ -1751,7 +1874,7 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
 
 1) **Prerequisiti**
 
-   - La libreria deve essere un *Class Library* (non un exe). In pratica: progetto SDK style, con `<TargetFramework>...`.
+   - La libreria deve essere un *Class Library* (non un exe). In pratica: progetto SDK style, con `<TargetFramework>...` senza `<OutputType>Exe</OutputType>`.
    - Il progetto di esempio è HttpProxyControl.csproj.
 
 2) **Aggiungere i metadati NuGet nel `.csproj`**
@@ -1759,7 +1882,7 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
     Dentro il `<PropertyGroup>` di HttpProxyControl.csproj aggiungere (o completare) campi come questi:
 
       - `PackageId` (nome del pacchetto; su nuget.org deve essere UNICO globalmente)
-      - `Version` (es. `1.0.0`)
+      - `Version` (es. `0.0.1-alpha.1` per pre-release)
       - `Authors`, `Company` (opzionale), `Description`
       - `RepositoryUrl` (consigliato)
       - `PackageReadmeFile` (consigliato)
@@ -1776,7 +1899,7 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
     - esempio:
 
         ```xml
-            <Project Sdk="Microsoft.NET.Sdk">
+           <Project Sdk="Microsoft.NET.Sdk">
 
             <PropertyGroup>
                 <TargetFramework>net9.0</TargetFramework>
@@ -1786,7 +1909,7 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
                 <!-- NuGet packaging (local + publish-ready) -->
                 <IsPackable>true</IsPackable>
                 <PackageId>HttpProxyControl</PackageId>
-                <Version>1.0.0</Version>
+                <Version>0.0.1-alpha.1</Version>
                 <Authors>GreppiDev</Authors>
                 <Company>Info4IA</Company>
                 <Description>Helper per creare HttpClient con supporto proxy (esempi didattici di NetworkProgramming).</Description>
@@ -1809,10 +1932,11 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
 
         </Project>
 
+
         ```
 
 4) **Generare il pacchetto in locale**
-    Dalla cartella della solution (dove c’è NetworkProgramming.sln) eseguire:
+    Dalla cartella della solution (dove c’è `NetworkProgramming.sln`) eseguire:
     - `dotnet pack .\HttpProxyControl\HttpProxyControl.csproj -c Release -o .\LocalNuget -v minimal`
 
         Risultato: una `.nupkg` in `.\LocalNuget`.
@@ -1864,12 +1988,14 @@ Su [nuget.org](https://www.nuget.org/) il `PackageId` deve essere unico. Se, ad 
 
 1) **Creare account su nuget.org**
 
-   - Registrarsi su `https://www.nuget.org/`
+   - Registrarsi su [`https://www.nuget.org/`](https://www.nuget.org/) con un account Microsoft.
 
 2) **Creare una API Key**
 
    - NuGet.org → account → **API Keys** → `Create`
    - Dare i permessi di `Push` per il package id desiderato (es. `HttpProxyControl` oppure `GreppiDev.HttpProxyControl`).
+   - Definire un Glob Pattern (es. `HttpProxyControl*` per tutte le versioni del pacchetto).
+   - Copiare l’API Key generata (non sarà più visibile in futuro).
 
 3) **Push del pacchetto**
     Se si ha la `.nupkg` in `bin/Release`:
@@ -1880,6 +2006,11 @@ Su [nuget.org](https://www.nuget.org/) il `PackageId` deve essere unico. Se, ad 
     Ogni push su nuget.org richiede una versione nuova (non è possibile sovrascrivere `1.0.0` con un contenuto diverso). Usare SemVer:
     - `MAJOR.MINOR.PATCH` (es. `1.2.3`)
     - pre-release: `1.1.0-beta.1`
+5) **Aggiornare il pacchetto nei progetti consumer**
+    Nei progetti che usano il pacchetto, eseguire:
+    - `dotnet add package HttpProxyControl --version <nuova-versione>`
+6) Libreria di esempio pubblicata effettivamente su NuGet:
+   - [HttpProxyControl su NuGet.org](https://www.nuget.org/packages/HttpProxyControl/)  
 
 ### JSON (JavaScript Object Notation)
 
