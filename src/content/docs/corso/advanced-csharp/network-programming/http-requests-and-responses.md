@@ -151,33 +151,46 @@ class Program
         var swGlobal = new Stopwatch();
         swGlobal.Start();
         //processiamo in parallelo una lista di URL
-        // Materializziamo subito per evitare enumerazioni multiple accidentali.
+        // IMPORTANTE: materializziamo la query LINQ in un array concreto.
+        // ProcessURLAsync restituisce un Task<int> per ogni URL della lista.
+        // La materializzazione evita che la query venga rieseguita ad ogni enumerazione,
+        // prevenendo download duplicati.
         Task<int>[] downloadTasks = [.. urlList.Select(u => ProcessURLAsync(u, client))];
-        
+
         //*****************************************************************************
-        // //altro modo per processare in parallelo più attività è il seguente:
-        // // ATTENZIONE: List<T> non è thread-safe. Usiamo un array indicizzato.
+        // NOTA IMPORTANTE: Il codice commentato sotto è un ANTI-PATTERN!
+        // Parallel.For e Parallel.ForEach sono progettati per operazioni CPU-intensive SINCRONE,
+        // NON per operazioni I/O-bound asincrone come i download HTTP.
+        // Usarli con metodi async causa:
+        // 1. Spreco di thread del ThreadPool che rimangono bloccati ad aspettare
+        // 2. Nessun beneficio reale rispetto a Task.WhenAll
+        // 3. Maggiore complessità e overhead
+        // 
+        // Per operazioni async I/O-bound, il pattern corretto è:
+        // - Creare tutti i task con Select (come fatto sopra)
+        // - Attendere il completamento con Task.WhenAll
+        // Questo permette al runtime di gestire efficientemente le operazioni asincrone
+        // senza bloccare thread.
+        //*****************************************************************************
+        // CODICE COMMENTATO (ANTI-PATTERN - NON USARE):
+        //*****************************************************************************
         // var completedDownloads = new Task<int>[urlList.Count];
         // Parallel.For(0, urlList.Count, index =>
         // {
         //     completedDownloads[index] = ProcessURLAsync(urlList[index], client);
         // });
-        // // You can do other work here before awaiting.
         // int[] lengthsParallel = await Task.WhenAll(completedDownloads);
         // int totalParallel = lengthsParallel.Sum();
         // Console.WriteLine($"{Environment.NewLine}Total bytes returned (Parallel.For): {totalParallel}{Environment.NewLine}");
-        // //altro modo per processare in parallelo più attività è il seguente:
-        // // ATTENZIONE: List<T>.Add non è thread-safe. Usiamo l'overload con indice + array.
+        // 
         // var completedDownloads2 = new Task<int>[urlList.Count];
         // Parallel.ForEach(urlList, (url, _, index) =>
         // {
         //     completedDownloads2[(int)index] = ProcessURLAsync(url, client);
         // });
-        // // You can do other work here before awaiting.
         // int[] lengthsParallelForEach = await Task.WhenAll(completedDownloads2);
         // int totalParallelForEach = lengthsParallelForEach.Sum();
         // Console.WriteLine($"{Environment.NewLine}Total bytes returned (Parallel.ForEach): {totalParallelForEach}{Environment.NewLine}");
-        // Await the completion of all the running tasks.
         //*****************************************************************************
 
         int[] lengths = await Task.WhenAll(downloadTasks);
@@ -1135,14 +1148,18 @@ namespace CustomExtensions;
 
 public static class StringExtension
 {
-    // This is the extension method.
-    // The first parameter takes the "this" modifier
-    // and specifies the type for which the method is defined.
-    public static int WordCount(this String str)
+   /// <summary>
+   /// Conta il numero di parole nella stringa str
+   /// </summary>
+   /// <param name="str">La stringa di cui si vuole conoscere il numero di parole</param>
+   /// <returns>Il numero di parole contenute nella stringa str</returns>
+    public static int WordCount(this string str)
     {
-        return str.Split([' ', '.', '?'], StringSplitOptions.RemoveEmptyEntries).Length;
+        return str.Split([' ', '.', '?','!',';',',',':'], StringSplitOptions.RemoveEmptyEntries).Length;
     }
+
 }
+
 //file: Program.cs
 using CustomExtensions;
 namespace ExtensionMethodsDemo
@@ -1180,65 +1197,115 @@ In Visual Studio Code:
 Creiamo un progetto di tipo `Class Library` chiamato `TaskParallelismControl` e al suo interno creiamo la classe `TaskConcurrencyHelper`.
 
 ```csharp
+namespace TaskParallelismControl;
+
 using System.Collections.Concurrent;
-namespace TaskParallelismControl
+
+/// <summary>
+/// Provides extension methods for executing asynchronous operations in parallel with controlled degree of parallelism.
+/// Useful for throttling concurrent operations to avoid resource saturation (network, CPU, memory).
+/// </summary>
+/// <remarks>
+/// Based on the pattern described at:
+/// https://medium.com/@nirinchev/executing-a-collection-of-tasks-in-parallel-with-control-over-the-degree-of-parallelism-in-c-508d59ddffc6
+/// </remarks>
+public static class TaskConcurrencyHelper
 {
-    //Questa classe implementa metodi di estensione:
-    //https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/how-to-implement-and-call-a-custom-extension-method
-    //https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/extension-methods
-    public static class TaskConcurrencyHelper
-    {
-        //esempio preso da
-        //https://medium.com/@nirinchev/executing-a-collection-of-tasks-in-parallel-with-control-over-the-degree-of-parallelism-in-c-508d59ddffc6
-        //con alcuni adattamenti
-        /// <summary>
-        /// Permette di eseguire in parallelo un metodo che restituisce un Task su una collection, specificando il numero massimo di task da impiegare
-        /// </summary>
-        /// <typeparam name="T">Tipo degli elementi della collection</typeparam>
-        /// <param name="collection">Collection da processare</param>
-        /// <param name="processor">metodo da eseguire su ciascun elemento della collection</param>
-        /// <param name="degreeOfParallelism">Grado di parallelismo</param>
-        /// <returns>Restituisce un task che termina quando tutti i task che processano la collection hanno terminato</returns>
-        public static async Task ExecuteInParallel<T>(this IEnumerable<T> collection,
-                                           Func<T, Task> processor,
-                                           int degreeOfParallelism)
-        {
-            //creo una coda Thrade-safe a partire dalla collection
-            var queue = new ConcurrentQueue<T>(collection);
-            //creo tanti task (esecutori) quanto è il grado di parallelismo richiesto
-            var tasks = Enumerable.Range(0, degreeOfParallelism).Select(async _ =>
-            {
-                //ogni task cerca di svuotare la coda, prelevando un elemento e processandolo
-                while (queue.TryDequeue(out T? item))
-                {
-                    await processor(item);
-                }
-            });
-            //attendo che tutti i task finiscano
-            await Task.WhenAll(tasks);
-        }
-        public static async Task<ConcurrentBag<Tresult>> ExecuteInParallel<T, Tresult>(this IEnumerable<T> collection,
-                                           Func<T, Task<Tresult>> processor,
-                                           int degreeOfParallelism)
-        {
-            //creo una coda Thrade-safe a partire dalla collection
-            var queue = new ConcurrentQueue<T>(collection);
-            //creo una collection Thrade-safe dove inserire i risultati dell'elaborazione dei Task
-            var results = new ConcurrentBag<Tresult>();
-            var tasks = Enumerable.Range(0, degreeOfParallelism).Select(async _ =>
-            {
-                //ogni task cerca di svuotare la coda, prelevando un elemento e processandolo
-                while (queue.TryDequeue(out T? item))
-                {
-                    results.Add(await processor(item));
-                }
-            });
-            //attendo che tutti i task finiscano
-            await Task.WhenAll(tasks);
-            return results;
-        }
-    }
+    /// <summary>
+    /// Executes an asynchronous operation on each element of a collection in parallel,
+    /// with a controlled maximum degree of parallelism.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the collection.</typeparam>
+    /// <param name="collection">The collection to process.</param>
+    /// <param name="processor">The asynchronous operation to execute on each element.</param>
+    /// <param name="degreeOfParallelism">The maximum number of concurrent tasks to use.</param>
+    /// <returns>A task that completes when all elements have been processed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="collection"/> or <paramref name="processor"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="degreeOfParallelism"/> is less than 1.</exception>
+    /// <example>
+    /// <code>
+    /// var urls = new[] { "https://example.com", "https://example.org" };
+    /// await urls.ExecuteInParallel(
+    ///     async url => await DownloadAsync(url),
+    ///     degreeOfParallelism: 5);
+    /// </code>
+    /// </example>
+    public static async Task ExecuteInParallel<T>(
+        this IEnumerable<T> collection,
+        Func<T, Task> processor,
+        int degreeOfParallelism)
+    {
+        // Create a thread-safe queue from the input collection
+        var queue = new ConcurrentQueue<T>(collection);
+
+        // Create worker tasks equal to the degree of parallelism
+        // Each worker will compete to dequeue and process items
+        var tasks = Enumerable.Range(0, degreeOfParallelism).Select(async _ =>
+                {
+                    // Each worker continuously dequeues and processes items until the queue is empty
+                    while (queue.TryDequeue(out T? item))
+                    {
+                        await processor(item);
+                    }
+                });
+
+        // Wait for all worker tasks to complete
+        await Task.WhenAll(tasks);
+    }
+
+    /// <summary>
+    /// Executes an asynchronous operation on each element of a collection in parallel,
+    /// with a controlled maximum degree of parallelism, and collects the results.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the collection.</typeparam>
+    /// <typeparam name="TResult">The type of result produced by processing each element.</typeparam>
+    /// <param name="collection">The collection to process.</param>
+    /// <param name="processor">The asynchronous operation to execute on each element that returns a result.</param>
+    /// <param name="degreeOfParallelism">The maximum number of concurrent tasks to use.</param>
+    /// <returns>
+    /// A task that completes when all elements have been processed,
+    /// containing a <see cref="ConcurrentBag{T}"/> with all the results.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="collection"/> or <paramref name="processor"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="degreeOfParallelism"/> is less than 1.</exception>
+    /// <example>
+    /// <code>
+    /// var urls = new[] { "https://example.com", "https://example.org" };
+    /// var results = await urls.ExecuteInParallel(
+    ///     async url => await client.GetByteArrayAsync(url),
+    ///     degreeOfParallelism: 5);
+    /// Console.WriteLine($"Total bytes: {results.Sum(r => r.Length)}");
+    /// </code>
+    /// </example>
+    public static async Task<ConcurrentBag<TResult>> ExecuteInParallel<T, TResult>(
+        this IEnumerable<T> collection,
+        Func<T, Task<TResult>> processor,
+        int degreeOfParallelism)
+    {
+        // Create a thread-safe queue from the input collection
+        var queue = new ConcurrentQueue<T>(collection);
+
+        // Create a thread-safe bag to collect results from all workers
+        var results = new ConcurrentBag<TResult>();
+
+        // Create worker tasks equal to the degree of parallelism
+        // Each worker will compete to dequeue and process items
+        var tasks = Enumerable.Range(0, degreeOfParallelism).Select(async _ =>
+        {
+            // Each worker continuously dequeues, processes items, and adds results until the queue is empty
+            while (queue.TryDequeue(out T? item))
+            {
+                results.Add(await processor(item));
+            }
+        });
+
+        // Wait for all worker tasks to complete
+        await Task.WhenAll(tasks);
+        return results;
+    }
 }
+
+
 ```
 
 Compiliamo la libreria con il comando:
@@ -1279,7 +1346,7 @@ namespace HttpClientDemo3;
 
 class Program
 {
-    
+
     /// <summary>
     /// Scarica un file dalla rete e restituisce la lunghezza in byte
     /// </summary>
@@ -1338,14 +1405,20 @@ class Program
     {
         // Make a list of web addresses.
         List<string> urlList = SetUpURLList();
-        HttpClient client = new ();
+        HttpClient client = new();
         //misuriamo il tempo complessivo per scaricare tutte le pagine
         var swGlobal = new Stopwatch();
         swGlobal.Start();
         //processiamo in parallelo una lista di URL
-        IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, client));
+        // IMPORTANTE: materializziamo la query LINQ in un array concreto.
+        // Senza materializzazione (usando IEnumerable<Task<int>>), la query lazy verrebbe
+        // rieseguita ogni volta che la enumeriamo (sia con Task.WhenAll che con Sum),
+        // causando il download duplicato di tutti i file!
+        //Task<int>[] downloadTasks = urlList.Select(u => ProcessURLAsync(u, client)).ToArray();
+        Task<int>[] downloadTasks = [.. urlList.Select(u => ProcessURLAsync(u, client))];
+
         //attendiamo il completamento di tutti i download
-        
+
         await Task.WhenAll(downloadTasks);
         //sommiamo i risultati
         int total = downloadTasks.Sum(t => t.Result);
@@ -1356,7 +1429,7 @@ class Program
         //ora facciamo la stessa cosa ma limitando il grado di parallelismo
         Console.WriteLine($"{Environment.NewLine}Esecuzione con grado di parallelismo limitato:");
         swGlobal.Restart();
-        
+
         //ConcurrentBag<int> bag = [];
         //await urlList.ExecuteInParallel(async u => { bag.Add(await ProcessURLAsync(u, client)); }, 10);
         //var theTotal = bag.ToArray().Sum();
@@ -1760,13 +1833,18 @@ class Program
     {
         // Make a list of web addresses.
         List<string> urlList = SetUpURLList();
-        //setup del client con eventuale Proxy
         HttpClient client = HttpProxyHelper.CreateHttpClient(setProxy: true);
         //misuriamo il tempo complessivo per scaricare tutte le pagine
         var swGlobal = new Stopwatch();
         swGlobal.Start();
         //processiamo in parallelo una lista di URL
-        IEnumerable<Task<int>> downloadTasks = urlList.Select(u => ProcessURLAsync(u, client));
+        // IMPORTANTE: materializziamo la query LINQ in un array concreto.
+        // Senza materializzazione (usando IEnumerable<Task<int>>), la query lazy verrebbe
+        // rieseguita ogni volta che la enumeriamo (sia con Task.WhenAll che con Sum),
+        // causando il download duplicato di tutti i file!
+        //Task<int>[] downloadTasks = urlList.Select(u => ProcessURLAsync(u, client)).ToArray();
+        Task<int>[] downloadTasks = [.. urlList.Select(u => ProcessURLAsync(u, client))];
+
         //attendiamo il completamento di tutti i download
 
         await Task.WhenAll(downloadTasks);
@@ -2009,8 +2087,9 @@ Su [nuget.org](https://www.nuget.org/) il `PackageId` deve essere unico. Se, ad 
 5) **Aggiornare il pacchetto nei progetti consumer**
     Nei progetti che usano il pacchetto, eseguire:
     - `dotnet add package HttpProxyControl --version <nuova-versione>`
-6) Libreria di esempio pubblicata effettivamente su NuGet:
-   - [HttpProxyControl su NuGet.org](https://www.nuget.org/packages/HttpProxyControl/)  
+6) Librerie di esempio pubblicate effettivamente su NuGet:
+   - [HttpProxyControl su NuGet.org](https://www.nuget.org/packages/HttpProxyControl/)
+   - [TaskParallelismControl su NuGet.org](https://www.nuget.org/packages/TaskParallelismControl/)
 
 ### JSON (JavaScript Object Notation)
 
