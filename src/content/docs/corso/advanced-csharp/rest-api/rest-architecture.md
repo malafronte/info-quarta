@@ -143,7 +143,7 @@ http://api.example.com/user-management/users/{id}/accounts
 Uno store è un repository gestito dal client: consente di inserire, recuperare e cancellare risorse. Le URI sono scelte dal client al momento dell’inserimento. Usare nomi al plurale:
 
 ```text
-`http://api.example.com/song-management/users/{id}/playlists`
+http://api.example.com/song-management/users/{id}/playlists
 ```
 
 #### Controller
@@ -179,7 +179,7 @@ http://api.example.com/device-management/managed-devices/{id}/scripts
 ```
 
 ```text
-`http://api.example.com/device-management/managed-devices/{id}/scripts/{id}`
+http://api.example.com/device-management/managed-devices/{id}/scripts/{id}
 ```
 
 ##### Evitare lo slash finale (/)
@@ -248,8 +248,8 @@ http://api.example.com/device-management/managed-devices.xml
 ```
 
 ```text
-`http://api.example.com/device-management/managed-devices 
-/*This is correct URI*/`
+http://api.example.com/device-management/managed-devices 
+/*This is correct URI*/
 ```
 
 ##### Non usare funzioni CRUD nelle URI
@@ -372,7 +372,7 @@ Esempio:
 ```text
 HTTP GET /users/1
 
-{id: 1, username: 'admin', email: 'email@example.org'}
+{"id": 1, "username": "admin", "email": "email@example.org"}
 
 HTTP PATCH /users/1
 

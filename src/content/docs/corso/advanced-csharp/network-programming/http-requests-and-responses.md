@@ -2597,6 +2597,161 @@ namespace HttpClientExtensionMethods
 
 ```
 
+##### Diversi modi per ottenere oggetti JSON da un endpoint HTTP
+
+L'esempio precedente mostra come sia semplice ottenere oggetti JSON da un endpoint HTTP utilizzando i metodi di estensione di `HttpClient`. Tuttavia, esistono diversi modi per ottenere oggetti JSON da un endpoint HTTP, a seconda delle esigenze specifiche dell'applicazione. Ecco alcuni approcci comuni:
+
+1. **Utilizzo di `GetFromJsonAsync<T>`**: Questo metodo di estensione consente di effettuare una richiesta GET e deserializzare automaticamente la risposta JSON in un oggetto del tipo specificato `T`. È il modo più semplice e diretto per ottenere oggetti JSON da un endpoint HTTP. Questo è il metodo utilizzato nell'esempio precedente.
+
+2. **Utilizzo di `GetStringAsync` seguito da `JsonSerializer.Deserialize<T>`**: In questo caso, si effettua una richiesta GET utilizzando il metodo `GetStringAsync` per ottenere la risposta JSON come stringa. Successivamente, si utilizza il metodo `JsonSerializer.Deserialize<T>` per deserializzare la stringa JSON in un oggetto del tipo specificato `T`. Questo approccio è utile quando si desidera avere un controllo completo sulla deserializzazione o quando si lavora con JSON non standard.
+
+3. **Utilizzo di `GetAsync` seguito da `ReadFromJsonAsync<T>`**: In questo approccio, si effettua una richiesta GET utilizzando il metodo `GetAsync`, quindi si legge il contenuto della risposta come JSON e lo si deserializza in un oggetto del tipo specificato `T` utilizzando il metodo `ReadFromJsonAsync<T>`. Questo approccio offre maggiore flessibilità, consentendo di gestire manualmente la risposta HTTP prima della deserializzazione.
+
+```csharp
+using System.Net.Http.Json;
+using System.Text.Json;
+namespace HttpClientExtensionMethods;
+
+//serve un modello dei dati in c#
+public class User
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public string? Username { get; set; }
+    public string? Email { get; set; }
+}
+public class Program
+{
+    // Cached JsonSerializerOptions instance - reuse for all serialization/deserialization operations
+    // This is a best practice to avoid performance overhead of creating new instances
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        WriteIndented = true
+    };
+
+    public static async Task Main()
+    {
+
+        HttpClient client = new()
+        {
+            BaseAddress = new Uri("https://jsonplaceholder.typicode.com")
+        };
+        // Get the user information.
+        //usiamo un metodo di estensione
+        //GET https://jsonplaceholder.typicode.com/users/1
+        User? user = await client.GetFromJsonAsync<User>("users/1");
+        Console.WriteLine($"Id: {user?.Id}");
+        Console.WriteLine($"Name: {user?.Name}");
+        Console.WriteLine($"Username: {user?.Username}");
+        Console.WriteLine($"Email: {user?.Email}");
+
+
+        Console.WriteLine("Metodo alternativo - uso GetStringAsync");
+        //metodo alternativo per fare la GET - otteniamo prima la stringa e poi la convertiamo in un oggetto C#
+        var jsonResponse = await client.GetStringAsync("users/1");
+        if (jsonResponse is not null)
+        {
+            //Console.WriteLine($"La stringa è \n{jsonResponse}");
+            //de-serializziamo la stringa
+            //qui non abbiamo bisogno del metodo asincrono perché lavoro direttamente in memoria
+
+            //IMPORTANTE: usiamo le opzioni per gestire correttamente la deserializzazione
+            User? theUser = JsonSerializer.Deserialize<User>(jsonResponse, _jsonOptions);
+            if (theUser != null)
+            {
+                Console.WriteLine($"Id: {theUser.Id}");
+                Console.WriteLine($"Name: {theUser.Name}");
+                Console.WriteLine($"Username: {theUser.Username}");
+                Console.WriteLine($"Email: {theUser.Email}");
+            }
+            else
+            {
+                Console.WriteLine("Errore: deserializzazione fallita!");
+            }
+        }
+
+        try
+        {
+            Console.WriteLine("Metodo alternativo - uso GetAsync");
+            HttpResponseMessage risposta = await client.GetAsync("users/1");
+            risposta.EnsureSuccessStatusCode();
+            //leggiamo la risposta sotto forma di stringa
+            //IMPORTANTE: la riposta ottenuta precedentemente ha già letto anche il contenuto perché se non si specifica nessuna opzione
+            //viene utilizzata di default HttpCompletionOption.ResponseContentRead 
+            //HttpResponseMessage risposta = await client.GetAsync("users/1"); equivale a
+            //HttpResponseMessage risposta = await client.GetAsync("users/1", HttpCompletionOption.ResponseContentRead);
+            //tuttavia per leggere il contenuto dobbiamo usare il metodo ReadAsStringAsync sul Content della risposta
+            //perché .NET non ha un metodo sincrono che legge direttamente il contenuto come stringa
+            var jsonRes = await risposta.Content.ReadAsStringAsync();
+            //convertiamo la stringa in CSharp
+            //IMPORTANTE: usiamo le opzioni per gestire correttamente la deserializzazione
+            User? theUser = JsonSerializer.Deserialize<User>(jsonRes, _jsonOptions);
+            if (theUser != null)
+            {
+                Console.WriteLine($"Id: {theUser.Id}");
+                Console.WriteLine($"Name: {theUser.Name}");
+                Console.WriteLine($"Username: {theUser.Username}");
+                Console.WriteLine($"Email: {theUser.Email}");
+            }
+            else
+            {
+                Console.WriteLine("Errore: deserializzazione fallita!");
+            }
+
+        }
+        catch (HttpRequestException ex)
+        {
+
+            Console.WriteLine(ex.Message);
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"Errore JSON: {ex.Message}");
+        }
+
+        // Post a new user.
+        //l'endpoint del server su cui fare la POST è:
+        //https://jsonplaceholder.typicode.com/users
+        HttpResponseMessage response = await client.PostAsJsonAsync("users", user);
+        Console.WriteLine(
+        $"{(response.IsSuccessStatusCode ? "Success" : "Error")} - {response.StatusCode}");
+
+        //versione alternativa della post
+        //converto l'oggetto C sharp in stringa e poi lo invio con una post
+        if (user is not null)
+        {
+            string jsonData = JsonSerializer.Serialize(user, _jsonOptions);
+
+            // Use StringContent with proper disposal and Content-Type header
+            using var content = new StringContent(
+                jsonData,
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            try
+            {
+                // Use relative path (consistent with BaseAddress usage elsewhere)
+                HttpResponseMessage responseToPost = await client.PostAsync("users", content);
+
+                // Ensure success and handle the response
+                responseToPost.EnsureSuccessStatusCode();
+                Console.WriteLine(
+                    $"{(responseToPost.IsSuccessStatusCode ? "Success" : "Error")} - {responseToPost.StatusCode}");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP Error: {ex.Message}");
+            }
+        }
+    }
+}
+```
+
+##### Scrittura del data model per la serializzazione e deserializzazione JSON
+
+Per serializzare e deserializzare oggetti JSON, è necessario definire un data model in C# che rappresenti la struttura dei dati JSON. Le classi del data model devono avere proprietà che corrispondano alle chiavi del JSON. È possibile utilizzare attributi come `[JsonPropertyName]` per mappare le proprietà C# a chiavi JSON con nomi diversi. La scrittura del data model è un passaggio fondamentale per garantire che la serializzazione e deserializzazione funzionino correttamente, consentendo di convertire tra oggetti C# e JSON in modo efficiente, tuttavia, in diversi casi il numero di classi e proprietà da scrivere può essere elevato, soprattutto se la struttura del JSON è complessa. In tali situazioni, è possibile utilizzare strumenti online come [json2csharp](https://json2csharp.com/) per generare automaticamente le classi C# a partire da un esempio di JSON, oppure utilizzare funzionalità offerte da plugin di terze parti di Visual Studio Code, come [Paste JSON as Code (Refresh)](https://marketplace.visualstudio.com/items?itemName=doggy8088.quicktype-refresh) (Extension ID = *doggy8088.quicktype-refresh*).
+
 ##### Metodi di estensione per inviare e ricevere contenuto HTTP sotto forma di oggetti JSON
 
 [HttpClient Json Extension Methods](https://docs.microsoft.com/en-us/dotnet/api/system.net.http.json.httpclientjsonextensions)
