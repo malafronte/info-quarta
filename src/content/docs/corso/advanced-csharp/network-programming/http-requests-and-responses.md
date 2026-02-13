@@ -1967,7 +1967,12 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
       - `PackageLicenseExpression` (es. `MIT`) **oppure** `PackageLicenseFile` (se hai un file)
       - facoltativi ma utili: `GeneratePackageOnBuild`, `IncludeSymbols`, `SymbolPackageFormat`
 
-3) **(Consigliato) Aggiungere un README del pacchetto**
+3) **(Consigliato) Aggiungere un README del pacchetto** e configurare la licenza con la quale si distribuisce il pacchetto (es. `MIT`, `Apache-2.0`, ecc.). Il README è importante perché viene mostrato su nuget.org e aiuta gli utenti a capire cosa fa il pacchetto e come usarlo. La licenza è importante per chiarire i termini di utilizzo del pacchetto. In mancanza di una licenza esplicita, il pacchetto è di fatto "tutti i diritti riservati" e non può essere usato legalmente da altri. La licenza pu essere specificata in due modi:
+
+   - `PackageLicenseExpression`: se la licenza è una delle espressioni standard (es. `MIT`, `Apache-2.0`, `GPL-3.0-only`, ecc.)
+     - Ad esempio: `<PackageLicenseExpression>MIT</PackageLicenseExpression>`
+   - `PackageLicenseFile`: se si vuole includere un file di testo con il testo completo della licenza (es. `LICENSE.txt`).
+     - Ad esempio: `<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>` e poi aggiungere anche `<None Include="LICENSE.txt" Pack="true" PackagePath="" />` per includere il file nel pacchetto.
 
     Creare un file `README.md` nella cartella del progetto (es. `HttpProxyControl/README.md`) e poi in csproj:
     - `<PackageReadmeFile>README.md</PackageReadmeFile>`
@@ -1987,13 +1992,14 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
                 <!-- NuGet packaging (local + publish-ready) -->
                 <IsPackable>true</IsPackable>
                 <PackageId>HttpProxyControl</PackageId>
-                <Version>0.0.1-alpha.1</Version>
+                <Version>0.1.0-beta.1</Version>
                 <Authors>GreppiDev</Authors>
                 <Company>Info4IA</Company>
                 <Description>Helper per creare HttpClient con supporto proxy (esempi didattici di NetworkProgramming).</Description>
                 <PackageTags>http;httpclient;proxy;networking;didattica</PackageTags>
                 <RepositoryUrl>https://github.com/GreppiDev/Info4IA2526NetworkProgramming</RepositoryUrl>
                 <RepositoryType>git</RepositoryType>
+                <PackageLicenseExpression>MIT</PackageLicenseExpression>
 
                 <!-- Docs + symbols -->
                 <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -2008,8 +2014,7 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
                 <None Include="README.md" Pack="true" PackagePath="" />
             </ItemGroup>
 
-        </Project>
-
+            </Project>
 
         ```
 
@@ -2039,7 +2044,7 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
         </configuration>
     ```
 
-    Poi, nel progetto consumer (es. `HttpClientDemo6`):
+    Poi, nel progetto consumer (es. `HttpClientDemo6`), supponendo di essere alla versione `1.0.0` del pacchetto, eseguire:
     - `dotnet add package HttpProxyControl --version 1.0.0`
 
     Oppure:
@@ -2056,7 +2061,106 @@ Su noti che in VS Code non è possibile aggiungere i riferimenti alle DLL precom
     - incrementare `Version` (es. `1.0.1`)
     - rifare `dotnet pack ...`
 
-    ---
+##### Come scegliere i numeri di versione (SemVer)
+
+Il [**Semantic Versioning 2.0.0**](https://semver.org/) (o **SemVer**) è lo standard più diffuso per etichettare le release software. Funziona come una "promessa contrattuale" su cosa cambia tra una versione e l'altra.
+
+###### La struttura base: `MAJOR.MINOR.PATCH`
+
+```text
+0.0.1
+│ │ │
+│ │ └── PATCH: correzioni di bug retrocompatibili
+│ └──── MINOR: nuove funzionalità retrocompatibili
+└────── MAJOR: cambiamenti breaking (non retrocompatibili)
+```
+
+- **0.y.z**: Software in fase iniziale (sviluppo). L'API o il software in generale può cambiare in qualsiasi momento.
+- **1.0.0**: Prima release pubblica stabile.
+
+###### I tag di pre-release: `-alpha`, `-beta`, `-rc`
+
+Quando si aggiunge un trattino dopo i tre numeri, si indicano versioni **instabili** o in test:
+
+| Suffisso | Significato | Stabilità |
+| ---------- | ------------- | ----------- |
+| **alpha** | Fase sperimentale interna, features incomplete | Molto instabile |
+| **beta** | Feature complete, ma possono esserci bug noti | Testabile, non per produzione |
+| **rc** (release candidate) | Potenzialmente definitiva, solo bugfix minori | Quasi stabile |
+
+###### Il numero dopo il punto: `.1`, `.2`, `.3`
+
+Quando si scrive `0.1.0-alpha.1`, il `.1` è un **iterazione** di quel tag specifico:
+
+- `0.1.0-alpha.1` → prima alpha
+- `0.1.0-alpha.2` → seconda alpha (bugfix o piccoli aggiustamenti)
+- `0.1.0-beta.1` → prima beta (più stabile dell'ultima alpha)
+- `0.1.0-rc.1` → prima release candidate
+- `0.1.0` → versione finale stabile
+
+###### Esempio pratico di ciclo vitale
+
+```text
+0.1.0-alpha.1   → prima bozza, login non funziona
+0.1.0-alpha.2   → login aggiustato, ma va in crash su mobile
+0.1.0-beta.1    → tutte le feature ci sono, testing pubblico
+0.1.0-beta.2    → corretto il bug che causava il crash su mobile
+0.1.0-rc.1      → controlli finali prima del rilascio
+0.1.0           → RELEASE STABILE ufficiale
+0.1.1           → hotfix per un bug critico troppo tardi
+0.2.0           → nuova feature (retrocompatibile)
+1.0.0           → cambiamento breaking: API vecchia non funziona più
+```
+
+###### Metadata aggiuntivo: `+build`
+
+Esiste anche un simbolo `+` per metadati non semantici (non influenzano la precedenza):
+
+```text
+1.0.0+exp.sha.5114f85   → build specifica dal commit git
+1.0.0+20231005          → data di build
+```
+
+###### Ordine di precedenza
+
+I gestori di pacchetti (npm, pip, cargo, etc.) ordinano così:
+
+```text
+0.0.1-alpha.1 < 0.0.1-alpha.2 < 0.0.1-beta.1 < 0.0.1-beta.2 < 0.0.1-rc.1 < 0.0.1
+```
+
+###### Varianti comuni
+
+Alcuni progetti usano convenzioni specifiche:
+
+- **Chrome/Firefox**: numeri molto alti (Chrome 120+) senza semanticità stretta
+- **Ubuntu**: `YY.MM` (es. 22.04 = rilascio aprile 2022)
+- **CalVer**: versioni basate sul tempo (es. `2023.10.1`)
+
+Il SemVer è utile perché un utente (o uno script) può capire immediatamente se aggiornare è sicuro o rischioso.
+
+###### Come scegliere il numero iniziale?
+
+- Se il software è in fase di sviluppo attivo e l'API è instabile, si può iniziare con `0.1.0` o `0.1.0-alpha.1`.
+- Se si ritiene che l'API sia abbastanza stabile e pronta per l'uso pubblico, si può iniziare direttamente con `1.0.0`.
+- In generale, è comune iniziare con `0.1.0` o `0.1.0-alpha.1` per indicare che il software è in fase di sviluppo e potrebbe subire cambiamenti significativi.
+- non si inizia con `0.0.1` perché 0.0.1 semanticamente implicherebbe "prima patch di bug sulla versione 0.0.0", che è un concetto contraddittorio (non si può effettuare la patch su qualcosa che non esiste ancora)
+Nella pratica reale:
+- 0.0.x viene usato quasi solo per hotfix emergency su progetti già esistenti, o per esperimenti "pre-feature"
+- 0.1.0-alpha.1 è lo standard per dire: "Sto lavorando verso la prima release pubblica con API iniziale"
+
+Quindi il flusso corretto è:
+
+```text
+0.1.0-alpha.1  → prima bozza
+0.1.0-alpha.2  → aggiustamenti
+0.1.0-beta.1   → feature complete, testing
+0.1.0-rc.1     → candidata finale
+0.1.0          → prima stabile
+0.1.1          → hotfix
+0.2.0          → nuove feature
+1.0.0          → cambiamento breaking
+```
 
 ###### Pubblicare su NuGet.org (nuget.org) – indicazioni operative
 

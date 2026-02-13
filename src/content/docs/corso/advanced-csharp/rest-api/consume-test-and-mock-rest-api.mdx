@@ -12,7 +12,7 @@ import Accordion from "@components/Accordion.astro";
   img {display: block; margin: 0 auto;}
 `}</style>
 
-![Overview Image](./consume-test-and-mock-rest-api/api_integration_workbench_gem.png)
+![Overview Image](./consume-test-and-mock-rest-api/api_integration_workbench_extended_gem.png)
 
 ## Postman
 
@@ -390,250 +390,114 @@ In Linux bash:
 - Modifica del metodo HTTP: [https://everything.curl.dev/http/modify/method](https://everything.curl.dev/http/modify/method)
 - Esempio (IP pubblico): [https://linuxconfig.org/how-to-use-curl-to-get-public-ip-address](https://linuxconfig.org/how-to-use-curl-to-get-public-ip-address)
 
-## Realizzazione di un Mock Server
+## Utilizzo di un Mock Server per il testing di applicazioni client
 
-Approfondimento: [https://it.wikipedia.org/wiki/Mock_object](https://it.wikipedia.org/wiki/Mock_object)
+Durante lo sviluppo di applicazioni client che consumano API REST, si presenta spesso la necessità di testare il codice in assenza di un backend reale funzionante. Un **mock server** consente di simulare le risposte di un'API, permettendo lo sviluppo parallelo del frontend senza dipendere dalla disponibilità del backend.
 
-Nel contesto della programmazione orientata agli oggetti, un **mock object** (oggetto simulato) riproduce in modo controllato il comportamento di un oggetto reale. Il mock consente di testare componenti che dipendono da risorse non disponibili, inaccessibili oppure non ancora implementate; in tali casi l'oggetto reale viene sostituito dal mock.
+### Avvio Rapido del Mock Server con json-server
 
-## Creazione di Mock Server REST con `json-server` e `faker.js`
+Per facilitare l'apprendimento e il testing delle applicazioni client, viene fornita una cartella preconfigurata contenente tutti i file necessari per avviare un mock server REST. La cartella distribuita contiene:
 
-### Introduzione e Contesto Operativo
+- **`package.json`**: File di configurazione del progetto Node.js con gli script predefiniti
+- **`db.json`**: Database JSON contenente i dati mock da esporre tramite API
+- **`generate-data.js`**: Script per rigenerare il database con nuovi dati casuali
 
-Nell'ambito dello sviluppo software moderno, la separazione tra lo sviluppo del backend e del frontend rende necessaria l'adozione di strategie di mocking per permettere ai team di lavorare in parallelo senza dipendenze bloccanti. Il tool [`json-server`](https://github.com/typicode/json-server) rappresenta una soluzione elegante e immediata per la prototipazione rapida di API RESTful, permettendo di simulare un server backend completo a partire da un semplice file JSON. Il software [`Faker.js`](https://github.com/faker-js/faker) consente invece di generare dati realistici e variabili, arricchendo l'esperienza di testing e sviluppo con dataset che riflettono scenari reali.
-Questa guida illustra il processo di installazione, configurazione e popolamento dati di un mock server, con particolare attenzione alla generazione di dataset realistici mediante la libreria Faker.js. Verrà inoltre presentato un esempio completo di client C# per l'interazione con le risorse esposte.
+È importante notare che per iniziare a sviluppare applicazioni client **non è necessario comprendere immediatamente i dettagli implementativi del server**. La configurazione avanzata e la generazione personalizzata dei dati verranno affrontate nelle sezioni successive. In questa fase introduttiva, l'obiettivo è acquisire familiarità con l'installazione e l'utilizzo base del mock server.
 
-### Prerequisiti
+### Procedura di Installazione e Configurazione
 
-Prima di iniziare, è necessario assicurarsi che l'ambiente di sviluppo soddisfi i seguenti requisiti:
+La procedura seguente guida l'utente attraverso i passaggi necessari per rendere operativo il mock server sul proprio ambiente di sviluppo locale.
 
-- [Node.js](https://nodejs.org/en): È richiesto il runtime Node.js (versione raccomandata LTS) per eseguire il server e gli script di generazione dati.
-- npm (Node Package Manager): Viene installato automaticamente insieme a Node.js.
-- Un editor di codice (si consiglia Visual Studio Code).
+#### Verifica dei Prerequisiti
 
-### Configurazione del Progetto
+Prima di procedere, è necessario verificare che il sistema disponga di:
 
-Per mantenere ordine nel lavoro, si consiglia di creare una cartella dedicata al progetto di mock server.
+- **Node.js** installato (versione LTS raccomandata)
+- **npm** (Node Package Manager, installato automaticamente con Node.js)
 
-1. Creare una nuova cartella denominata `mock-server-tutorial`.
-2. Aprire il terminale e posizionarsi all'interno della cartella.
-3. Inizializzare un nuovo progetto `Node.js` per gestire le dipendenze:
+Per verificare l'installazione, è possibile eseguire in un terminale:
 
 ```bash
-mkdir mock-server-tutorial
-cd mock-server-tutorial
-npm init -y
+node --version
+npm --version
 ```
 
-Questo comando genererà un file `package.json` di base.
+Entrambi i comandi dovrebbero restituire un numero di versione. In caso contrario, sarà necessario installare Node.js dal sito ufficiale: [https://nodejs.org](https://nodejs.org)
 
-### Installazione delle Dipendenze
+#### Apertura della Cartella del Mock Server
 
-Per questo ambiente di test sono necessari due pacchetti npm:
+Una volta ottenuta la cartella del mock server, occorre:
 
-1. **json-server**: Il motore che trasformerà un file JSON in un server REST completo.
+1. Posizionare la cartella in una location appropriata del file system
+2. Aprire un terminale (Command Prompt, PowerShell o terminale integrato di VS Code)
+3. Navigare all'interno della cartella utilizzando il comando `cd`
 
-2. **@faker-js/faker**: La libreria utilizzata per generare dati casuali ma verosimili (nomi di aziende, prezzi, coordinate geografiche, ecc.).
+Esempio:
 
-Eseguire il seguente comando nella cartella del progetto per installarli:
+```bash
+cd C:\path\to\mock-server
+```
+
+In alternativa, con Visual Studio Code:
+
+1. Aprire VS Code
+2. Selezionare **File → Apri Cartella**
+3. Selezionare la cartella del mock server
+4. Aprire il terminale integrato con **Terminale → Nuovo Terminale** (o `Ctrl + ò`)
+
+#### Installazione delle Dipendenze
+
+Il primo passo consiste nell'installare le dipendenze necessarie. Dal terminale, all'interno della cartella del mock server, eseguire:
 
 ```bash
 npm install json-server@0.17.4 @faker-js/faker --save-dev
-
 ```
 
-:::note
-La versione `0.17.x` rappresenta il ramo stabile più documentato. La versione `1.0.0-beta` introduce modifiche architetturali significative (middleware-based) che, sebbene promettenti, possono risultare destabilizzanti in un contesto educativo.
+Questo comando:
 
-È fondamentale utilizzare il pacchetto `@faker-js/faker` e non il deprecato `faker`.\*
+- Installa **json-server** (versione 0.17.4), il tool che trasforma un file JSON in un server REST completo
+- Installa **@faker-js/faker**, la libreria per generare dati casuali realistici
+- Salva le dipendenze nella sezione `devDependencies` del file `package.json`
+
+L'installazione potrebbe richiedere alcuni minuti. Al termine, nella cartella sarà presente una nuova directory `node_modules` contenente tutte le librerie necessarie.
+
+:::note[Output dell'installazione]
+Durante l'installazione è normale visualizzare messaggi di avviso (warning). Non costituiscono errori critici e il server risulterà comunque funzionante.
 :::
 
-#### Uso di `--save-dev`
+#### (Opzionale) Rigenerazione del Database
 
-L'opzione `--save-dev` (o la sua forma abbreviata `-D`) è un parametro fondamentale del comando `npm install` e serve a categorizzare le dipendenze del proprio progetto. Aggiunge i pacchetti installati alla sezione `"devDependencies"` del file `package.json`, invece che alla sezione standard `"dependencies"`. Serve a distinguere tra le librerie necessarie per far **funzionare** l'applicazione in produzione e quelle necessarie solo durante la fase di **sviluppo**.
-
-- **Dependencies (senza flag):** Librerie essenziali per l'esecuzione del programma (es. React, Angular, o driver di database).
-
-- **DevDependencies (`--save-dev`):** Strumenti usati dagli sviluppatori ma non necessari all'utente finale (es. strumenti di test, compilatori, linter, e nel nostro caso **generatori di dati mock** e **server di sviluppo**).
-
-Si usa `--save-dev` perché `json-server` e `faker` sono strumenti di supporto per il testing; non fanno parte del codice che verrà distribuito ai clienti finali.
-
-#### Installazione globale (opzionale e sconsigliata)
-
-È anche possibile installare `json-server` globalmente sulla propria macchina per utilizzarlo rapidamente in qualsiasi cartella senza dover configurare un progetto `npm`.
-
-Il comando è:
-
-```bash
-npm install -g json-server
-
-```
-
-Se si sceglie questa strada, per avviare il server basterà digitare nel terminale:
-
-```bash
-json-server --watch db.json
-
-```
-
-Tuttavia in un contesto didattico **si consiglia l'installazione locale** e l'utilizzo dell'opzione `--save-dev` descritta sopra. Questo garantisce che tutti gli studenti utilizzino la stessa versione del server e che il progetto sia auto-contenuto e facilmente condivisibile.
-
-### Generazione Automatica dei Dati (Data Seeding)
-
-Invece di scrivere manualmente migliaia di righe di JSON, si creerà uno script per generare tali dati con l'uso della libreria [@faker-js/faker](https://www.npmjs.com/package/@faker-js/faker). Si crei un file denominato `generate-database.js` con il contenuto specificato di seguito. Lo script implementa la logica di generazione per le due collezioni, una di `companies` e una di `products`, garantendo la coerenza referenziale tra prodotti e compagnie (il campo `company_id` nei prodotti referenzierà sempre `ID` esistenti nella collezione `companies`).
-
-Creare un file denominato `generate_data.js` nella radice del progetto. Questo script avrà il compito di creare due collezioni:
-
-- **Companies**: 100 aziende con dettagli su fatturato, sede centrale e filiali.
-
-- **Products**: 100 prodotti, ciascuno collegato a un'azienda tramite `company_id`.
-
-```javascript
-const fs = require("fs");
-const { faker } = require("@faker-js/faker");
-
-// Configurazione
-const PRODUCTS_COUNT = 100;
-const COMPANIES_COUNT = 100;
-
-console.log("Inizio generazione dati mock...");
-
-// Funzione helper per generare Locations
-const generateLocations = () => {
-  const locationsCount = faker.number.int({ min: 1, max: 5 });
-  const locations = [];
-
-  for (let i = 0; i < locationsCount; i++) {
-    locations.push({
-      city: faker.location.city(),
-      employee_number: faker.number.int({ min: 10, max: 10000 }),
-      state: faker.location.state(),
-    });
-  }
-  return locations;
-};
-
-// 1. Generazione Companies
-const companies = [];
-for (let i = 1; i <= COMPANIES_COUNT; i++) {
-  const company = {
-    id: i,
-    name: faker.company.name(),
-    revenue: parseFloat(
-      faker.finance.amount({ min: 1000000, max: 100000000, dec: 2 }),
-    ),
-    headquarter: {
-      lat: faker.location.latitude(),
-      lon: faker.location.longitude(),
-    },
-    locations: generateLocations(),
-  };
-  companies.push(company);
-}
-
-// 2. Generazione Products
-const products = [];
-for (let i = 1; i <= PRODUCTS_COUNT; i++) {
-  const product = {
-    id: i,
-    name: faker.commerce.productName(),
-    price: parseFloat(faker.commerce.price({ min: 1, max: 1000, dec: 2 })),
-    // Assegna casualmente un company_id esistente (da 1 a 100)
-    company_id: faker.number.int({ min: 1, max: COMPANIES_COUNT }),
-  };
-  products.push(product);
-}
-
-// Struttura finale del DB
-const database = {
-  products: products,
-  companies: companies,
-};
-
-// Scrittura su file db.json
-const jsonString = JSON.stringify(database, null, 2);
-fs.writeFileSync("db.json", jsonString);
-
-console.log(`Generazione completata!`);
-console.log(`- Creati ${products.length} prodotti.`);
-console.log(`- Create ${companies.length} compagnie.`);
-console.log(`Il file 'db.json' è pronto per essere servito.`);
-```
-
-Per eseguire lo script e generare il database, modificare il file `package.json`, nella sezione "scripts" come riportato di seguito:
-
-```json showLineNumbers {6-9}
-{
-  "name": "mock-server-tutorial",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "generate": "node generate_data.js",
-    "start": "json-server --watch db.json --port 3000",
-    "start:alt": "json-server --watch db.json --port 3001"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "@faker-js/faker": "^10.3.0",
-    "json-server": "0.17.4"
-  }
-}
-```
-
-:::note
-
-Se si preferisce non modificare il file `package.json`, è possibile eseguire i comandi direttamente da terminale:
-
-1. **Per generare i dati:** Eseguire `node generate_data.js`.
-
-2. **Per avviare il server:** Poiché `json-server` è installato come dipendenza locale (e non globale), il terminale non troverà il comando diretto `json-server`. È necessario utilizzare **`npx`** (Node Package Execute), uno strumento incluso in Node.js che cerca ed esegue i binari presenti nella cartella locale `node_modules` senza richiedere installazioni globali:
-
-   ```bash
-   npx json-server db.json --port 3000
-
-   ```
-
-:::
-
-Tornando al metodo principale, ora è possibile generare i dati eseguendo:
+Se si desidera rigenerare il database con nuovi dati casuali, è possibile eseguire lo script di generazione:
 
 ```bash
 npm run generate
-
 ```
 
-Questo comando creerà un file `db.json` contenente 100 prodotti e 100 aziende con dati coerenti.
+Questo comando esegue lo script `generate-data.js` che sovrascrive il file `db.json` con nuovi dati generati tramite Faker.js. Questa operazione è completamente opzionale: il file `db.json` fornito contiene già un dataset funzionante.
 
-### Avvio del Server e Analisi degli Endpoint
+:::caution[Sovrascrittura dei dati]
+Il comando `npm run generate` sovrascrive completamente il contenuto del file `db.json`. Eventuali modifiche manuali ai dati andranno perse. Si consiglia di eseguire questo comando solo quando si desidera un reset completo dei dati.
+:::
 
-Una volta generato il file `db.json`, il server è pronto per essere avviato. Utilizzare il comando configurato precedentemente:
+#### Avvio del Mock Server
+
+Per avviare il mock server ed esporre le API REST, eseguire:
 
 ```bash
 npm start
-
 ```
 
-Il terminale mostrerà un output simile al seguente:
+Se tutto è configurato correttamente, nel terminale apparirà un output simile al seguente:
 
-```bash
-$ npm start
-
-> mock-server-tutorial@1.0.0 start
-> json-server --watch db.json --port 3000
-
-
+```
   \{^_^}/ hi!
 
   Loading db.json
   Done
 
   Resources
-  http://localhost:3000/products
   http://localhost:3000/companies
+  http://localhost:3000/products
 
   Home
   http://localhost:3000
@@ -642,23 +506,48 @@ $ npm start
   Watching...
 ```
 
-#### Troubleshooting: Errore "Port 3000 already in use"
+Il server è ora in esecuzione sulla porta **3000** del localhost. Le risorse esposte sono accessibili tramite i seguenti endpoint:
 
-Se all'avvio compare l'errore `Error: listen EADDRINUSE: address already in use :::3000`, significa che un altro programma sta usando la porta 3000. Hai due opzioni:
+- `http://localhost:3000/companies` - Collezione delle aziende
+- `http://localhost:3000/products` - Collezione dei prodotti
 
-1. **Identificare e chiudere il processo:**
-   - **Windows:** `netstat -ano | findstr :3000` per trovare il PID, poi `taskkill /PID <PID> /F`.
+#### Verifica del Funzionamento
 
-   - **Mac/Linux:** `lsof -i :3000` per trovare il PID, poi `kill -9 <PID>`.
+Per verificare che il server risponda correttamente, è possibile:
 
-2. **Cambiare porta:** Abbiamo predisposto uno script alternativo che usa la porta 3001. Eseguire:
+**Opzione 1: Browser Web**
 
-   ```bash
-   npm run start:alt
+Aprire un browser e navigare all'indirizzo [http://localhost:3000/products](http://localhost:3000/products). Il browser dovrebbe visualizzare un array JSON contenente i dati dei prodotti.
 
-   ```
+**Opzione 2: Postman**
 
-#### Funzionalità disponibili per il Client
+Creare una nuova richiesta GET con URL `http://localhost:3000/products` ed eseguirla. La risposta dovrebbe contenere l'elenco dei prodotti in formato JSON.
+
+**Opzione 3: curl (da un altro terminale)**
+
+```bash
+curl http://localhost:3000/products
+```
+
+### Interruzione del Server
+
+Per arrestare il mock server, è sufficiente tornare al terminale dove è in esecuzione e premere:
+
+- **`Ctrl + C`** (su Windows/Linux)
+- **`Cmd + C`** (su macOS)
+
+Il server si arresterà immediatamente e non sarà più possibile accedere alle API fino a un nuovo avvio con `npm start`.
+
+### Riepilogo dei Comandi
+
+| Comando                                                     | Descrizione                                                    |
+| ----------------------------------------------------------- | -------------------------------------------------------------- |
+| `npm install json-server@0.17.4 @faker-js/faker --save-dev` | Prima installazione delle dipendenze (eseguire una sola volta) |
+| `npm run generate`                                          | Rigenera il database con nuovi dati casuali (opzionale)        |
+| `npm start`                                                 | Avvia il mock server sulla porta 3000                          |
+| `Ctrl + C`                                                  | Arresta il mock server                                         |
+
+### Funzionalità disponibili per il Client
 
 **json-server** non si limita a servire dati statici; offre funzionalità REST complete che il client potrà gestire:
 
@@ -1219,7 +1108,7 @@ DELETE {{baseUrl}}/products/101
 GET {{baseUrl}}/products?company_id=5
 
 ### 8. Filter Products by Price Range
-# Prodotti con prezzo tra 100 e 500 
+# Prodotti con prezzo tra 100 e 500
 # Operators: gte=greater than equal, lte=less than equal
 GET {{baseUrl}}/products?price_gte=100&price_lte=500
 
@@ -1228,7 +1117,7 @@ GET {{baseUrl}}/products?price_gte=100&price_lte=500
 GET {{baseUrl}}/products?_sort=price&_order=desc
 
 ### 10. Paginate Products
-# Paginazione: pagina 2 con 10 elementi per pagina. 
+# Paginazione: pagina 2 con 10 elementi per pagina.
 # Header X-Total-Count indica il totale.
 GET {{baseUrl}}/products?_page=2&_limit=10
 
@@ -1245,7 +1134,7 @@ GET {{baseUrl}}/products?q=Soap
 GET {{baseUrl}}/products/1?_expand=company
 
 ### 14. Slice Data (Range)
-# Restituisce elementi dall'indice 20 al 30 (escluso). 
+# Restituisce elementi dall'indice 20 al 30 (escluso).
 # Header Content-Range indica la porzione.
 GET {{baseUrl}}/products?_start=20&_end=30
 
@@ -1262,17 +1151,17 @@ GET {{baseUrl}}/companies
 GET {{baseUrl}}/companies/1
 
 ### 17. Get Company with Embedded Products
-# Recupera la compagnia 1 includendo tutti i prodotti associati (company_id = 1) 
+# Recupera la compagnia 1 includendo tutti i prodotti associati (company_id = 1)
 # annidati nell'array 'products'
 GET {{baseUrl}}/companies/1?_embed=products
 
 ### 18. Get Companies with Locations Filter
-# Filtra compagnie che hanno una location nella città 'Jackson' 
+# Filtra compagnie che hanno una location nella città 'Jackson'
 # (filtro su campo annidato)
 GET {{baseUrl}}/companies?locations.city=Jackson
 
 ### 19. Create Company
-# Crea una nuova compagnia con struttura complessa annidata 
+# Crea una nuova compagnia con struttura complessa annidata
 # (headquarter e locations array)
 POST {{baseUrl}}/companies
 Content-Type: {{contentType}}
@@ -1332,7 +1221,7 @@ GET {{baseUrl}}/db
 
 1. **Installazione**: Installare l'estensione "REST Client" (`humao.rest-client`) da VS Code Marketplace
 2. **Configurazione**: Se il server gira su porta diversa dalla 3000, modificare la variabile `@baseUrl` in cima al file
-3. **Utilizzo**: 
+3. **Utilizzo**:
    - Posizionare il cursore sulla richiesta desiderata
    - Click destro → "Send Request" (oppure `Ctrl+Alt+R` / `Cmd+Alt+R`)
    - La risposta appare in una nuova tab a destra con syntax highlighting JSON
@@ -1352,13 +1241,14 @@ Di seguito si riporta il file `mock-api-curl.sh` (o `commands.txt`) contenente t
 #### Istruzioni per l'installazione di `jq`
 
 1. **Pre-requisito**: Installare `jq` per la formattazione JSON colorata (opzionale ma consigliato):
+
    ```bash
    # Ubuntu/Debian
    sudo apt-get install jq
-   
+
    # macOS
    brew install jq
-   
+
    # Windows con winget
    winget install jqlang.jq
 
@@ -1373,7 +1263,6 @@ Di seguito si riporta il file `mock-api-curl.sh` (o `commands.txt`) contenente t
 4. **Visualizzazione headers**: I comandi DELETE e Paginazione usano `-i` per mostrare gli header HTTP (utili per vedere `X-Total-Count` e `Content-Range`).
 
 5. **Windows**: Su PowerShell usare il carattere backtick `` ` `` per il multiline invece di `\`, oppure eseguire i comandi in una singola riga. Su CMD usare `^` per il multiline.
-
 
 #### Utilizzo di `curl` senza `jq`
 
@@ -1555,6 +1444,1163 @@ curl -X GET "${BASE_URL}/db" -H "Content-Type: application/json" | jq .
 ---
 
 </Accordion>
+
+### Sviluppo dell'Applicazione Client
+
+Una volta avviato il mock server, è possibile iniziare immediatamente lo sviluppo dell'applicazione client. Gli endpoint REST sono pienamente funzionali e supportano tutte le operazioni CRUD standard:
+
+- **GET** `/products` - Recupera tutti i prodotti
+- **GET** `/products/1` - Recupera il prodotto con ID 1
+- **POST** `/products` - Crea un nuovo prodotto
+- **PUT** `/products/1` - Aggiorna completamente il prodotto con ID 1
+- **PATCH** `/products/1` - Aggiorna parzialmente il prodotto con ID 1
+- **DELETE** `/products/1` - Elimina il prodotto con ID 1
+
+Lo stesso vale per la risorsa `/companies`.
+
+:::tip[Ambiente di Sviluppo Isolato]
+Il mock server opera esclusivamente in locale (localhost) e non è accessibile dall'esterno della propria macchina. Ciò lo rende ideale per lo sviluppo e il testing in sicurezza, senza rischi di esposizione o conflitti con servizi di produzione.
+:::
+
+Con il mock server in esecuzione, è ora possibile concentrarsi completamente sull'implementazione della logica client, sulla gestione delle richieste HTTP e sulla manipolazione dei dati ricevuti, senza preoccuparsi dell'infrastruttura backend.
+
+#### Esempio Completo di Client Console in C#
+
+Di seguito viene presentata un'implementazione completa di un'applicazione console C# che interagisce con il mock server tramite `HttpClient`. L'esempio dimostra tutte le operazioni CRUD fondamentali e l'utilizzo di `System.Text.Json` per la serializzazione e deserializzazione degli oggetti.
+
+##### Definizione delle Classi Modello
+
+Le classi modello rappresentano la struttura dei dati esposti dal mock server. È fondamentale che i nomi delle proprietà corrispondano esattamente ai campi JSON (o utilizzare attributi `[JsonPropertyName]` per il mapping).
+
+```csharp
+//file DataModels.cs
+namespace RestApiClient;
+
+using System.Text.Json.Serialization;
+
+// Classe che rappresenta un prodotto
+public class Product
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("price")]
+    public decimal Price { get; set; }
+
+    [JsonPropertyName("company_id")]
+    public int CompanyId { get; set; }
+
+    public override string ToString()
+    {
+        return $"[{Id}] {Name} - €{Price:F2} (Company: {CompanyId})";
+    }
+}
+
+// Classe che rappresenta le coordinate geografiche della sede principale
+public class Headquarter
+{
+    [JsonPropertyName("lat")]
+    public double Lat { get; set; }
+
+    [JsonPropertyName("lon")]
+    public double Lon { get; set; }
+
+    public override string ToString()
+    {
+        return $"Lat: {Lat:F6}, Lon: {Lon:F6}";
+    }
+}
+
+// Classe che rappresenta una location/filiale
+public class Location
+{
+    [JsonPropertyName("city")]
+    public string City { get; set; } = string.Empty;
+
+    [JsonPropertyName("employee_number")]
+    public int EmployeeNumber { get; set; }
+
+    [JsonPropertyName("state")]
+    public string State { get; set; } = string.Empty;
+
+    public override string ToString()
+    {
+        return $"{City}, {State} ({EmployeeNumber} dipendenti)";
+    }
+}
+
+// Classe che rappresenta un'azienda
+public class Company
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("revenue")]
+    public decimal Revenue { get; set; }
+
+    [JsonPropertyName("headquarter")]
+    public Headquarter Headquarter { get; set; } = new();
+
+    [JsonPropertyName("locations")]
+    public List<Location> Locations { get; set; } = new();
+
+    public override string ToString()
+    {
+        return $"[{Id}] {Name} - Revenue: €{Revenue:N2}";
+    }
+}
+```
+
+##### Implementazione del Client REST
+
+La classe `ApiClient` incapsula la logica di comunicazione con il mock server, fornendo metodi asincroni per tutte le operazioni CRUD.
+
+```csharp
+//file ApiClient.cs
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+
+namespace RestApiClient;
+
+public class ApiClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public ApiClient(string baseUrl = "http://localhost:3000")
+    {
+        _baseUrl = baseUrl;
+        _httpClient = new HttpClient { BaseAddress = new Uri(_baseUrl) };
+
+        // Configurazione opzioni JSON con formattazione leggibile
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = true
+        };
+    }
+
+    // ==================== OPERAZIONI SUI PRODOTTI ====================
+
+    /// <summary>
+    /// Recupera tutti i prodotti dal server
+    /// </summary>
+    public async Task<List<Product>?> GetAllProductsAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("/products");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<Product>>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore HTTP: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Recupera un prodotto specifico tramite ID
+    /// </summary>
+    public async Task<Product?> GetProductByIdAsync(int id)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<Product>($"/products/{id}", _jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante il recupero del prodotto {id}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Crea un nuovo prodotto sul server
+    /// </summary>
+    public async Task<Product?> CreateProductAsync(Product product)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("/products", product, _jsonOptions);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<Product>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante la creazione del prodotto: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Aggiorna completamente un prodotto esistente (PUT)
+    /// </summary>
+    public async Task<Product?> UpdateProductAsync(int id, Product product)
+    {
+        try
+        {
+            var response = await _httpClient.PutAsJsonAsync($"/products/{id}", product, _jsonOptions);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<Product>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante l'aggiornamento del prodotto {id}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Aggiorna parzialmente un prodotto (PATCH)
+    /// </summary>
+    public async Task<Product?> PatchProductAsync(int id, object partialUpdate)
+    {
+        try
+        {
+            var json = JsonSerializer.Serialize(partialUpdate, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PatchAsync($"/products/{id}", content);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<Product>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante l'aggiornamento parziale del prodotto {id}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Elimina un prodotto dal server
+    /// </summary>
+    public async Task<bool> DeleteProductAsync(int id)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"/products/{id}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante l'eliminazione del prodotto {id}: {ex.Message}");
+            return false;
+        }
+    }
+
+    // ==================== OPERAZIONI SULLE COMPAGNIE ====================
+
+    /// <summary>
+    /// Recupera tutte le compagnie dal server
+    /// </summary>
+    public async Task<List<Company>?> GetAllCompaniesAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("/companies");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<Company>>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore HTTP: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Recupera una compagnia specifica tramite ID
+    /// </summary>
+    public async Task<Company?> GetCompanyByIdAsync(int id)
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<Company>($"/companies/{id}", _jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante il recupero della compagnia {id}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Recupera i prodotti filtrati per compagnia
+    /// </summary>
+    public async Task<List<Product>?> GetProductsByCompanyAsync(int companyId)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/products?company_id={companyId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<Product>>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante il recupero dei prodotti della compagnia {companyId}: {ex.Message}");
+            return null;
+        }
+    }
+
+    // ==================== OPERAZIONI AVANZATE ====================
+
+    /// <summary>
+    /// Ricerca prodotti per nome (full-text search)
+    /// </summary>
+    public async Task<List<Product>?> SearchProductsAsync(string searchTerm)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/products?q={Uri.EscapeDataString(searchTerm)}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<Product>>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante la ricerca: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Recupera prodotti con paginazione
+    /// </summary>
+    public async Task<List<Product>?> GetProductsPaginatedAsync(int page, int limit)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/products?_page={page}&_limit={limit}");
+            response.EnsureSuccessStatusCode();
+
+            // L'header X-Total-Count contiene il numero totale di elementi
+            if (response.Headers.TryGetValues("X-Total-Count", out var values))
+            {
+                Console.WriteLine($"Totale prodotti disponibili: {values.First()}");
+            }
+
+            return await response.Content.ReadFromJsonAsync<List<Product>>(_jsonOptions);
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore durante il recupero paginato: {ex.Message}");
+            return null;
+        }
+    }
+}
+
+```
+
+##### Programma di Esempio con Utilizzo del Client
+
+Il seguente programma principale dimostra l'utilizzo pratico di tutte le funzionalità del client REST.
+
+```csharp
+//file Program.cs
+using System.Text;
+using RestApiClient;
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        Console.OutputEncoding= Encoding.UTF8;
+        Console.WriteLine("=== Client REST per Mock Server JSON-Server ===\n");
+
+        var client = new ApiClient();
+
+        // ========== GET: Recupera tutti i prodotti ==========
+        Console.WriteLine("1. RECUPERO DI TUTTI I PRODOTTI");
+        Console.WriteLine("".PadRight(50, '-'));
+        var products = await client.GetAllProductsAsync();
+        if (products != null && products.Count != 0)
+        {
+            Console.WriteLine($"Recuperati {products.Count} prodotti:");
+            foreach (var product in products.Take(5)) // Mostra solo i primi 5
+            {
+                Console.WriteLine($"  {product}");
+            }
+            Console.WriteLine($"  ... (altri {products.Count - 5} prodotti omessi)\n");
+        }
+
+        // ========== GET by ID: Recupera un prodotto specifico ==========
+        Console.WriteLine("2. RECUPERO PRODOTTO SPECIFICO (ID=1)");
+        Console.WriteLine("".PadRight(50, '-'));
+        var product1 = await client.GetProductByIdAsync(1);
+        if (product1 != null)
+        {
+            Console.WriteLine($"  {product1}\n");
+        }
+
+        // ========== POST: Crea un nuovo prodotto ==========
+        Console.WriteLine("3. CREAZIONE DI UN NUOVO PRODOTTO");
+        Console.WriteLine("".PadRight(50, '-'));
+        var newProduct = new Product
+        {
+            Name = "Tastiera Meccanica RGB",
+            Price = 129.99m,
+            CompanyId = 5
+        };
+        var createdProduct = await client.CreateProductAsync(newProduct);
+        if (createdProduct != null)
+        {
+            Console.WriteLine($"  Prodotto creato: {createdProduct}\n");
+        }
+
+        // ========== PUT: Aggiorna completamente un prodotto ==========
+        Console.WriteLine("4. AGGIORNAMENTO COMPLETO PRODOTTO (PUT)");
+        Console.WriteLine("".PadRight(50, '-'));
+        if (createdProduct != null)
+        {
+            createdProduct.Name = "Tastiera Meccanica RGB Pro";
+            createdProduct.Price = 159.99m;
+            var updatedProduct = await client.UpdateProductAsync(createdProduct.Id, createdProduct);
+            if (updatedProduct != null)
+            {
+                Console.WriteLine($"  Prodotto aggiornato: {updatedProduct}\n");
+            }
+        }
+
+        // ========== PATCH: Aggiorna parzialmente un prodotto ==========
+        Console.WriteLine("5. AGGIORNAMENTO PARZIALE PRODOTTO (PATCH)");
+        Console.WriteLine("".PadRight(50, '-'));
+        if (createdProduct != null)
+        {
+            var partialUpdate = new { price = 139.99m };
+            var patchedProduct = await client.PatchProductAsync(createdProduct.Id, partialUpdate);
+            if (patchedProduct != null)
+            {
+                Console.WriteLine($"  Prodotto aggiornato (PATCH): {patchedProduct}\n");
+            }
+        }
+
+        // ========== GET: Recupera compagnie ==========
+        Console.WriteLine("6. RECUPERO DELLE COMPAGNIE");
+        Console.WriteLine("".PadRight(50, '-'));
+        var companies = await client.GetAllCompaniesAsync();
+        if (companies != null && companies.Any())
+        {
+            Console.WriteLine($"Recuperate {companies.Count} compagnie:");
+            foreach (var company in companies.Take(3))
+            {
+                Console.WriteLine($"  {company}");
+                Console.WriteLine($"    Sede: {company.Headquarter}");
+                Console.WriteLine($"    Locations: {company.Locations.Count}");
+            }
+            Console.WriteLine();
+        }
+
+        // ========== GET: Recupera prodotti per compagnia ==========
+        Console.WriteLine("7. PRODOTTI DELLA COMPAGNIA ID=5");
+        Console.WriteLine("".PadRight(50, '-'));
+        var companyProducts = await client.GetProductsByCompanyAsync(5);
+        if (companyProducts != null)
+        {
+            Console.WriteLine($"Trovati {companyProducts.Count} prodotti:");
+            foreach (var prod in companyProducts.Take(3))
+            {
+                Console.WriteLine($"  {prod}");
+            }
+            Console.WriteLine();
+        }
+
+        // ========== SEARCH: Ricerca full-text ==========
+        Console.WriteLine("8. RICERCA PRODOTTI (full-text: 'Soap')");
+        Console.WriteLine("".PadRight(50, '-'));
+        var searchResults = await client.SearchProductsAsync("Soap");
+        if (searchResults != null)
+        {
+            Console.WriteLine($"Trovati {searchResults.Count} risultati:");
+            foreach (var prod in searchResults.Take(3))
+            {
+                Console.WriteLine($"  {prod}");
+            }
+            Console.WriteLine();
+        }
+
+        // ========== PAGINATION: Recupera con paginazione ==========
+        Console.WriteLine("9. PAGINAZIONE (Pagina 2, 10 elementi)");
+        Console.WriteLine("".PadRight(50, '-'));
+        var paginatedProducts = await client.GetProductsPaginatedAsync(2, 10);
+        if (paginatedProducts != null)
+        {
+            Console.WriteLine($"Prodotti della pagina 2:");
+            foreach (var prod in paginatedProducts)
+            {
+                Console.WriteLine($"  {prod}");
+            }
+            Console.WriteLine();
+        }
+
+        // ========== DELETE: Elimina il prodotto creato ==========
+        Console.WriteLine("10. ELIMINAZIONE PRODOTTO CREATO");
+        Console.WriteLine("".PadRight(50, '-'));
+        if (createdProduct != null)
+        {
+            var deleted = await client.DeleteProductAsync(createdProduct.Id);
+            Console.WriteLine(deleted
+                ? $"  Prodotto {createdProduct.Id} eliminato con successo\n"
+                : $"  Errore nell'eliminazione del prodotto {createdProduct.Id}\n");
+        }
+
+        Console.WriteLine("=== Test completato ===");
+        Console.WriteLine("\nPremere un tasto per terminare...");
+        Console.ReadKey();
+    }
+}
+```
+
+##### Note Implementative
+
+**Gestione degli Errori**: Il client implementa una gestione base delle eccezioni HTTP. In un contesto di produzione, sarebbe opportuno implementare:
+
+- Retry policies con Polly
+- Circuit breaker per resilienza
+- Logging strutturato
+
+**Serializzazione JSON**: L'utilizzo di `System.Text.Json` garantisce prestazioni ottimali e integrazione nativa con .NET moderno. Gli attributi `[JsonPropertyName]` permettono il mapping tra la convenzione snake_case di JSON e PascalCase di C#.
+
+**Pattern Asincrono**: Tutte le operazioni di I/O sono asincrone (`async`/`await`), rispettando le best practices per applicazioni scalabili e responsive.
+
+**HttpClient**: L'istanza di `HttpClient` viene riutilizzata per tutte le richieste, evitando l'esaurimento delle socket (socket exhaustion) che si verificherebbe creando un nuovo client per ogni richiesta.
+
+:::tip[Esecuzione del Programma]
+Prima di eseguire il client C#, assicurarsi che il mock server sia in esecuzione con `npm start`. Il client tenterà di connettersi a `http://localhost:3000` per impostazione predefinita.
+:::
+
+##### Configurazione Avanzata degli Header HTTP
+
+Nella sezione precedente, l'implementazione del client REST non include una configurazione esplicita degli header HTTP personalizzati. Questa scelta è stata adottata intenzionalmente per motivi didattici e per la natura permissiva del mock server `json-server`. Tuttavia, quando si interagisce con API reali pubbliche o aziendali, la **corretta configurazione degli header HTTP diventa fondamentale** e spesso obbligatoria per il funzionamento dell'applicazione.
+
+###### Perché l'Esempio Base Funziona Senza Header Personalizzati
+
+Il mock server `json-server` è stato progettato per facilitare lo sviluppo e il testing, pertanto accetta richieste HTTP anche senza header specifici. Quando non vengono configurati esplicitamente, `HttpClient` utilizza i seguenti **valori predefiniti**:
+
+```
+GET /products HTTP/1.1
+Host: localhost:3000
+Connection: keep-alive
+```
+
+Questi header minimi sono sufficienti per `json-server`, che:
+
+- Non richiede autenticazione
+- Non verifica l'header `Accept` per il content negotiation
+- Non richiede identificazione del client tramite `User-Agent`
+- Risponde sempre con `application/json` indipendentemente dalla richiesta
+
+Questa permissività è ideale per l'apprendimento iniziale, consentendo di concentrarsi sulla logica HTTP (GET, POST, PUT, DELETE) senza la complessità aggiuntiva della gestione degli header.
+
+###### Quando È Necessario Configurare Gli Header
+
+Quasi tutte le API pubbliche moderne richiedono header aggiuntivi per motivi di sicurezza, versioning, identificazione e ottimizzazione. Ecco i casi più comuni:
+
+| Scenario                   | Header Richiesto              | Esempio Pratico                                                                     |
+| -------------------------- | ----------------------------- | ----------------------------------------------------------------------------------- |
+| **Autenticazione**         | `Authorization` o `X-API-Key` | GitHub API, OpenWeather, Google Maps API                                            |
+| **Content Negotiation**    | `Accept`                      | API che supportano XML e JSON, versionamento (es. `application/vnd.github.v3+json`) |
+| **Identificazione Client** | `User-Agent`                  | GitHub API (rifiuta richieste senza `User-Agent`)                                   |
+| **CORS e sicurezza**       | `Origin`, `Referer`           | API chiamate da browser web                                                         |
+| **Rate Limiting**          | `X-RateLimit-*`               | Molte API restituiscono questi header per informare sui limiti                      |
+| **Compressione**           | `Accept-Encoding`             | Riduce il traffico di rete (gzip, deflate, br)                                      |
+
+###### Tipi di Header in HttpClient
+
+`HttpClient` permette di configurare gli header in due modalità distinte:
+
+**1. DefaultRequestHeaders - Header Globali**
+
+Gli header configurati in `DefaultRequestHeaders` vengono **automaticamente aggiunti a tutte le richieste** effettuate da quell'istanza di `HttpClient`. Sono ideali per:
+
+- Token di autenticazione utilizzati in tutte le chiamate
+- User-Agent costante per l'applicazione
+- Accept header che non varia tra le richieste
+
+**2. Header Per Singola Richiesta**
+
+È possibile aggiungere header specifici a una singola richiesta HTTP, utile quando:
+
+- Solo alcune chiamate richiedono autenticazione speciale
+- Si vuole sovrascrivere temporaneamente un header globale
+- Ogni richiesta necessita di un timestamp o token univoco
+
+###### Esempio 1: Configurazione Base con GitHub API
+
+L'API di GitHub rappresenta un esempio reale che **richiede obbligatoriamente** header specifici. Senza di essi, le richieste vengono rifiutate con errore 403 Forbidden.
+
+```csharp
+using System.Net.Http.Headers;
+
+public class GitHubApiClient
+{
+    private readonly HttpClient _httpClient;
+
+    public GitHubApiClient()
+    {
+        _httpClient = new HttpClient
+        {
+            BaseAddress = new Uri("https://api.github.com")
+        };
+
+        // 1. Header Accept per specificare la versione API e il formato
+        _httpClient.DefaultRequestHeaders.Accept.Clear();
+        _httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+
+        // 2. User-Agent è OBBLIGATORIO per GitHub API
+        // Formato raccomandato: NomeApp/Versione
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "MyApp/1.0");
+
+        // 3. (Opzionale) Token di autenticazione per accesso autenticato
+        // Aumenta il rate limit da 60 a 5000 richieste/ora
+        // _httpClient.DefaultRequestHeaders.Authorization =
+        //     new AuthenticationHeaderValue("Bearer", "YOUR_GITHUB_TOKEN");
+    }
+
+    public async Task<string?> GetUserProfileAsync(string username)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"/users/{username}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore: {ex.Message}");
+            return null;
+        }
+    }
+}
+```
+
+**Spiegazione degli Header GitHub:**
+
+- **`Accept: application/vnd.github.v3+json`**: Indica al server di utilizzare la versione 3 dell'API GitHub e di rispondere con JSON. Il prefisso `vnd.` (vendor) identifica un media type proprietario.
+
+- **`User-Agent: MyApp/1.0`**: Identifica l'applicazione client. GitHub traccia l'utilizzo delle API tramite questo header e **rifiuta richieste senza User-Agent** per prevenire abusi.
+
+- **`Authorization: Bearer TOKEN`**: Opzionale per endpoint pubblici, obbligatorio per operazioni autenticate (es. creazione repository, accesso a dati privati).
+
+###### Esempio 2: API con Chiave Personalizzata (Custom API Key)
+
+Molte API commerciali utilizzano header personalizzati per l'autenticazione invece dello standard `Authorization`. Questo pattern è comune in servizi come OpenWeather, Postman Mock API, e molti servizi enterprise.
+
+```csharp
+public class CustomApiClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _apiKey;
+
+    public CustomApiClient(string baseUrl, string apiKey)
+    {
+        _apiKey = apiKey;
+        _httpClient = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl)
+        };
+
+        // Header personalizzato per API Key
+        _httpClient.DefaultRequestHeaders.Add("X-API-Key", _apiKey);
+
+        // Accept standard per JSON
+        _httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+
+        // User-Agent per identificazione
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "CustomApiClient/2.0");
+    }
+
+    public async Task<T?> GetAsync<T>(string endpoint)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<T>();
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore: {ex.Message}");
+            return default;
+        }
+    }
+}
+
+// Utilizzo
+var client = new CustomApiClient(
+    "https://api.example.com",
+    "your-secret-api-key-here"
+);
+```
+
+###### Esempio 3: Header Per Singola Richiesta
+
+In alcuni scenari è necessario aggiungere o sovrascrivere header solo per una specifica chiamata, ad esempio quando si caricano file o si invia un formato diverso.
+
+```csharp
+public class FlexibleApiClient
+{
+    private readonly HttpClient _httpClient;
+
+    public FlexibleApiClient(string baseUrl)
+    {
+        _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+
+        // Configurazione base per JSON
+        _httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+    }
+
+    /// <summary>
+    /// POST standard con JSON
+    /// </summary>
+    public async Task<Product?> CreateProductAsync(Product product)
+    {
+        var response = await _httpClient.PostAsJsonAsync("/products", product);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Product>();
+    }
+
+    /// <summary>
+    /// POST con XML (header specifico per questa richiesta)
+    /// </summary>
+    public async Task<string?> SendXmlDataAsync(string xmlContent)
+    {
+        var content = new StringContent(xmlContent, Encoding.UTF8, "application/xml");
+
+        // Crea una richiesta con header personalizzato
+        var request = new HttpRequestMessage(HttpMethod.Post, "/data")
+        {
+            Content = content
+        };
+
+        // Aggiunge header specifico solo per questa richiesta
+        request.Headers.Add("X-Custom-Header", "special-value");
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    /// <summary>
+    /// Richiesta con token temporaneo (non salvato in DefaultRequestHeaders)
+    /// </summary>
+    public async Task<string?> GetSecureDataAsync(string temporaryToken)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "/secure/data");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", temporaryToken);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+}
+```
+
+###### Esempio 4: Integrazione con Mock Server e Header Personalizzati
+
+Per preparare il client all'integrazione con API reali mantenendo la compatibilità con `json-server`, è possibile adottare un approccio ibrido:
+
+```csharp
+public class ProductionReadyApiClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly bool _isProduction;
+
+    public ProductionReadyApiClient(string baseUrl, string? apiKey = null, bool isProduction = false)
+    {
+        _isProduction = isProduction;
+        _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+
+        // Header comuni sempre presenti
+        _httpClient.DefaultRequestHeaders.Accept.Clear();
+        _httpClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+
+        _httpClient.DefaultRequestHeaders.Add(
+            "User-Agent", "ProductApiClient/1.0");
+
+        // Header di autenticazione solo in produzione
+        if (_isProduction && !string.IsNullOrEmpty(apiKey))
+        {
+            _httpClient.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+            Console.WriteLine("Client configurato per ambiente di PRODUZIONE");
+        }
+        else
+        {
+            Console.WriteLine("Client configurato per ambiente di SVILUPPO (Mock Server)");
+        }
+    }
+
+    public async Task<List<Product>?> GetProductsAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("/products");
+
+            // Log degli header di risposta (utile per debugging)
+            if (_isProduction)
+            {
+                LogResponseHeaders(response);
+            }
+
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<Product>>();
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore HTTP: {ex.Message}");
+            return null;
+        }
+    }
+
+    private void LogResponseHeaders(HttpResponseMessage response)
+    {
+        Console.WriteLine("\n--- Response Headers ---");
+        foreach (var header in response.Headers)
+        {
+            Console.WriteLine($"{header.Key}: {string.Join(", ", header.Value)}");
+        }
+
+        // Header comuni per rate limiting
+        if (response.Headers.TryGetValues("X-RateLimit-Remaining", out var remaining))
+        {
+            Console.WriteLine($"Rate Limit Remaining: {remaining.First()}");
+        }
+    }
+}
+
+// Utilizzo in sviluppo (con json-server locale)
+var devClient = new ProductionReadyApiClient("http://localhost:3000");
+
+// Utilizzo in produzione (con API reale)
+var prodClient = new ProductionReadyApiClient(
+    "https://api.production.com",
+    apiKey: "your-production-key",
+    isProduction: true
+);
+```
+
+###### Best Practices per la Gestione degli Header
+
+1. **Non codificare mai API Key nel codice sorgente**: Utilizzare variabili d'ambiente, file di configurazione esterni o Azure Key Vault.
+
+   ```csharp
+   var apiKey = Environment.GetEnvironmentVariable("API_KEY")
+                ?? throw new InvalidOperationException("API_KEY non configurata");
+   ```
+
+2. **Riutilizzare l'istanza di HttpClient**: Come già implementato negli esempi, una singola istanza va riutilizzata per tutta l'applicazione.
+
+3. **Verificare sempre gli header di risposta**: Molte API forniscono informazioni utili negli header di risposta (rate limiting, pagination, deprecation warnings).
+
+4. **Documentare gli header obbligatori**: Quando si sviluppa un client per API di terze parti, documentare quali header sono obbligatori e quali opzionali.
+
+5. **Testare con e senza autenticazione**: Verificare che l'applicazione gestisca correttamente errori 401 (Unauthorized) e 403 (Forbidden).
+
+###### Confronto: Mock Server vs API Reali
+
+| Aspetto               | json-server (Mock)              | API Reali                                         |
+| --------------------- | ------------------------------- | ------------------------------------------------- |
+| **Header Accept**     | Opzionale, risponde sempre JSON | Spesso obbligatorio per versioning                |
+| **User-Agent**        | Ignorato                        | Spesso obbligatorio (GitHub, molte API pubbliche) |
+| **Autenticazione**    | Non richiesta                   | Quasi sempre obbligatoria (API Key, OAuth, JWT)   |
+| **Rate Limiting**     | Assente                         | Presente con header `X-RateLimit-*`               |
+| **CORS**              | Permissivo                      | Restrittivo per sicurezza                         |
+| **Certificati HTTPS** | Non necessari (HTTP)            | Obbligatori, validazione del certificato          |
+
+:::note[Transizione Mock → Produzione]
+Una strategia consigliata è sviluppare inizialmente contro il mock server senza header complessi, poi introdurre gradualmente la configurazione degli header quando si passa a testare contro un ambiente di staging o produzione. Questo approccio incrementale facilita il debugging e la comprensione dei requisiti specifici dell'API target.
+:::
+
+###### Risorse per Approfondimento
+
+- **Documentazione Microsoft HttpClient**: [HttpClient Class](https://learn.microsoft.com/en-us/dotnet/api/system.net.http.httpclient)
+- **HTTP Headers Reference**: [MDN Web Docs - HTTP Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers)
+- **GitHub API Documentation**: [GitHub REST API](https://docs.github.com/en/rest)
+- **Best Practices HttpClient**: [HttpClient Guidelines](https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient-guidelines)
+
+Con questa comprensione della configurazione degli header HTTP, il client REST diventa pronto per interagire con qualsiasi API professionale, mantenendo al contempo la flessibilità necessaria per ambienti di sviluppo e testing.
+
+## Realizzazione di un Mock Server
+
+Approfondimento: [https://it.wikipedia.org/wiki/Mock_object](https://it.wikipedia.org/wiki/Mock_object)
+
+Nel contesto della programmazione orientata agli oggetti, un **mock object** (oggetto simulato) riproduce in modo controllato il comportamento di un oggetto reale. Il mock consente di testare componenti che dipendono da risorse non disponibili, inaccessibili oppure non ancora implementate; in tali casi l'oggetto reale viene sostituito dal mock.
+
+## Creazione di Mock Server REST con `json-server` e `faker.js`
+
+### Introduzione e Contesto Operativo
+
+Nell'ambito dello sviluppo software moderno, la separazione tra lo sviluppo del backend e del frontend rende necessaria l'adozione di strategie di mocking per permettere ai team di lavorare in parallelo senza dipendenze bloccanti. Il tool [`json-server`](https://github.com/typicode/json-server) rappresenta una soluzione elegante e immediata per la prototipazione rapida di API RESTful, permettendo di simulare un server backend completo a partire da un semplice file JSON. Il software [`Faker.js`](https://github.com/faker-js/faker) consente invece di generare dati realistici e variabili, arricchendo l'esperienza di testing e sviluppo con dataset che riflettono scenari reali.
+Questa guida illustra il processo di installazione, configurazione e popolamento dati di un mock server, con particolare attenzione alla generazione di dataset realistici mediante la libreria Faker.js. Verrà inoltre presentato un esempio completo di client C# per l'interazione con le risorse esposte.
+
+### Prerequisiti
+
+Prima di iniziare, è necessario assicurarsi che l'ambiente di sviluppo soddisfi i seguenti requisiti:
+
+- [Node.js](https://nodejs.org/en): È richiesto il runtime Node.js (versione raccomandata LTS) per eseguire il server e gli script di generazione dati.
+- npm (Node Package Manager): Viene installato automaticamente insieme a Node.js.
+- Un editor di codice (si consiglia Visual Studio Code).
+
+### Configurazione del Progetto
+
+Per mantenere ordine nel lavoro, si consiglia di creare una cartella dedicata al progetto di mock server.
+
+1. Creare una nuova cartella denominata `mock-server-tutorial`.
+2. Aprire il terminale e posizionarsi all'interno della cartella.
+3. Inizializzare un nuovo progetto `Node.js` per gestire le dipendenze:
+
+```bash
+mkdir mock-server-tutorial
+cd mock-server-tutorial
+npm init -y
+```
+
+Questo comando genererà un file `package.json` di base.
+
+### Installazione delle Dipendenze
+
+Per questo ambiente di test sono necessari due pacchetti npm:
+
+1. **json-server**: Il motore che trasformerà un file JSON in un server REST completo.
+
+2. **@faker-js/faker**: La libreria utilizzata per generare dati casuali ma verosimili (nomi di aziende, prezzi, coordinate geografiche, ecc.).
+
+Eseguire il seguente comando nella cartella del progetto per installarli:
+
+```bash
+npm install json-server@0.17.4 @faker-js/faker --save-dev
+
+```
+
+:::note
+La versione `0.17.x` rappresenta il ramo stabile più documentato. La versione `1.0.0-beta` introduce modifiche architetturali significative (middleware-based) che, sebbene promettenti, possono risultare destabilizzanti in un contesto educativo.
+
+È fondamentale utilizzare il pacchetto `@faker-js/faker` e non il deprecato `faker`.\*
+:::
+
+#### Uso di `--save-dev`
+
+L'opzione `--save-dev` (o la sua forma abbreviata `-D`) è un parametro fondamentale del comando `npm install` e serve a categorizzare le dipendenze del proprio progetto. Aggiunge i pacchetti installati alla sezione `"devDependencies"` del file `package.json`, invece che alla sezione standard `"dependencies"`. Serve a distinguere tra le librerie necessarie per far **funzionare** l'applicazione in produzione e quelle necessarie solo durante la fase di **sviluppo**.
+
+- **Dependencies (senza flag):** Librerie essenziali per l'esecuzione del programma (es. React, Angular, o driver di database).
+
+- **DevDependencies (`--save-dev`):** Strumenti usati dagli sviluppatori ma non necessari all'utente finale (es. strumenti di test, compilatori, linter, e nel nostro caso **generatori di dati mock** e **server di sviluppo**).
+
+Si usa `--save-dev` perché `json-server` e `faker` sono strumenti di supporto per il testing; non fanno parte del codice che verrà distribuito ai clienti finali.
+
+#### Installazione globale (opzionale e sconsigliata)
+
+È anche possibile installare `json-server` globalmente sulla propria macchina per utilizzarlo rapidamente in qualsiasi cartella senza dover configurare un progetto `npm`.
+
+Il comando è:
+
+```bash
+npm install -g json-server
+
+```
+
+Se si sceglie questa strada, per avviare il server basterà digitare nel terminale:
+
+```bash
+json-server --watch db.json
+
+```
+
+Tuttavia in un contesto didattico **si consiglia l'installazione locale** e l'utilizzo dell'opzione `--save-dev` descritta sopra. Questo garantisce che tutti gli studenti utilizzino la stessa versione del server e che il progetto sia auto-contenuto e facilmente condivisibile.
+
+### Generazione Automatica dei Dati (Data Seeding)
+
+Invece di scrivere manualmente migliaia di righe di JSON, si creerà uno script per generare tali dati con l'uso della libreria [@faker-js/faker](https://www.npmjs.com/package/@faker-js/faker). Si crei un file denominato `generate-database.js` con il contenuto specificato di seguito. Lo script implementa la logica di generazione per le due collezioni, una di `companies` e una di `products`, garantendo la coerenza referenziale tra prodotti e compagnie (il campo `company_id` nei prodotti referenzierà sempre `ID` esistenti nella collezione `companies`).
+
+Creare un file denominato `generate_data.js` nella radice del progetto. Questo script avrà il compito di creare due collezioni:
+
+- **Companies**: 100 aziende con dettagli su fatturato, sede centrale e filiali.
+
+- **Products**: 100 prodotti, ciascuno collegato a un'azienda tramite `company_id`.
+
+```javascript
+const fs = require("fs");
+const { faker } = require("@faker-js/faker");
+
+// Configurazione
+const PRODUCTS_COUNT = 100;
+const COMPANIES_COUNT = 100;
+
+console.log("Inizio generazione dati mock...");
+
+// Funzione helper per generare Locations
+const generateLocations = () => {
+  const locationsCount = faker.number.int({ min: 1, max: 5 });
+  const locations = [];
+
+  for (let i = 0; i < locationsCount; i++) {
+    locations.push({
+      city: faker.location.city(),
+      employee_number: faker.number.int({ min: 10, max: 10000 }),
+      state: faker.location.state(),
+    });
+  }
+  return locations;
+};
+
+// 1. Generazione Companies
+const companies = [];
+for (let i = 1; i <= COMPANIES_COUNT; i++) {
+  const company = {
+    id: i,
+    name: faker.company.name(),
+    revenue: parseFloat(
+      faker.finance.amount({ min: 1000000, max: 100000000, dec: 2 }),
+    ),
+    headquarter: {
+      lat: faker.location.latitude(),
+      lon: faker.location.longitude(),
+    },
+    locations: generateLocations(),
+  };
+  companies.push(company);
+}
+
+// 2. Generazione Products
+const products = [];
+for (let i = 1; i <= PRODUCTS_COUNT; i++) {
+  const product = {
+    id: i,
+    name: faker.commerce.productName(),
+    price: parseFloat(faker.commerce.price({ min: 1, max: 1000, dec: 2 })),
+    // Assegna casualmente un company_id esistente (da 1 a 100)
+    company_id: faker.number.int({ min: 1, max: COMPANIES_COUNT }),
+  };
+  products.push(product);
+}
+
+// Struttura finale del DB
+const database = {
+  products: products,
+  companies: companies,
+};
+
+// Scrittura su file db.json
+const jsonString = JSON.stringify(database, null, 2);
+fs.writeFileSync("db.json", jsonString);
+
+console.log(`Generazione completata!`);
+console.log(`- Creati ${products.length} prodotti.`);
+console.log(`- Create ${companies.length} compagnie.`);
+console.log(`Il file 'db.json' è pronto per essere servito.`);
+
+```
+
+Per eseguire lo script e generare il database, modificare il file `package.json`, nella sezione "scripts" come riportato di seguito:
+
+```json showLineNumbers {6-9}
+{
+  "name": "mock-server-tutorial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "generate": "node generate_data.js",
+    "start": "json-server --watch db.json --port 3000",
+    "start:alt": "json-server --watch db.json --port 3001"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@faker-js/faker": "^10.3.0",
+    "json-server": "0.17.4"
+  }
+}
+```
+
+:::note
+
+Se si preferisce non modificare il file `package.json`, è possibile eseguire i comandi direttamente da terminale:
+
+1. **Per generare i dati:** Eseguire `node generate_data.js`.
+
+2. **Per avviare il server:** Poiché `json-server` è installato come dipendenza locale (e non globale), il terminale non troverà il comando diretto `json-server`. È necessario utilizzare **`npx`** (Node Package Execute), uno strumento incluso in Node.js che cerca ed esegue i binari presenti nella cartella locale `node_modules` senza richiedere installazioni globali:
+
+   ```bash
+   npx json-server db.json --port 3000
+
+   ```
+
+:::
+
+Tornando al metodo principale, ora è possibile generare i dati eseguendo:
+
+```bash
+npm run generate
+
+```
+
+Questo comando creerà un file `db.json` contenente 100 prodotti e 100 aziende con dati coerenti.
+
+### Avvio del Server e Analisi degli Endpoint
+
+Una volta generato il file `db.json`, il server è pronto per essere avviato. Utilizzare il comando configurato precedentemente:
+
+```bash
+npm start
+
+```
+
+Il terminale mostrerà un output simile al seguente:
+
+```bash
+$ npm start
+
+> mock-server-tutorial@1.0.0 start
+> json-server --watch db.json --port 3000
+
+
+  \{^_^}/ hi!
+
+  Loading db.json
+  Done
+
+  Resources
+  http://localhost:3000/products
+  http://localhost:3000/companies
+
+  Home
+  http://localhost:3000
+
+  Type s + enter at any time to create a snapshot of the database
+  Watching...
+```
+
+#### Troubleshooting: Errore "Port 3000 already in use"
+
+Se all'avvio compare l'errore `Error: listen EADDRINUSE: address already in use :::3000`, significa che un altro programma sta usando la porta 3000. Hai due opzioni:
+
+1. **Identificare e chiudere il processo:**
+   - **Windows:** `netstat -ano | findstr :3000` per trovare il PID, poi `taskkill /PID <PID> /F`.
+
+   - **Mac/Linux:** `lsof -i :3000` per trovare il PID, poi `kill -9 <PID>`.
+
+2. **Cambiare porta:** Abbiamo predisposto uno script alternativo che usa la porta 3001. Eseguire:
+
+   ```bash
+   npm run start:alt
+
+   ```
+
+
 
 ### Configurazione avanzata di `json-server`: architettura e implementazione
 
@@ -2155,6 +3201,385 @@ Quando si utilizza questo pattern in ambiente didattico, è opportuno evidenziar
 
 4. **Revoca**: Il sistema implementato è stateless. Per permettere la revoca di una chiave compromessa senza riavviare il server, sarebbe necessario implementare un meccanismo di blacklist in memoria o su file esterno controllato periodicamente.
 
+### Funzionalità avanzate - uso di certificati SSL self-signed
+
+Ecco la procedura completa per generare certificati SSL self-signed su Windows e configurare `json-server` 0.17.4 in modalità HTTPS, inclusa la configurazione del client C# per l'ambiente di sviluppo.
+
+---
+
+#### Prerequisiti: OpenSSL su Windows
+
+Poiché OpenSSL non è incluso nativamente in Windows, installarlo tramite uno dei seguenti metodi:
+
+**Opzione A - Git Bash (Consigliata):**
+Se si ha Git per Windows installato, Git Bash include già OpenSSL. aprire **Git Bash** nella cartella del progetto.
+
+**Opzione B - WSL (Windows Subsystem for Linux):**
+
+```powershell
+wsl --install
+# Poi da terminale WSL Ubuntu procedere con i comandi Linux
+```
+
+**Opzione C - Download manuale:**
+Scarica OpenSSL per Windows da [https://slproweb.com/products/Win32OpenSSL.html](https://slproweb.com/products/Win32OpenSSL.html) (versione "Win64 OpenSSL v3.x").
+
+---
+
+#### Generazione dei Certificati
+
+Dalla root del progetto `mock-server-tutorial`, eseguire:
+
+```bash
+# Crea la directory per i certificati
+mkdir ssl
+
+# Genera la chiave privata (2048 bit)
+openssl genrsa -out ssl/key.pem 2048
+
+# Genera il certificato self-signed valido 365 giorni
+openssl req -new -x509 -sha256 -key ssl/key.pem -out ssl/cert.pem -days 365 -subj "/C=IT/ST=Lombardia/L=Milano/O=DevLocal/CN=localhost"
+```
+
+**Output atteso:**
+
+- `ssl/key.pem` - Chiave privata del server
+- `ssl/cert.pem` - Certificato pubblico autofirmato
+
+---
+
+#### Configurazione di JSON Server (Versione 0.17.4)
+
+##### Metodo A: Avvio via CLI (Più rapido)
+
+Modificare lo script nel `package.json`:
+
+```json
+{
+  "scripts": {
+    "generate": "node generate_data.js",
+    "start": "json-server db.json --port 3000",
+    "start:secure": "json-server db.json --port 3001 --ssl --cert ./ssl/cert.pem --key ./ssl/key.pem"
+  }
+}
+```
+
+Avvio:
+
+```bash
+npm run start:secure
+```
+
+##### Metodo B: Configurazione programmatica con `https-config.js`
+
+Se si preferisce il controllo programmatico (per aggiungere middleware custom), creare il file `server.js`:
+
+```javascript
+const jsonServer = require("json-server");
+const https = require("https");
+const fs = require("fs");
+const path = require("path");
+
+// Import della configurazione SSL separata
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, "ssl", "key.pem")),
+  cert: fs.readFileSync(path.join(__dirname, "ssl", "cert.pem")),
+};
+
+const server = jsonServer.create();
+const router = jsonServer.router("db.json");
+const middlewares = jsonServer.defaults();
+
+server.use(middlewares);
+server.use(router);
+
+https.createServer(sslOptions, server).listen(3001, () => {
+  console.log("✓ JSON Server HTTPS running at https://localhost:3001");
+  console.log(
+    "  ⚠️  Il certificato è self-signed: accettare l'eccezione nel browser",
+  );
+});
+```
+
+E aggiornare `package.json`:
+
+```json
+{
+  "scripts": {
+    "start:secure": "node server.js"
+  }
+}
+```
+
+---
+
+#### Configurazione del Client C\#
+
+Quando il client C# tenta di connettersi a `https://localhost:3001`, riceverà un errore di certificato non attendibile. Per l'ambiente di sviluppo, configurare `HttpClient` per bypassare la validazione:
+
+```csharp
+using System;
+using System.Net.Http;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+
+public class SecureApiClient
+{
+    private readonly HttpClient _httpClient;
+    private const string BaseUrl = "https://localhost:3001/";
+
+    public SecureApiClient()
+    {
+        // Handler che accetta qualsiasi certificato (SOLO per sviluppo locale!)
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback =
+                (message, cert, chain, errors) =>
+                {
+                    // In produzione: validare thumbprint o issuer
+                    // In sviluppo: accettare tutto
+                    return true;
+                }
+        };
+
+        _httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(BaseUrl)
+        };
+
+        _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+    }
+
+    // ... metodi CRUD come in precedenza
+}
+```
+
+:::caution
+**⚠️ Avviso di sicurezza:** Il callback `return true` disabilita completamente la validazione SSL. Utilizzare **esclusivamente** in ambiente di sviluppo locale mai in produzione.
+:::
+
+---
+
+#### Verifica e Test
+
+##### Test via curl (ignorando certificato)
+
+```bash
+curl -k https://localhost:3001/products
+# oppure
+curl --insecure https://localhost:3001/products
+```
+
+##### Test via browser
+
+1. Aprire `https://localhost:3001/products`
+2. Il browser mostrerà un avviso "La connessione non è privata" (Chrome) o "Warning: Potential Security Risk" (Firefox)
+3. Cliccare su "Avanzate" → "Procedi su localhost (non sicuro)"
+
+#### Importazione certificato (Opzionale - per eliminare warning)
+
+Per aggiungere il certificato ai "Trusted Root" di Windows (utile per test con browser):
+
+```powershell
+# Da PowerShell come Amministratore
+certutil -addstore -f "ROOT" .\ssl\cert.pem
+```
+
+---
+
+#### Riepilogo struttura files
+
+```text
+mock-server-tutorial/
+├── ssl/
+│   ├── key.pem          # Chiave privata (NON committare in git!)
+│   └── cert.pem         # Certificato pubblico
+├── db.json              # Database generato
+├── server.js            # (Opzionale) Server HTTPS programmatico
+├── https-config.js      # Modulo config SSL richiesto dall'utente
+└── package.json
+```
+
+:::note
+**Nota:** Aggiungere la cartella `ssl/` al `.gitignore` per evitare di committare chiavi private:
+
+```
+# .gitignore
+ssl/
+*.pem
+```
+
+:::
+
+### Funzionalità avanzate - Validazione del certificato self signed
+
+Per far sì che il client C# consideri attendibile esclusivamente il certificato `cert.pem` generato localmente, si implementa una tecnica di **Certificate Pinning** (o "fingerprint validation"). Invece di disabilitare la validazione SSL, il client verifica che l'impronta digitale (_thumbprint_) del certificato ricevuto corrisponda esattamente a quella del file locale.
+
+Di seguito la procedura completa.
+
+---
+
+#### Estrazione dell'impronta digitale (Thumbprint)
+
+Dalla directory del progetto, si esegue il comando OpenSSL per ottenere l'hash SHA-1 (o SHA-256) del certificato:
+
+```bash
+openssl x509 -in ssl/cert.pem -noout -fingerprint -sha1
+```
+
+Output esempio:
+
+```
+SHA1 Fingerprint=A1:B2:C3:D4:E5:F6:...
+```
+
+Si copia la stringa esadecimale **rimuovendo i due punti** (`:`). Il valore da inserire nel codice C# sarà:
+
+```
+A1B2C3D4E5F6...
+```
+
+_Nota:_ Se si preferisce SHA-256, sostituire `-sha1` con `-sha256` nel comando OpenSSL.
+
+---
+
+#### Implementazione del Client C# con Validazione
+
+Il `HttpClientHandler` viene configurato per confrontare l'impronta del certificato server con quella attesa. Se non coincidono, la connessione viene rifiutata.
+
+```csharp
+using System;
+using System.Net.Http;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
+
+public class SecurePinnedApiClient
+{
+    private readonly HttpClient _httpClient;
+    private const string BaseUrl = "https://localhost:3001/";
+
+    // Impronta del certificato self-signed (senza due punti, maiuscole o minuscole indifferenti)
+    private const string ExpectedCertificateThumbprint = "A1B2C3D4E5F678..."; // <-- Inserire qui il valore
+
+    public SecurePinnedApiClient()
+    {
+        var handler = new HttpClientHandler
+        {
+            // Validazione custom: accetta SOLO il certificato con thumbprint specifico
+            ServerCertificateCustomValidationCallback = ValidateCertificate
+        };
+
+        _httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(BaseUrl),
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+
+        _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+    }
+
+    /// <summary>
+    /// Valida che il certificato presentato dal server sia esattamente quello generato localmente.
+    /// </summary>
+    private bool ValidateCertificate(
+        HttpRequestMessage request,
+        X509Certificate2 certificate,
+        X509Chain chain,
+        SslPolicyErrors sslPolicyErrors)
+    {
+        if (certificate == null)
+        {
+            Console.WriteLine("Errore: Nessun certificato presentato dal server.");
+            return false;
+        }
+
+        // Ottiene l'impronta SHA-1 del certificato ricevuto
+        string actualThumbprint = certificate.Thumbprint;
+
+        // Confronto case-insensitive
+        bool isValid = actualThumbprint.Equals(
+            ExpectedCertificateThumbprint,
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isValid)
+        {
+            Console.WriteLine($"ATTENZIONE: Tentativo di connessione con certificato non autorizzato.");
+            Console.WriteLine($"  Atteso: {ExpectedCertificateThumbprint}");
+            Console.WriteLine($"  Ricevuto: {actualThumbprint}");
+            return false;
+        }
+
+        Console.WriteLine("Certificato validato con successo (pinning corretto).");
+        return true;
+    }
+
+    public async Task<string> GetProductsAsync()
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync("products");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsStringAsync();
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Errore richiesta: {ex.Message}");
+            throw;
+        }
+    }
+}
+```
+
+---
+
+#### Alternativa: Caricamento del file `.pem` nel Client
+
+Un approccio più manutenibile consiste nel copiare il file `cert.pem` nel progetto C# (cartella `Assets/` o radice) e validare confrontando direttamente i byte del certificato, senza dover copiare manualmente l'hash.
+
+**Configurazione progetto C#:**
+
+1. Aggiungere `cert.pem` al progetto in Visual Studio.
+2. Impostare **Proprietà → Copia nella directory di output** = _Copia sempre_ (o _Copia se più recente_).
+
+```csharp
+using System.IO;
+using System.Reflection;
+
+public class PinnedCertFromFileClient
+{
+    private readonly string _expectedThumbprint;
+
+    public PinnedCertFromFileClient()
+    {
+        // Carica il certificato embedded o da file
+        var assembly = Assembly.GetExecutingAssembly();
+        var certPath = Path.Combine(
+            Path.GetDirectoryName(assembly.Location)!,
+            "cert.pem"); // Assicurarsi che cert.pem sia in output dir
+
+        if (!File.Exists(certPath))
+            throw new FileNotFoundException("Certificato non trovato", certPath);
+
+        var localCert = new X509Certificate2(certPath);
+        _expectedThumbprint = localCert.Thumbprint;
+
+        Console.WriteLine($"Certificato locale caricato. Thumbprint: {_expectedThumbprint}");
+    }
+
+    // Usare _expectedThumbprint nel callback ValidateCertificate
+    // come mostrato nella sezione precedente
+}
+```
+
+---
+
+#### Considerazioni di Sicurezza
+
+- **Man-in-the-Middle (MITM):** Questa tecnica previene attacchi MITM anche con certificati self-signed, poiché un eventuale attaccante dovrebbe possedere esattamente la coppia di chiavi generata localmente, non un qualsiasi altro certificato.
+- **Rinnovo/Rigenerazione:** Se si rigenera il certificato (`openssl req` nuovo), il thumbprint cambia. È necessario aggiornare la costante `ExpectedCertificateThumbprint` nel codice C# e ridistribuire il client (o il file `cert.pem`).
+- **Produzione:** In ambiente di produzione non si utilizzano certificati self-signed. Si utilizza invece un certificato rilasciato da una CA pubblica (Let's Encrypt, etc.) e si rimuove il callback custom, lasciando che il sistema operativo validi la catena di fiducia (`SslPolicyErrors.None`).
+
 ## Postman Mock Server
 
 Video introduttivi:
@@ -2436,11 +3861,11 @@ L'esempio seguente mostra un client console che interroga un mock server Postman
 Se si vuole testare un mock server privato, è necessario inserire la chiave API e la URL del server nel file `MyPostmanStore.json` e assicurarsi che il client C# legga correttamente questi dati per configurare l'header delle richieste HTTP.
 Se si vuole testare il client senza una chiave API, è possibile creare un mock server ad accesso libero e inserire la URL del server nel file `MyPostmanStore.json`, lasciando vuoto il campo della chiave API. In questo modo, il client C# non invierà l'header `X-API-Key` nelle richieste HTTP, e il mock server ad accesso libero risponderà comunque alle richieste.
 
-Pet l'esempio di codice seguente è possibile usare il seguente Mock Server:
+Pet l'esempio di codice seguente è possibile usare il Mock Server:
+
 - URL: `https://f656ed25-0808-4eec-b895-d3e84f046cee.mock.pstmn.io`
 - GET `/products` restituisce un elenco di prodotti in formato JSON
 - GET `/companies` restituisce un elenco di aziende in formato JSON
-
 
 ```csharp
 //file Company.cs
