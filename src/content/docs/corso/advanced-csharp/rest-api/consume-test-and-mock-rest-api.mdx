@@ -23,7 +23,7 @@ Postman è uno strumento per l'invio di richieste HTTP e per il collaudo (testin
 - Learning Center: [Learning Center](https://learning.postman.com/)
 - Postman Echo Docs: [Postman Echo Docs](https://docs.postman-echo.com/?version=latest)
 
-## Testing di API con Postman
+### Testing di API con Postman
 
 Materiale introduttivo consigliato:
 
@@ -62,7 +62,7 @@ Dopo la creazione del fork, la collection risulterà presente nel workspace dell
 
 Un profilo pubblico Postman consente inoltre di disporre di una pagina di presentazione raggiungibile all'indirizzo [https://www.postman.com/UserName](https://www.postman.com/UserName) sulla quale è possibile pubblicare collection (rendendole copiabili da terzi tramite fork o import).
 
-## Utilizzo di Postman con la collection Postman Echo
+### Utilizzo di Postman con la collection Postman Echo
 
 Riferimento: [Invio delle richieste](https://learning.postman.com/docs/sending-requests/requests/)
 
@@ -82,7 +82,7 @@ PATCH [https://postman-echo.com/patch](https://postman-echo.com/patch)
 
 DELETE [https://postman-echo.com/delete](https://postman-echo.com/delete)
 
-## Utilizzo della collection Postman API
+### Utilizzo della collection Postman API
 
 Dopo aver importato nel proprio workspace la collection di [Postman API](https://www.postman.com/postman/workspace/published-postman-templates/collection/631643-dac5eac9-148d-a32e-b76b-3edee9da28f7), eseguire le seguenti richieste:
 
@@ -157,7 +157,7 @@ PUT `https://api.getpostman.com/collections/{{collection_uid}}`
 
 DEL `https://api.getpostman.com/collections/{{collection_uid}}`
 
-## Autorizzazione delle API in Postman
+### Autorizzazione delle API in Postman
 
 Riferimento principale: [https://learning.postman.com/docs/sending-requests/authorization/](https://learning.postman.com/docs/sending-requests/authorization/)
 
@@ -272,26 +272,448 @@ Dopo l'aggiornamento del PATH è opportuno chiudere e riaprire la shell e verifi
 
 ![Curl-V](consume-test-and-mock-rest-api/Curl-V.png)
 
+### Mini tutorial introduttivo su cURL
+
+cURL è uno strumento a riga di comando per trasferire dati con URL. Supporta numerosi protocolli (HTTP, HTTPS, FTP, SFTP, ecc.) ed è particolarmente utile per testare API REST.
+
+#### Proxy (ambiente scolastico)
+
+In presenza di proxy (scenario frequente in rete scolastica) è necessario configurare le variabili d'ambiente del proxy per poter accedere a Internet.
+
+In PowerShell:
+
+`$env:http_proxy="proxy:3128"`
+
+`$env:https_proxy="proxy:3128"`
+
+In CMD:
+
+`set http_proxy=proxy:3128`
+
+`set https_proxy=proxy:3128`
+
+In Linux bash:
+
+`export http_proxy="proxy:3128"`
+
+`export https_proxy="proxy:3128"`
+
+#### Sintassi base
+
+```bash
+curl [opzioni] [URL]
+```
+
+#### Scaricare un file
+
+**Salvare con il nome originale del server:**
+
+```bash
+curl -O https://jsonplaceholder.typicode.com/users
+```
+
+**Salvare con un nome specifico:**
+
+```bash
+curl -o lista_utenti.json https://jsonplaceholder.typicode.com/users
+```
+
+**Scaricare con follow dei redirect:**
+
+```bash
+curl -L -O https://esempio.com/file.zip
+```
+
+**Mostrare progresso di download:**
+
+```bash
+curl --progress-bar -O https://esempio.com/file.zip
+```
+
+**Riprendere un download interrotto:**
+
+```bash
+curl -C - -O https://esempio.com/file.zip
+```
+
+#### Operazioni CRUD su API REST
+
+Per i seguenti esempi si utilizza l'endpoint di test: `https://jsonplaceholder.typicode.com/users`
+
+##### GET - Recuperare dati
+
+**Recuperare tutti gli utenti:**
+
+```bash
+curl https://jsonplaceholder.typicode.com/users
+```
+
+**Recuperare un utente specifico:**
+
+```bash
+curl https://jsonplaceholder.typicode.com/users/1
+```
+
+**Salvare la risposta in un file:**
+
+```bash
+curl -o utente.json https://jsonplaceholder.typicode.com/users/1
+```
+
+**Mostrare solo gli header della risposta (utile per debug):**
+
+```bash
+curl -I https://jsonplaceholder.typicode.com/users/1
+```
+
+**Mostrare header e corpo della risposta:**
+
+```bash
+curl -i https://jsonplaceholder.typicode.com/users/1
+```
+
+**Seguire i redirect automaticamente:**
+
+```bash
+curl -L https://jsonplaceholder.typicode.com/users
+```
+
+##### POST - Creare una risorsa
+
+**Creare un nuovo utente con dati inline:**
+
+```bash
+# versione Bash
+curl -X POST https://jsonplaceholder.typicode.com/users \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Mario Rossi",
+    "username": "mrossi",
+    "email": "mario.rossi@example.com"
+  }'
+```
+
+```ps1
+# versione PowerShell
+curl -X POST https://jsonplaceholder.typicode.com/users `
+  -H "Content-Type: application/json" `
+  -d '{
+    "name": "Mario Rossi",
+    "username": "mrossi",
+    "email": "mario.rossi@example.com"
+  }'
+```
+
+**Creare da un file JSON:**
+
+```bash
+# versione Bash
+# Creare un file `nuovo_utente.json` con i dati del nuovo utente
+cat > nuovo_utente.json <<EOF
+{
+  "name": "Mario Rossi",
+  "username": "mrossi",
+  "email": "mario.rossi@example.com"
+}
+EOF
+
+curl -X POST https://jsonplaceholder.typicode.com/users \
+  -H "Content-Type: application/json" \
+  -d @nuovo_utente.json
+```
+
+```ps1
+# versione PowerShell
+# Creare un file `nuovo_utente.json` con i dati del nuovo utente
+@"
+{
+  "name": "Mario Rossi",
+  "username": "mrossi",
+  "email": "mario.rossi@example.com"
+}
+"@ > nuovo_utente.json
+
+# In PowerShell, il carattere @ ha un significato speciale (splatting)
+# Per passare @filename a curl, usare virgolette singole
+curl -X POST https://jsonplaceholder.typicode.com/users `
+  -H "Content-Type: application/json" `
+  -d '@nuovo_utente.json'
+```
+
+##### PUT - Aggiornare completamente una risorsa
+
+**Sostituire completamente un utente (tutti i campi richiesti):**
+
+```bash
+# versione Bash
+curl -X PUT https://jsonplaceholder.typicode.com/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 1,
+    "name": "Leanne Graham Modificata",
+    "username": "Bret",
+    "email": "Sincere@april.biz"
+  }'
+```
+
+```ps1
+# versione PowerShell
+curl -X PUT https://jsonplaceholder.typicode.com/users/1 `
+  -H "Content-Type: application/json" `
+  -d '{
+    "id": 1,
+    "name": "Leanne Graham Modificata",
+    "username": "Bret",
+    "email": "leanne.g@april.biz"
+  }'
+```
+
+##### PATCH - Aggiornare parzialmente una risorsa
+
+**Modificare solo alcuni campi:**
+
+```bash
+# versione Bash
+curl -X PATCH https://jsonplaceholder.typicode.com/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{"email": "nuova.email@example.com"}'
+```
+
+```ps1
+# versione PowerShell
+curl -X PATCH https://jsonplaceholder.typicode.com/users/1 `
+  -H "Content-Type: application/json" `
+  -d '{"email": "nuova.email@example.com"}'
+```
+
+##### DELETE - Eliminare una risorsa
+
+**Eliminare un utente:**
+
+```bash
+curl -X DELETE https://jsonplaceholder.typicode.com/users/1
+```
+
+#### Opzioni utili aggiuntive
+
+**Visualizzare informazioni dettagliate della connessione:**
+
+```bash
+curl -v https://jsonplaceholder.typicode.com/users/1
+```
+
+**Silenziare output (solo dati):**
+
+```bash
+curl -s https://jsonplaceholder.typicode.com/users/1
+```
+
+**Combinare silenzioso con mostrare errori:**
+
+```bash
+curl -sS https://jsonplaceholder.typicode.com/users/1
+```
+
+**Specificare un timeout (secondi):**
+
+```bash
+curl --max-time 10 https://jsonplaceholder.typicode.com/users
+```
+
+**Inviare dati form-encoded (come un form HTML):**
+
+```bash
+curl -X POST https://jsonplaceholder.typicode.com/users \
+  -d "name=Mario Rossi" \
+  -d "username=mrossi"
+```
+
+**Autenticazione Basic:**
+
+```bash
+curl -u username:password https://api.esempio.com/protetto
+```
+
+**Autenticazione Bearer Token:**
+
+```bash
+curl -H "Authorization: Bearer TUO_TOKEN" https://api.esempio.com/protetto
+```
+
+**Autenticazione con API Key (header X-API-Key):**
+
+```bash
+curl -H "X-API-Key: TUA_CHIAVE_API" https://api.esempio.com/protetto
+```
+
+Oppure in una richiesta POST con piú header:
+
+```bash
+curl -X POST https://api.esempio.com/users \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: TUA_CHIAVE_API" \
+  -d '{"name":"Mario Rossi"}'
+```
+
+**Specificare il metodo HTTP esplicitamente (GET è default):**
+
+```bash
+curl -X GET https://jsonplaceholder.typicode.com/users
+```
+
+#### Esempi pratici combinati
+
+**GET con header personalizzati e salvataggio:**
+
+```bash
+curl -H "Accept: application/json" \
+     -H "User-Agent: MyApp/1.0" \
+     -o output.json \
+     https://jsonplaceholder.typicode.com/users
+```
+
+**POST con autenticazione e verifica:**
+
+```bash
+curl -X POST https://jsonplaceholder.typicode.com/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer abc123" \
+  -d '{"name":"Test User"}' \
+  -v
+```
+
+#### Riferimenti rapidi
+
+| Opzione | Descrizione                                              |
+| ------- | -------------------------------------------------------- |
+| `-X`    | Specifica il metodo HTTP (GET, POST, PUT, PATCH, DELETE) |
+| `-H`    | Aggiunge un header HTTP                                  |
+| `-d`    | Invia dati nel body della richiesta                      |
+| `-o`    | Salva output in un file con nome specificato             |
+| `-O`    | Salva output mantenendo il nome originale del server     |
+| `-I`    | Scarica solo gli header (HEAD request)                   |
+| `-i`    | Include gli header nella risposta                        |
+| `-L`    | Segue i redirect (location)                              |
+| `-v`    | Modalità verbose (debug)                                 |
+| `-s`    | Silenzioso (nasconde progresso)                          |
+| `-S`    | Mostra errori anche in modalità silenziosa               |
+| `-u`    | Username e password per autenticazione                   |
+| `@file` | Legge dati da un file                                    |
+
+#### Risorse aggiuntive
+
+- Comandi di cURL in Windows: [https://ss64.com/nt/curl.html](https://ss64.com/nt/curl.html)
+- Comandi di cURL in bash: [https://ss64.com/bash/curl.html](https://ss64.com/bash/curl.html)
+- Guida generale: [https://everything.curl.dev/cmdline](https://everything.curl.dev/cmdline)
+- Modifica del metodo HTTP: [https://everything.curl.dev/http/modify/method](https://everything.curl.dev/http/modify/method)
+- Esempio (IP pubblico): [https://linuxconfig.org/how-to-use-curl-to-get-public-ip-address](https://linuxconfig.org/how-to-use-curl-to-get-public-ip-address)
+
 ### Verifica dei certificati SSL (HTTPS)
+
+Se si prova a eseguire una richiesta HTTPS con cURL, ad esempio:
+
+```bash
+curl https://jsonplaceholder.typicode.com/users
+```
+
+si potrebbe riscontrare un errore di questo tipo:
+
+```
+curl: (60) SSL certificate problem: unable to get local issuer certificate
+More details here: https://curl.se/docs/sslcerts.html
+curl failed to verify the legitimacy of the server and therefore could not
+establish a secure connection to it. To learn more about this situation and
+how to fix it, please visit the web page mentioned above.
+```
+
+Il problema è dovuto al fatto che cURL non riesce a verificare l'autenticità del certificato digitale presentato dal server remoto. Per risolvere questo problema è necessario configurare cURL in modo che possa accedere ai certificati delle Certification Authorities (CA) che consentono di validare il certificato digitale del server, seguendo il meccanismo di verifica basato su crittografia asimmetrica e firma digitale.
+
+Nelle installazioni di cURL più recenti è possibile utilizzare l'opzione `--ca-native` per sfruttare lo store di certificati di Windows, oppure specificare un file con i certificati delle CA tramite l'opzione `--cacert`, inoltre le versioni più recenti di cURL supportano la feature CAcert che include il bundle Mozilla dei certificati root (ad esempio aggiornati al 2025-12-02 nella release 8.18.0).
+
+Di seguito viene fornita una breve introduzione ai concetti fondamentali alla base del meccanismo di verifica dei certificati digitali, al fine di comprendere meglio il motivo per cui è necessario configurare cURL per accedere ai certificati delle CA in alcuni scenari.
+
+#### Introduzione ai concetti fondamentali
+
+Quando si accede a un sito HTTPS, il browser o il client deve risolvere un problema fondamentale: **come può essere certo di comunicare davvero con il server che dichiara di essere?** Un attaccante potrebbe fingersi il server legittimo (attacco "man-in-the-middle"). Per prevenire questo rischio, si utilizza un sistema basato sulla **crittografia asimmetrica** e sul concetto di **firma digitale**.
+
+##### Crittografia a doppia chiave: pubblica e privata
+
+A differenza della crittografia tradizionale (simmetrica) che usa una sola chiave segreta, la crittografia asimmetrica utilizza una **coppia di chiavi matematicamente correlate**:
+
+- **Chiave privata**: deve essere tenuta segreta dal proprietario. Serve a **firmare** documenti o a **decifrare** messaggi ricevuti.
+- **Chiave pubblica**: può essere distribuita liberamente. Serve a **verificare** le firme o a **cifrare** messaggi destinati al proprietario.
+
+La caratteristica fondamentale è che ciò che viene cifrato con una chiave può essere decifrato solo con l'altra chiave della coppia. Questo meccanismo permette due operazioni cruciali:
+
+1. **Riservatezza**: chiunque può cifrare un messaggio con la chiave pubblica del destinatario, ma solo il destinatario (con la sua chiave privata) può leggerlo.
+2. **Autenticità**: solo il proprietario può firmare un messaggio con la sua chiave privata, ma chiunque può verificare la firma usando la chiave pubblica.
+
+##### Cos'è l'hashing
+
+Prima di firmare un documento (come un certificato), non si cifra l'intero file, ma si calcola il suo **hash** (o impronta digitale). L'hashing è una funzione matematica che:
+
+- Trasforma dati di qualsiasi dimensione in una stringa di lunghezza fissa (es. 256 bit)
+- È **deterministica**: gli stessi dati producono sempre lo stesso hash
+- È **univoca**: è praticamente impossibile che due documenti diversi producano lo stesso hash
+- È **one-way**: dall'hash non si possono risalire ai dati originali
+
+Un esempio semplice: se si calcola l'hash della parola "hello" con SHA-256, si ottiene sempre:
+`2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824`
+
+Modificare anche una sola lettera ("hallo") produce un hash completamente diverso.
+
+##### Il meccanismo della firma digitale
+
+La firma digitale combina hashing e crittografia asimmetrica per garantire:
+
+- **Autenticità**: il documento proviene davvero dal firmatario
+- **Integrità**: il documento non è stato alterato dopo la firma
+
+**Procedura di firma** (eseguita dalla CA):
+
+1. Si calcola l'hash del certificato da firmare
+2. Si cifra l'hash con la **chiave privata** della CA
+3. L'hash cifrato diventa la **firma digitale**, allegata al certificato
+
+**Procedura di verifica** (eseguita dal browser):
+
+1. Si calcola l'hash del certificato ricevuto
+2. Si decifra la firma allegata usando la **chiave pubblica** della CA, ottenendo l'hash originale
+3. Si confrontano i due hash: se coincidono, il certificato è autentico e integro
+
+Se un attaccante modificasse anche un solo bit del certificato, l'hash ricalcolato dal browser sarebbe diverso da quello decifrato dalla firma, rivelando la manomissione.
+
+##### La catena di trust e le Certification Authorities (CA)
+
+Una domanda sorge spontanea: come fa il browser a sapere che la chiave pubblica usata per verificare la firma appartiene davvero alla CA legittima? La risposta è la **catena di trust** (chain of trust):
+
+- Il browser contiene preinstallate le chiavi pubbliche delle **Root CA** (autorità di certificazione radice), organizzazioni altamente affidabili come Let's Encrypt, DigiCert, GlobalSign
+- Queste Root CA possono firmare certificati per server web, oppure firmare certificati di **Intermediate CA** (autorità intermedie)
+- Le Intermediate CA a loro volta possono firmare certificati per i server
+
+Il browser verifica l'intera catena: il certificato del server è firmato da un'Intermediate CA, il cui certificato è firmato da una Root CA. Se l'intera catena è valida, il certificato del server è considerato **trusted** (fidato).
+
+#### Verifica pratica con cURL
 
 Riferimenti:
 
 - [Documentazione cURL sui certificati SSL](https://curl.se/docs/sslcerts.html)
 - [StackOverflow: Errore cURL 0x80092012](https://stackoverflow.com/questions/54938026/curl-unknown-error-0x80092012-the-revocation-function-was-unable-to-check-r)
 
-Quando si utilizza cURL per accedere a un sito HTTPS, si pone il problema della **verifica dell'autenticità del server remoto**. Si tratta dello stesso principio adottato dai browser: il client deve disporre dei certificati (o delle chiavi pubbliche) delle Certification Authorities (CA) che consentono di validare il certificato digitale presentato dal server.
+Quando si utilizza cURL per accedere a un sito HTTPS, si pone il problema della **verifica dell'autenticità del server remoto**. Il client deve disporre dei certificati (o delle chiavi pubbliche) delle Certification Authorities (CA) che consentono di validare il certificato digitale presentato dal server, seguendo esattamente il meccanismo descritto sopra.
 
 Ad esempio, quando un browser si connette al sito [https://www.istitutogreppi.edu.it](https://www.istitutogreppi.edu.it), esso verifica il certificato digitale del server:
 
 ![Certificato-Greppi](consume-test-and-mock-rest-api/Certificato-Greppi.png)
 
-La procedura reale è articolata; per semplicità didattica si può assumere che:
+**Riepilogo della procedura di verifica:**
 
-- il browser disponga delle chiavi pubbliche delle Root Certification Authorities che firmano i certificati digitali (nel caso della scuola, ad esempio, Let's Encrypt);
-- la fingerprint del certificato venga prodotta dalla CA emittente tramite hashing dei dati del certificato e successiva firma (crittografia) con la chiave privata della CA;
-- per verificare l'autenticità, il client ricalcola l'hash dei dati in chiaro del certificato e confronta il valore con quello ottenuto decifrando la fingerprint con la chiave pubblica della CA. Se coincidono, il client può concludere che:
-  - il certificato è integro (non manomesso);
-  - l'identità del server è coerente con la catena di trust verificata.
+- Il browser dispone delle chiavi pubbliche delle Root Certification Authorities (nel caso della scuola, ad esempio, Let's Encrypt)
+- La firma digitale sul certificato viene prodotta dalla CA emittente calcolando l'hash dei dati del certificato e cifrando tale hash con la **chiave privata** della CA
+- Per verificare l'autenticità, il client:
+  1. Ricalcola l'hash dei dati in chiaro del certificato ricevuto
+  2. Decifra la firma digitale usando la **chiave pubblica** della CA, ottenendo l'hash originale
+  3. Confronta i due hash: se coincidono, il certificato è integro (non manomesso) e l'identità del server è verificata
 
 Approfondimenti introduttivi:
 
@@ -314,13 +736,12 @@ Due alternative comuni sono:
    Un esempio di POST in questo caso è:
 
    ```ps1
-   curl --ca-native --request POST --location 'https://3ca86ebb-ff5d-4d05-aae4-117d2ea114ed.mock.pstmn.io/products' `
+   curl --ca-native --request POST --location 'https://jsonplaceholder.typicode.com/users' `
    --header 'Content-Type: application/json' `
-   --header 'X-API-Key: chiave_segreta' `
    --data '{
-       "name": "Honey - Comb",
-       "price": 26.68,
-       "company_id": 73
+       "name": "Mario Rossi",
+       "username": "mrossi",
+       "email": "mario.rossi@example.com"
    }'
    ```
 
@@ -337,22 +758,21 @@ Due alternative comuni sono:
    Ad esempio, ipotizzando che `cacert.pem` sia nella directory corrente:
 
    ```ps1
-   curl --cacert .\cacert.pem --request POST --location 'https://3ca86ebb-ff5d-4d05-aae4-117d2ea114ed.mock.pstmn.io/products' `
+   curl --cacert .\cacert.pem --request POST --location 'https://jsonplaceholder.typicode.com/users' `
     --header 'Content-Type: application/json' `
-    --header 'X-API-Key: chiave_segreta' `
     --data '{
-        "name": "Honey - Comb",
-        "price": 26.68,
-        "company_id": 73
+        "name": "Mario Rossi",
+        "username": "mrossi",
+        "email": "mario.rossi@example.com"
     }'
    ```
 
    ```json
    {
-     "id": 4,
-     "name": "Honey - Comb",
-     "price": 26.68,
-     "company_id": 73
+     "name": "Mario Rossi",
+     "username": "mrossi",
+     "email": "mario.rossi@example.com",
+     "id": 11
    }
    ```
 
@@ -360,35 +780,159 @@ Due alternative comuni sono:
    - [cURL Documentation](https://everything.curl.dev/)
    - [The Simplest Guide to cURL for REST API Requests](https://dev.to/ritaly/the-simplest-guide-to-curl-for-rest-api-requests-35ii#get-request)
 
-#### Proxy (ambiente scolastico)
 
-In presenza di proxy (scenario frequente in rete scolastica) è necessario configurare le variabili d'ambiente del proxy.
+## REST Client per Visual Studio Code
 
-In PowerShell:
+### Cos'è REST Client
 
-`$env:http_proxy="proxy:3128"`
+[REST Client](https://github.com/Huachao/vscode-restclient) è un'estensione per Visual Studio Code che permette di inviare richieste HTTP direttamente dall'editor, senza bisogno di strumenti esterni come Postman o cURL. Le richieste vengono scritte in file con estensione `.http` o `.rest` e possono essere eseguite con un semplice click.
 
-`$env:https_proxy="proxy:3128"`
+### Installazione
 
-In CMD:
+1. Aprire Visual Studio Code
+2. Andare nella sezione **Estensioni** (icona con i quadrati sulla sinistra o `Ctrl+Shift+X`)
+3. Cercare "REST Client" di Huachao Mao
+4. Cliccare su **Installa**
 
-`set http_proxy=proxy:3128`
+### Perché usare REST Client
 
-`set https_proxy=proxy:3128`
+| Vantaggio              | Descrizione                                                  |
+| ---------------------- | ------------------------------------------------------------ |
+| **Integrato nell'IDE** | Non serve uscire da VS Code per testare le API               |
+| **File testuali**      | Le richieste sono codice, salvabile su Git e condivisibile   |
+| **Sintassi semplice**  | Formato leggibile e immediato                                |
+| **Esecuzione rapida**  | Click destro → "Send Request" o shortcut `Ctrl+Alt+R`        |
+| **Variabili**          | Supporta variabili per ambienti diversi (dev, staging, prod) |
+| **Generazione cURL**   | Può generare automaticamente il comando cURL equivalente     |
 
-In Linux bash:
+### Come funziona
 
-`export http_proxy="proxy:3128"`
+1. **Creare un file** con estensione `.http` (esempio: `api-requests.http`)
+2. **Scrivere le richieste** usando la sintassi semplificata
+3. **Eseguire** posizionando il cursore sulla richiesta e premendo `Ctrl+Alt+R` (o click destro → "Send Request")
+4. **Visualizzare la risposta** in una nuova tab a destra
 
-`export https_proxy="proxy:3128"`
+### Sintassi base
 
-### cURL basics
+Di seguito esempi completi delle operazioni CRUD usando l'endpoint `https://jsonplaceholder.typicode.com/users`:
 
-- Comandi di cURL in Windows: [https://ss64.com/nt/curl.html](https://ss64.com/nt/curl.html)
-- Comandi di cURL in bash: [https://ss64.com/bash/curl.html](https://ss64.com/bash/curl.html)
-- Guida generale: [https://everything.curl.dev/cmdline](https://everything.curl.dev/cmdline)
-- Modifica del metodo HTTP: [https://everything.curl.dev/http/modify/method](https://everything.curl.dev/http/modify/method)
-- Esempio (IP pubblico): [https://linuxconfig.org/how-to-use-curl-to-get-public-ip-address](https://linuxconfig.org/how-to-use-curl-to-get-public-ip-address)
+```http
+### GET - Recupera tutti gli utenti
+GET https://jsonplaceholder.typicode.com/users
+
+### GET - Recupera un utente specifico
+GET https://jsonplaceholder.typicode.com/users/1
+
+### POST - Crea un nuovo utente
+POST https://jsonplaceholder.typicode.com/users
+Content-Type: application/json
+
+{
+  "name": "Mario Rossi",
+  "username": "mrossi",
+  "email": "mario.rossi@example.com",
+  "phone": "123-456-7890",
+  "website": "mariorossi.it"
+}
+
+### PUT - Aggiorna completamente un utente
+PUT https://jsonplaceholder.typicode.com/users/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Leanne Graham Modificata",
+  "username": "Bret",
+  "email": "Sincere@april.biz",
+  "phone": "1-770-736-8031 x56442",
+  "website": "hildegard.org"
+}
+
+### PATCH - Aggiorna parzialmente un utente
+PATCH https://jsonplaceholder.typicode.com/users/1
+Content-Type: application/json
+
+{
+  "email": "nuova.email@example.com"
+}
+
+### DELETE - Elimina un utente
+DELETE https://jsonplaceholder.typicode.com/users/1
+```
+
+:::note
+Il separatore `###` permette di dividere più richieste nello stesso file. Ogni richiesta può essere eseguita singolarmente posizionando il cursore su di essa.
+:::
+
+:::tip[Esecuzione]
+Posizionare il cursore sulla riga della richiesta desiderata (ad esempio `GET https://...`) e premere `Ctrl+Alt+R` per eseguirla.
+:::
+
+### Generazione di comandi cURL
+
+REST Client può convertire automaticamente qualsiasi richiesta HTTP in un comando cURL equivalente. Questa funzionalità è utile quando si necessita di eseguire la stessa richiesta da terminale o script.
+
+**Per generare il comando cURL:**
+
+1. Posizionare il cursore sulla richiesta desiderata
+2. Premere `Ctrl+Alt+C` (o `Cmd+Alt+C` su macOS) oppure click destro → "Copy as cURL"
+3. Il comando cURL viene copiato negli appunti
+
+**Esempio di conversione:**
+
+La richiesta REST Client:
+
+```http
+POST https://jsonplaceholder.typicode.com/users
+Content-Type: application/json
+
+{
+  "name": "Mario Rossi",
+  "email": "mario@example.com"
+}
+```
+
+Viene convertita in:
+
+```bash
+curl -X POST \
+  https://jsonplaceholder.typicode.com/users \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "name": "Mario Rossi",
+  "email": "mario@example.com"
+}'
+```
+
+:::note
+Questa funzionalità permette di prototipare rapidamente le richieste in REST Client e poi esportarle per l'uso in script shell o documentazione.
+:::
+
+### Variabili
+
+È possibile definire variabili all'inizio del file per rendere le richieste più flessibili:
+
+```http
+@baseUrl = https://jsonplaceholder.typicode.com
+@contentType = application/json
+
+GET {{baseUrl}}/users
+Content-Type: {{contentType}}
+```
+
+### Shortcut da tastiera
+
+| Azione                           | Windows/Linux | macOS       |
+| -------------------------------- | ------------- | ----------- |
+| Invia richiesta                  | `Ctrl+Alt+R`  | `Cmd+Alt+R` |
+| Invia richiesta e salva risposta | `Ctrl+Alt+S`  | `Cmd+Alt+S` |
+| Genera comando cURL              | `Ctrl+Alt+C`  | `Cmd+Alt+C` |
+
+### Documentazione ufficiale
+
+- Repository GitHub: [https://github.com/Huachao/vscode-restclient](https://github.com/Huachao/vscode-restclient)
+- Marketplace VS Code: Cercare "REST Client" nell'apposita sezione
+
 
 ## Utilizzo di un Mock Server per il testing di applicazioni client
 
@@ -2499,7 +3043,6 @@ console.log(`Generazione completata!`);
 console.log(`- Creati ${products.length} prodotti.`);
 console.log(`- Create ${companies.length} compagnie.`);
 console.log(`Il file 'db.json' è pronto per essere servito.`);
-
 ```
 
 Per eseguire lo script e generare il database, modificare il file `package.json`, nella sezione "scripts" come riportato di seguito:
@@ -2599,8 +3142,6 @@ Se all'avvio compare l'errore `Error: listen EADDRINUSE: address already in use 
    npm run start:alt
 
    ```
-
-
 
 ### Configurazione avanzata di `json-server`: architettura e implementazione
 
