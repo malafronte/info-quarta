@@ -2,7 +2,7 @@
 title: Guide di approfondimento 
 description: Un elenco di siti e guide per chi vuole approfondire i concetti relativi alla programmazione e all'AI
 sidebar:
-  label: "Guide su AI e programmazione"
+  label: "Introduzione all'AI e alla programmazione"
   order: 10
 ---
 
