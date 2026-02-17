@@ -113,13 +113,13 @@ I dati principali emersi dal rapporto includono:
 
 ### McKinsey Global Institute: analisi quantitative
 
-Il **McKinsey Global Institute** ha prodotto una serie di rapporti sull'impatto dell'automazione e dell'AI sul lavoro, caratterizzati da un approccio quantitativo rigoroso. Il rapporto **'A new future of work: The race to deploy AI and raise skills in Europe and beyond' (2024)** analizza specificamente il contesto europeo, evidenziando come la corsa all'adozione dell'AI sia accompagnata dalla necessità di elevare le competenze della forza lavoro.
+Il **McKinsey Global Institute** ha prodotto una serie di rapporti sull'impatto dell'automazione e dell'AI sul lavoro, caratterizzati da un approccio quantitativo rigoroso. Il rapporto ***A new future of work: The race to deploy AI and raise skills in Europe and beyond* (2024)** analizza specificamente il contesto europeo, evidenziando come la corsa all'adozione dell'AI sia accompagnata dalla necessità di elevare le competenze della forza lavoro.
 
 **Secondo McKinsey, entro il 2030 circa il 30% dei posti di lavoro attuali negli Stati Uniti potrebbe essere automatizzato, con il 60% significativamente alterato dagli strumenti di AI**.[^mckinsey2024] Il rapporto sottolinea come il potenziale di automazione vari significativamente tra settori: le attività finanziarie e assicurative presentano il più alto potenziale di automazione (fino al 66% delle attività), seguite dal settore manifatturiero e da quello dei servizi professionali. Al contrario, settori come l'istruzione, la sanità e i servizi sociali presentano un potenziale di automazione inferiore, data la prevalenza di attività che richiedono interazione umana e competenze relazionali.
 
 ### International Labour Organization: prospettiva globale
 
-L'International Labour Organization offre una prospettiva peculiare, concentrandosi sulle implicazioni dell'AI per il lavoro a livello globale e con particolare attenzione alle diseguaglianze tra Paesi sviluppati e in via di sviluppo. **Il rapporto 'Mind the AI Divide: Shaping a Global Perspective on the Future of Work' (2024) evidenzia come l'adozione dell'AI sia fortemente disomogenea a livello mondiale, con il rischio di ampliare il divario tra economie avanzate e quelle emergenti**.[^ilo-mind]
+L'International Labour Organization offre una prospettiva peculiare, concentrandosi sulle implicazioni dell'AI per il lavoro a livello globale e con particolare attenzione alle diseguaglianze tra Paesi sviluppati e in via di sviluppo. **Il rapporto *Mind the AI Divide: Shaping a Global Perspective on the Future of Work* (2024) evidenzia come l'adozione dell'AI sia fortemente disomogenea a livello mondiale, con il rischio di ampliare il divario tra economie avanzate e quelle emergenti**.[^ilo-mind]
 
 L'ILO ha sviluppato una metodologia sofisticata per misurare l'esposizione occupazionale all'AI generativa, combinando dati a livello di attività (task-level data), input esperti e valutazioni dei modelli di AI. I risultati mostrano che l'esposizione varia non solo tra settori, ma anche tra Paesi in base alla struttura occupazionale. I Paesi con una maggiore quota di occupazione nel terziario avanzato presentano un'esposizione più alta, ma anche maggiori opportunità di sfruttare i benefici dell'augmentation. Al contrario, i Paesi in cui prevale l'occupazione agricola e manifatturiera potrebbero vedere un impatto minore diretto dall'AI generativa, ma rischiare di perdere opportunità di sviluppo economico legate alla nuova rivoluzione tecnologica.
 
@@ -173,7 +173,7 @@ Le principali competenze tecniche individuate includono:
 
 ### Competenze trasversali e soft skills
 
-Paradossalmente, mentre l'automazione investe le competenze tecniche, **le competenze umane e sociali acquisiscono un valore crescente**. Queste competenze, spesso definite 'soft skills' o 'power skills', sono quelle che l'AI fatica maggiormente a replicare e che diventano pertanto il fattore differenziale dei professionisti di successo. **Il pensiero creativo, la risoluzione di problemi complessi, l'intelligenza emotiva, la comunicazione efficace e la capacità di lavorare in team sono competenze che i sistemi di AI non possono sostituire**.
+Paradossalmente, mentre l'automazione investe le competenze tecniche, **le competenze umane e sociali acquisiscono un valore crescente**. Queste competenze, spesso definite *soft skills* o *power skills*, sono quelle che l'AI fatica maggiormente a replicare e che diventano pertanto il fattore differenziale dei professionisti di successo. **Il pensiero creativo, la risoluzione di problemi complessi, l'intelligenza emotiva, la comunicazione efficace e la capacità di lavorare in team sono competenze che i sistemi di AI non possono sostituire**.
 
 Le competenze trasversali più richieste secondo il World Economic Forum sono:
 
