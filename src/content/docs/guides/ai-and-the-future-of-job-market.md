@@ -7,6 +7,7 @@ sidebar:
   order: 10
 ---
 
+![Overview Image](./ai-and-the-future-of-job-market/ia_futuro_del_lavoro.png)
 
 ## L'infrastruttura cognitiva che ridisegna il lavoro e la società
 
@@ -153,6 +154,8 @@ Il World Economic Forum sottolinea come l'istruzione e la formazione continua di
 
 ## Le competenze del futuro: cosa serve per prosperare nell'era dell'AI
 
+![Overview Image](./ai-and-the-future-of-job-market/diventare_orchestratori_ai.png)
+
 La definizione delle competenze necessarie per prosperare nell'era dell'AI rappresenta uno dei temi centrali del dibattito sul futuro del lavoro. Il World Economic Forum, nel Future of Jobs Report 2025, identifica un set di competenze chiave che saranno sempre più richieste nel prossimo decennio. Queste competenze possono essere raggruppate in due grandi categorie: le competenze tecniche specifiche e le competenze trasversali di carattere umano e sociale.
 
 ### Competenze tecniche
@@ -236,6 +239,8 @@ L'AI Act introduce importanti tutele per i lavoratori. I sistemi di AI utilizzat
 Per i professionisti IT, l'AI Act crea nuove responsabilità e opportunità. La progettazione, l'implementazione e la gestione di sistemi di AI conformi al regolamento richiedono competenze specifiche che diventeranno sempre più richieste. La comprensione del quadro normativo, la capacità di valutare il rischio dei sistemi di AI, di documentare adeguatamente i processi e di garantire la conformità sono competenze che integrano quelle tecniche e che avranno un valore crescente nel mercato del lavoro europeo.
 
 ## Conclusioni: orientarsi nel futuro del lavoro
+
+![Overview Image](./ai-and-the-future-of-job-market/competenze_ai_2030.png)
 
 L'analisi condotta in questo documento evidenzia come l'intelligenza artificiale stia trasformando profondamente il mercato del lavoro, con effetti che si manifestano in tutte le dimensioni dell'attività professionale: dall'aumento delle capacità individuali alla trasformazione dei ruoli lavorativi, fino alla potenziale sostituzione di alcune attività. I dati presentati dai principali report internazionali convergono nel dipingere uno scenario di cambiamento strutturale, che interesserà milioni di lavoratori a livello globale nel prossimo decennio.
 
