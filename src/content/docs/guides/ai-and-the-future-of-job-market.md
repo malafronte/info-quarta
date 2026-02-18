@@ -9,33 +9,25 @@ sidebar:
 
 ![Overview Image](./ai-and-the-future-of-job-market/ia_futuro_del_lavoro.png)
 
-## L'infrastruttura cognitiva che ridisegna il lavoro e la società
+## Affrontare la rivoluzione dell'intelligenza artificiale: un'analisi completa dell'impatto sul mercato del lavoro e sulle professioni del futuro
 
 L'intelligenza artificiale rappresenta una delle trasformazioni tecnologiche più significative nella storia dell'umanità, con implicazioni profonde e durature sul mercato del lavoro globale. A differenza delle precedenti rivoluzioni industriali, che hanno interessato principalmente attività fisiche e manuali, l'AI sta investendo direttamente le capacità cognitive, creative e decisionali che tradizionalmente hanno distinto il lavoro umano da quello automatizzato. Questa caratteristica fondamentale rende l'attuale transizione tecnologica unica nel suo genere, ponendo sfide e opportunità completamente inedite per lavoratori, imprese e istituzioni educative.
 
-Gli studenti di oggi saranno i professionisti e i cittadini del domani, chiamati a operare in un contesto lavorativo profondamente trasformato dalle tecnologie di intelligenza artificiale.
-
-**Il World Economic Forum, nel suo rapporto *Future of Jobs Report 2025*, ha evidenziato come** l'impatto dell'AI sul mercato del lavoro sia destinato a essere strutturale e non transitorio.[^wef2025] Secondo le stime dell'organizzazione internazionale, **entro il 2030 verranno dislocati circa 92 milioni di posti di lavoro a livello globale, ma contemporaneamente ne verranno creati circa 170 milioni di nuovi**.[^wef2025] Questo dato, apparentemente rassicurante, nasconde però una realtà più complessa: la transizione richiederà una profonda riqualificazione delle competenze, con conseguenze significative sulla distribuzione delle opportunità lavorative e sui meccanismi di accesso al mercato del lavoro.
+**Il World Economic Forum, nel suo rapporto *Future of Jobs Report 2025*, ha evidenziato come** l'impatto dell'AI sul mercato del lavoro sia destinato a essere strutturale e non transitorio.[^wef2025] Secondo le stime dell'organizzazione internazionale, **entro il 2030 verranno eliminati circa 92 milioni di posti di lavoro a livello globale, ma contemporaneamente ne verranno creati circa 170 milioni di nuovi**.[^wef2025] Questo dato, apparentemente rassicurante, nasconde però una realtà più complessa: la transizione richiederà una profonda riqualificazione delle competenze, con conseguenze significative sulla distribuzione delle opportunità lavorative e sui meccanismi di accesso al mercato del lavoro.
 
 **L'International Labour Organization (ILO), l'agenzia specializzata delle Nazioni Unite per le questioni lavorative**, ha elaborato metodologie sofisticate per misurare l'esposizione occupazionale all'AI generativa. I risultati di queste analisi indicano che **circa un quarto delle occupazioni a livello mondiale è potenzialmente esposto alla trasformazione da parte delle tecnologie di intelligenza artificiale generativa.**[^ilo-gaijobs] Tuttavia, il termine 'trasformazione' è fondamentale: l'ILO sottolinea che non si tratta necessariamente di sostituzione, quanto piuttosto di una riconfigurazione sostanziale delle attività e delle competenze richieste.
 
-### Obiettivi di questo articolo
+In questo articolo, partendo da un'analisi approfondita delle principali ricerche internazionali sull'impatto dell'AI sul mercato del lavoro, si cerca di fornire una panoramica completa e articolata delle dinamiche in corso e delle prospettive future, con particolare attenzione agli studenti degli istituti tecnici informatici. In particolare, gli obiettivi specifici di questa analisi sono:
 
-Questo articolo persegue molteplici obiettivi formativi, finalizzati a costruire una consapevolezza critica e operativa riguardo alle trasformazioni indotte dall'AI nel mercato del lavoro. Gli obiettivi principali possono essere sintetizzati nei seguenti punti:
+1. Fornire una panoramica completa e aggiornata delle principali ricerche internazionali sull'impatto dell'AI sul mercato del lavoro, con particolare attenzione ai report del **World Economic Forum**, **McKinsey Global Institute**, **International Labour Organization** e **Goldman Sachs**.
 
-1. Fornire una panoramica completa e aggiornata delle principali ricerche internazionali sull'impatto dell'AI sul mercato del lavoro, con particolare attenzione ai report del World Economic Forum, McKinsey Global Institute, International Labour Organization e Goldman Sachs.
-
-2. Analizzare le tre dimensioni fondamentali dell'impatto dell'AI: l'aumento delle capacità umane (augmentation), la trasformazione dei ruoli professionali e la potenziale sostituzione di alcune attività lavorative.
+2. Analizzare le tre dimensioni fondamentali dell'impatto dell'AI: l'aumento delle capacità umane (**augmentation**), la **trasformazione dei ruoli professionali** e la potenziale **sostituzione** di alcune attività lavorative.
 
 3. Identificare i settori economici maggiormente esposti alla trasformazione tecnologica e le relative implicazioni per le figure professionali coinvolte.
 
 4. Definire le competenze chiave per il futuro del lavoro, distinguendo tra competenze tecniche specifiche e competenze trasversali di carattere umano e sociale.
 
 5. Fornire indicazioni pratiche e strategie concrete per prepararsi al cambiamento, con particolare riferimento al percorso formativo degli studenti degli istituti tecnici informatici.
-
-### Metodologia e fonti
-
-L'elaborazione di questo articolo si basa su un'approfondita analisi delle principali fonti internazionali in materia di intelligenza artificiale e mercato del lavoro. Le fonti primarie includono i rapporti del **World Economic Forum**, in particolare il ***Future of Jobs Report 2025***, che offre una visione d'insieme basata sul punto di vista di oltre 1.000 datori di lavoro globali. I **report del McKinsey Global Institute** forniscono analisi quantitative dettagliate sul potenziale di automazione e sulle proiezioni di lungo periodo. L'**International Labour Organization** contribuisce con studi specifici sull'esposizione occupazionale all'AI generativa, mentre **Goldman Sachs** offre prospettive economiche e finanziarie sull'impatto della tecnologia. A queste si aggiungono le fonti normative europee, con particolare riferimento all'**AI Act**, il regolamento europeo che definisce il quadro giuridico per l'utilizzo dell'intelligenza artificiale nell'Unione Europea.
 
 ## L'evoluzione dell'intelligenza artificiale e il mercato del lavoro
 
@@ -95,7 +87,7 @@ Il **'Future of Jobs Report 2025'** del **World Economic Forum** rappresenta una
 
 I dati principali emersi dal rapporto includono:
 
-- Entro il 2030, circa 92 milioni di posti di lavoro verranno dislocati a livello globale, mentre circa 170 milioni di nuovi posti verranno creati, per un saldo netto positivo di 78 milioni di occupazioni.
+- Entro il 2030, circa 92 milioni di posti di lavoro verranno eliminati a livello globale, mentre circa 170 milioni di nuovi posti verranno creati, per un saldo netto positivo di 78 milioni di occupazioni.
 
 - Circa il 54% dei rispondenti prevede che l'AI dislocherà posti di lavoro esistenti, mentre il 24% prevede che creerà nuove opportunità.
 
@@ -107,7 +99,7 @@ I dati principali emersi dal rapporto includono:
 
 | **Fonte** | **Posti trasformati/esposti** | **Orizzonte temporale** |
 | --- | --- | --- |
-| World Economic Forum | 92 milioni dislocati | 2030 |
+| World Economic Forum | 92 milioni eliminati | 2030 |
 | McKinsey Global Institute | 57% ore lavorative | Attuale |
 | Goldman Sachs | 300 milioni esposti | Medio periodo |
 | International Labour Organization | 25% occupazioni | Attuale |
@@ -244,7 +236,7 @@ Per i professionisti IT, l'AI Act crea nuove responsabilità e opportunità. La 
 
 L'analisi condotta in questo documento evidenzia come l'intelligenza artificiale stia trasformando profondamente il mercato del lavoro, con effetti che si manifestano in tutte le dimensioni dell'attività professionale: dall'aumento delle capacità individuali alla trasformazione dei ruoli lavorativi, fino alla potenziale sostituzione di alcune attività. I dati presentati dai principali report internazionali convergono nel dipingere uno scenario di cambiamento strutturale, che interesserà milioni di lavoratori a livello globale nel prossimo decennio.
 
-Tuttavia, il messaggio fondamentale che emerge dall'analisi non è di pessimismo o di rassegnazione, ma di opportunità e responsabilità. Il World Economic Forum stima che, mentre 92 milioni di posti di lavoro verranno dislocati entro il 2030, circa 170 milioni di nuovi posti verranno creati. La sfida non è la scarsità di opportunità, ma la capacità di prepararsi ad afferrarle. Per gli studenti degli istituti tecnici informatici, che già sviluppano competenze fondamentali per l'economia digitale, le prospettive sono particolarmente favorevoli, a patto di saper integrare le competenze tecniche con quelle umane e sociali che l'AI non può replicare.
+Tuttavia, il messaggio fondamentale che emerge dall'analisi non è di pessimismo o di rassegnazione, ma di opportunità e responsabilità. Il World Economic Forum stima che, mentre 92 milioni di posti di lavoro verranno eliminati entro il 2030, circa 170 milioni di nuovi posti verranno creati. La sfida non è la scarsità di opportunità, ma la capacità di prepararsi ad afferrarle. Per gli studenti degli istituti tecnici informatici, che già sviluppano competenze fondamentali per l'economia digitale, le prospettive sono particolarmente favorevoli, a patto di saper integrare le competenze tecniche con quelle umane e sociali che l'AI non può replicare.
 
 Il concetto di **skill partnership**, introdotto dal McKinsey Global Institute, rappresenta la chiave di lettura più utile per orientarsi nel futuro del lavoro. Non si tratta di competere con l'AI, ma di collaborare con essa, integrando le proprie capacità con quelle degli strumenti tecnologici. Chi saprà utilizzare l'AI come leva di potenziamento delle proprie competenze, chi svilupperà la capacità di apprendimento continuo, chi coltiverà le competenze umane e sociali che la tecnologia non può sostituire, sarà nella posizione migliore per prosperare nel mercato del lavoro del futuro.
 
