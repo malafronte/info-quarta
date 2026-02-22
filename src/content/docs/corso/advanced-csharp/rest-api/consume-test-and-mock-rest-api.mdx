@@ -626,7 +626,9 @@ establish a secure connection to it. To learn more about this situation and
 how to fix it, please visit the web page mentioned above.
 ```
 
-Il problema è dovuto al fatto che cURL non riesce a verificare l'autenticità del certificato digitale presentato dal server remoto. Per risolvere questo problema è necessario configurare cURL in modo che possa accedere ai certificati delle Certification Authorities (CA) che consentono di validare il certificato digitale del server, seguendo il meccanismo di verifica basato su crittografia asimmetrica e firma digitale.
+Il problema è dovuto al fatto che cURL non riesce a verificare l'autenticità del certificato digitale presentato dal server remoto. Per risolvere questo problema è necessario configurare cURL in modo che possa accedere ai certificati delle **Certification Authorities (CA)**.
+
+Una **Certification Authority (CA)** è un'entità terza fidata (come Let's Encrypt, DigiCert, GlobalSign) responsabile dell'emissione e della gestione dei certificati digitali. Il suo ruolo è quello di garantire crittograficamente che una determinata chiave pubblica appartenga effettivamente all'organizzazione o al dominio che dichiara di possederla, agendo di fatto come un "notaio digitale". Le CA consentono di validare il certificato digitale del server, seguendo il meccanismo di verifica basato su crittografia asimmetrica e firma digitale.
 
 Nelle installazioni di cURL più recenti è possibile utilizzare l'opzione `--ca-native` per sfruttare lo store di certificati di Windows, oppure specificare un file con i certificati delle CA tramite l'opzione `--cacert`, inoltre le versioni più recenti di cURL supportano la feature CAcert che include il bundle Mozilla dei certificati root (ad esempio aggiornati al 2025-12-02 nella release 8.18.0).
 
@@ -634,7 +636,26 @@ Di seguito viene fornita una breve introduzione ai concetti fondamentali alla ba
 
 #### Introduzione ai concetti fondamentali
 
-Quando si accede a un sito HTTPS, il browser o il client deve risolvere un problema fondamentale: **come può essere certo di comunicare davvero con il server che dichiara di essere?** Un attaccante potrebbe fingersi il server legittimo (attacco "man-in-the-middle"). Per prevenire questo rischio, si utilizza un sistema basato sulla **crittografia asimmetrica** e sul concetto di **firma digitale**.
+Quando si accede a un sito HTTPS, il browser o il client deve risolvere un problema fondamentale: **come può essere certo di comunicare davvero con il server che dichiara di essere?** Un attaccante potrebbe fingersi il server legittimo (attacco "man-in-the-middle"). Per prevenire questo rischio, si utilizza un sistema basato sulla **crittografia asimmetrica**, sul concetto di **firma digitale** e sull'infrastruttura a chiave pubblica (PKI) gestita dalle **Certification Authorities (CA)**.
+
+Il ruolo della CA nel processo di emissione e verifica di un certificato può essere riassunto nel seguente schema:
+
+```mermaid
+sequenceDiagram
+    participant Server as Server (es. esempio.com)
+    participant CA as Certification Authority
+    participant Client as Client (Browser/cURL)
+
+    Server->>Server: Genera Coppia di Chiavi (Pubblica/Privata)
+    Server->>CA: Invia CSR (Certificate Signing Request) con Chiave Pubblica
+    CA->>CA: Verifica l'identità del richiedente (es. controllo dominio)
+    CA->>Server: Emette Certificato firmato con la Chiave Privata della CA
+
+    Client->>Server: Richiesta di connessione HTTPS
+    Server->>Client: Invia il proprio Certificato
+    Client->>Client: Verifica la firma del Certificato usando la Chiave Pubblica della CA
+    Client->>Client: Se la firma è valida, stabilisce la connessione sicura
+```
 
 ##### Crittografia a doppia chiave: pubblica e privata
 
@@ -685,13 +706,29 @@ Se un attaccante modificasse anche un solo bit del certificato, l'hash ricalcola
 
 ##### La catena di trust e le Certification Authorities (CA)
 
-Una domanda sorge spontanea: come fa il browser a sapere che la chiave pubblica usata per verificare la firma appartiene davvero alla CA legittima? La risposta è la **catena di trust** (chain of trust):
+Una domanda sorge spontanea: come fa il browser a sapere che la chiave pubblica usata per verificare la firma appartiene davvero alla CA legittima? La risposta è la **catena di trust** (chain of trust).
 
-- Il browser contiene preinstallate le chiavi pubbliche delle **Root CA** (autorità di certificazione radice), organizzazioni altamente affidabili come Let's Encrypt, DigiCert, GlobalSign
-- Queste Root CA possono firmare certificati per server web, oppure firmare certificati di **Intermediate CA** (autorità intermedie)
-- Le Intermediate CA a loro volta possono firmare certificati per i server
+Per motivi di sicurezza, le CA principali non firmano quasi mai direttamente i certificati dei server finali. Utilizzano invece una struttura gerarchica:
 
-Il browser verifica l'intera catena: il certificato del server è firmato da un'Intermediate CA, il cui certificato è firmato da una Root CA. Se l'intera catena è valida, il certificato del server è considerato **trusted** (fidato).
+```mermaid
+graph TD
+    RootCA[Root CA<br/> - Certificato auto-firmato<br/> preinstallato nel Browser/OS] -->|Firma| IntCA[Intermediate CA <br/>- Certificato Intermedio]
+    IntCA -->|Firma| ServerCert[Certificato del Server<br/>es. www.esempio.com]
+
+    classDef root fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef int fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef server fill:#bfb,stroke:#333,stroke-width:2px;
+
+    class RootCA root;
+    class IntCA int;
+    class ServerCert server;
+```
+
+- **Root CA**: Il browser o il sistema operativo contiene preinstallate le chiavi pubbliche delle **Root CA** (autorità di certificazione radice), organizzazioni altamente affidabili e rigorosamente controllate (come Let's Encrypt, DigiCert, GlobalSign). Il loro certificato è auto-firmato.
+- **Intermediate CA**: Le Root CA firmano i certificati delle **Intermediate CA** (autorità intermedie). Questo livello intermedio protegge la chiave privata della Root CA (che viene tenuta offline per massima sicurezza).
+- **Certificato del Server (Leaf Certificate)**: Le Intermediate CA a loro volta firmano i certificati finali per i server web.
+
+Il browser verifica l'intera catena a ritroso: controlla che il certificato del server sia firmato da un'Intermediate CA valida, e poi verifica che il certificato di quest'ultima sia firmato da una Root CA presente nel proprio archivio di fiducia (trust store). Se l'intera catena è valida e riconduce a una Root CA fidata, il certificato del server è considerato **trusted** (fidato).
 
 #### Verifica pratica con cURL
 
@@ -714,6 +751,36 @@ Ad esempio, quando un browser si connette al sito [https://www.istitutogreppi.ed
   1. Ricalcola l'hash dei dati in chiaro del certificato ricevuto
   2. Decifra la firma digitale usando la **chiave pubblica** della CA, ottenendo l'hash originale
   3. Confronta i due hash: se coincidono, il certificato è integro (non manomesso) e l'identità del server è verificata
+
+Ecco uno pseudocodice che illustra la logica di verifica:
+
+```csharp
+// 1. Il client riceve il certificato dal server
+Certificate cert = ReceiveCertificateFromServer();
+
+// 2. Il client estrae i dati in chiaro e la firma digitale dal certificato
+byte[] datiInChiaro = cert.GetDatiInChiaro();
+byte[] firmaDigitale = cert.GetFirmaDigitale();
+
+// 3. Il client recupera la chiave pubblica della CA (dal proprio trust store)
+PublicKey chiavePubblicaCA = GetCAPublicKey(cert.Issuer);
+
+// 4. Il client ricalcola l'hash dei dati in chiaro
+byte[] hashCalcolato = CalculateHash(datiInChiaro);
+
+// 5. Il client decifra la firma digitale usando la chiave pubblica della CA
+byte[] hashOriginale = DecryptSignature(firmaDigitale, chiavePubblicaCA);
+
+// 6. Il client confronta i due hash
+if (hashCalcolato == hashOriginale)
+{
+    Console.WriteLine("Certificato valido: integrità e autenticità confermate.");
+}
+else
+{
+    Console.WriteLine("Certificato NON valido: possibile manomissione o CA non fidata.");
+}
+```
 
 Approfondimenti introduttivi:
 
@@ -779,7 +846,6 @@ Due alternative comuni sono:
    Risorse aggiuntive su cURL:
    - [cURL Documentation](https://everything.curl.dev/)
    - [The Simplest Guide to cURL for REST API Requests](https://dev.to/ritaly/the-simplest-guide-to-curl-for-rest-api-requests-35ii#get-request)
-
 
 ## REST Client per Visual Studio Code
 
@@ -933,7 +999,6 @@ Content-Type: {{contentType}}
 - Repository GitHub: [https://github.com/Huachao/vscode-restclient](https://github.com/Huachao/vscode-restclient)
 - Marketplace VS Code: Cercare "REST Client" nell'apposita sezione
 
-
 ## Utilizzo di un Mock Server per il testing di applicazioni client
 
 Durante lo sviluppo di applicazioni client che consumano API REST, si presenta spesso la necessità di testare il codice in assenza di un backend reale funzionante. Un **mock server** consente di simulare le risposte di un'API, permettendo lo sviluppo parallelo del frontend senza dipendere dalla disponibilità del backend.
@@ -1026,7 +1091,7 @@ npm config set https-proxy http://proxy:3128
 
 ```
 
-Si noti che per `https-proxy`, l'indirizzo inizia generalmente con `http://` a meno che il proprio server proxy non richieda esplicitamente connessioni sicure).*
+Si noti che per `https-proxy`, l'indirizzo inizia generalmente con `http://` a meno che il proprio server proxy non richieda esplicitamente connessioni sicure).\*
 
 ##### Configurazione con Autenticazione
 
@@ -3246,12 +3311,12 @@ Questo file JSON centrale consente di sostituire la maggior parte dei flag da ri
 
 #### Analisi dei Parametri Critici
 
-| Parametro          | Valore Default | Descrizione Tecnica                                                                                                                                    |
-| :----------------- | :------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `host`             | `"localhost"`  | Per permettere l'accesso da altre macchine nella rete locale (utile per testare client C# su dispositivi mobili o VM), impostare `"0.0.0.0"`.          |
-| `snapshots`        | `null`         | Directory dove salvare lo stato del database via endpoint POST `/__snapshots__`. Utile per catturare stati specifici durante il testing del client C#. |
-| `id`               | `"id"`         | Nome della chiave primaria. Se un client C# si aspetta `"Id"` (PascalCase per convenzione .NET), modificare questo valore.                             |
-| `foreignKeySuffix` | `"Id"`         | Suffisso per le chiavi esterne. Standardizza la convenzione nominale tra collezioni.                                                                   |
+| Parametro&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Valore Default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Descrizione Tecnica                                                                                                                                    |
+| :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host`                                                                                                                            | `"localhost"`                                                                                                  | Per permettere l'accesso da altre macchine nella rete locale (utile per testare client C# su dispositivi mobili o VM), impostare `"0.0.0.0"`.          |
+| `snapshots`                                                                                                                       | `null`                                                                                                         | Directory dove salvare lo stato del database via endpoint POST `/__snapshots__`. Utile per catturare stati specifici durante il testing del client C#. |
+| `id`                                                                                                                              | `"id"`                                                                                                         | Nome della chiave primaria. Se un client C# si aspetta `"Id"` (PascalCase per convenzione .NET), modificare questo valore.                             |
+| `foreignKeySuffix`                                                                                                                | `"Id"`                                                                                                         | Suffisso per le chiavi esterne. Standardizza la convenzione nominale tra collezioni.                                                                   |
 
 #### Routing Avanzato (`routes.json`)
 
