@@ -6,6 +6,7 @@ sidebar:
   order: 40
 ---
 
+import { Badge } from '@astrojs/starlight/components';
 import Accordion from "@components/Accordion.astro";
 
 <style>{`
@@ -999,13 +1000,85 @@ Content-Type: {{contentType}}
 - Repository GitHub: [https://github.com/Huachao/vscode-restclient](https://github.com/Huachao/vscode-restclient)
 - Marketplace VS Code: Cercare "REST Client" nell'apposita sezione
 
-## Utilizzo di un Mock Server per il testing di applicazioni client
+## Utilizzo di un Mock Server per il testing di applicazioni client <Badge text="Importante" variant="tip" size="medium" />
 
 Durante lo sviluppo di applicazioni client che consumano API REST, si presenta spesso la necessità di testare il codice in assenza di un backend reale funzionante. Un **mock server** consente di simulare le risposte di un'API, permettendo lo sviluppo parallelo del frontend senza dipendere dalla disponibilità del backend.
 
 ### Avvio Rapido del Mock Server con json-server
 
-Per facilitare l'apprendimento e il testing delle applicazioni client, viene fornita una cartella preconfigurata contenente tutti i file necessari per avviare un mock server REST. La cartella distribuita contiene:
+Per facilitare l'apprendimento e il testing delle applicazioni client, viene fornita una cartella preconfigurata contenente tutti i file necessari per avviare un mock server REST. La cartella è scaricabile dal repository degli esempi: [mock-server-tutorial](https://github.com/malafronte/malafronte-doc-samples/tree/main/samples-quarta/api_client_server_demos/mock-server-tutorial). Per scaricare solo la cartella specifica, è possibile utilizzare un applicativo web come [download-directory.github.io](https://download-directory.github.io/) oppure il comando `git sparse-checkout`per clonare solo la parte desiderata del repository, oppure utilizzare uno degli script ottimizzati indicati nella terza opzione di seguito.
+
+#### Opzione 1: Scaricare la cartella specifica con la web app `download-directory.github.io`
+
+Se si preferisce non usare i comandi Git, è possibile scaricare solo la cartella specifica utilizzando uno strumento online:
+
+1. Visitare [https://download-directory.github.io/](https://download-directory.github.io/)
+2. Inserire l'URL della cartella desiderata:
+   ```
+   https://github.com/malafronte/malafronte-doc-samples/tree/main/samples-quarta/api_client_server_demos/mock-server-tutorial
+   ```
+3. Fare clic su "Download" per ottenere solo la cartella `mock-server-tutorial` come file ZIP
+
+:::note[Nota su GitHub]
+Il pulsante "Download ZIP" nativo di GitHub scarica sempre l'intero repository, non le singole sottocartelle. Per scaricare solo una cartella specifica senza Git, è necessario utilizzare strumenti di terze parti come download-directory.github.io o i comandi sparse-checkout mostrati sopra.
+:::
+
+#### Opzione 2: Clonare solo la cartella specifica con Git Sparse-Checkout
+
+```bash
+git clone --filter=blob:none --no-checkout https://github.com/malafronte/malafronte-doc-samples.git
+cd malafronte-doc-samples
+git sparse-checkout init --cone
+git sparse-checkout set samples-quarta/api_client_server_demos/mock-server-tutorial
+git checkout
+```
+
+:::note[Spiegazione dei Comandi Git Sparse-Checkout]
+
+Questi comandi permettono di scaricare **solo una specifica cartella** da un repository Git invece di clonare l'intero repository, risparmiando tempo e spazio su disco.
+
+**1. `git clone --filter=blob:none --no-checkout <URL>`**
+
+- `--filter=blob:none`: Utilizza il "partial clone" per scaricare solo i metadati del repository (commit history, tree structure) senza scaricare i contenuti dei file (blobs). Questo riduce drasticamente il download iniziale.
+- `--no-checkout`: Evita di creare la copia di lavoro (working directory) con i file, poiché scaricheremo solo una parte selezionata.
+
+**2. `cd malafronte-doc-samples`**
+
+- Entra nella directory del repository appena clonato.
+
+**3. `git sparse-checkout init --cone`**
+
+- Inizializza la funzionalità **sparse-checkout**.
+- `--cone`: Abilita la modalità "cone pattern matching", che è più efficiente e permette di definire cartelle "radice" (cone roots). Le cartelle specificate verranno scaricate con tutti i loro contenuti.
+
+**4. `git sparse-checkout set <percorso-cartella>`**
+
+- Specifica quale cartella scaricare. In questo caso: `samples-quarta/api_client_server_demos/mock-server-tutorial`
+- Git scaricherà solo i file contenuti in questa cartella e nelle sue sottocartelle.
+- Tutte le altre cartelle del repository rimarranno "vuote" (o non verranno scaricate).
+
+**5. `git checkout`**
+
+- Applica le impostazioni sparse-checkout al working directory.
+- Scarica effettivamente i file della cartella specificata nel comando precedente.
+
+:::note[Vantaggi dello Sparse-Checkout]
+
+- **Risparmio di spazio**: Scarica solo i file necessari invece dell'intero repository (potenzialmente centinaia di MB).
+- **Download più veloce**: Meno dati da trasferire tramite rete.
+- **Organizzazione pulita**: La directory locale contiene solo i file pertinenti al progetto.
+  :::
+
+#### Opzione 3: Utilizzare script ottimizzati per scaricare solo la cartella specifica
+
+Se si preferisce un approccio ancora semplice e sicuro, è possibile utilizzare uno script che automatizza il download della cartella specifica. Nella cartella [tools-and-scripts](https://github.com/malafronte/malafronte-doc-samples/tree/main/tools-and-scripts/github-download-directory) del repository [https://github.com/malafronte/malafronte-doc-samples](https://github.com/malafronte/malafronte-doc-samples) sono riportati alcuni script sia bash che python che permettono di scaricare solo una cartella specifica da un repository GitHub.
+
+- [download-github-folder-optimized.py](https://github.com/malafronte/malafronte-doc-samples/blob/main/tools-and-scripts/github-download-directory/download-github-folder-optimized.py): Script Python ottimizzato per scaricare solo la cartella desiderata, con gestione dell'autenticazione e degli errori.
+- [download-github-folder-optimized.sh](https://github.com/malafronte/malafronte-doc-samples/blob/main/tools-and-scripts/github-download-directory/download-github-folder-optimized.sh): Script bash ottimizzato per scaricare solo la cartella desiderata, con gestione dell'autenticazione e degli errori, ideale per ambienti Unix/Linux o Windows con WSL.
+
+Per maggiori dettagli si può consultare la pagina [README](https://github.com/malafronte/malafronte-doc-samples/blob/main/tools-and-scripts/github-download-directory/README.md) della cartella.
+
+La cartella distribuita contiene:
 
 - **`package.json`**: File di configurazione del progetto Node.js con gli script predefiniti
 - **`db.json`**: Database JSON contenente i dati mock da esporre tramite API
@@ -2120,7 +2193,7 @@ curl -X GET "${BASE_URL}/db" -H "Content-Type: application/json" | jq .
 
 </Accordion>
 
-### Sviluppo dell'Applicazione Client
+### Sviluppo dell'Applicazione Client 
 
 Una volta avviato il mock server, è possibile iniziare immediatamente lo sviluppo dell'applicazione client. Gli endpoint REST sono pienamente funzionali e supportano tutte le operazioni CRUD standard:
 
@@ -2637,9 +2710,9 @@ class Program
 
 **Gestione degli Errori**: Il client implementa una gestione base delle eccezioni HTTP. In un contesto di produzione, sarebbe opportuno implementare:
 
-- Retry policies con Polly
-- Circuit breaker per resilienza
-- Logging strutturato
+- **Retry policies con Polly**: Quando si consumano API REST, errori temporanei come timeout di rete, errori 503 (Service Unavailable) o 429 (Too Many Requests) sono comuni. Una **retry policy** (politica di ritentativo) definisce automaticamente quante volte ripetere una richiesta fallita e con quale strategia di attesa (es. attesa fissa, attesa esponenziale crescente). Ad esempio, si può configurare Polly per riprovare fino a 3 volte con un delay crescente (1s, 2s, 4s) quando si riceve un errore 5xx, aumentando la probabilità di successo senza interrompere l'applicazione.
+- **Circuit breaker per resilienza**: Il pattern **Circuit Breaker** (interruttore automatico) previene il sovraccarico di un servizio già in difficoltà. Quando un numero configurato di richieste consecutive fallisce (es. 5 errori), il circuito si "apre" e le richieste successive vengono bloccate immediatamente per un periodo di tempo (es. 30 secondi), senza nemmeno tentare di contattare il servizio. Dopo il periodo di "cooldown", il circuito entra in stato "half-open" e permette una richiesta di test: se ha successo, il circuito si "chiude" e il flusso normale riprende. Questo protegge sia il client (evitando attese inutili) sia il server (dando tempo di recupero).
+- **Logging strutturato**: A differenza del logging tradizionale basato su stringhe di testo libero (es. `Console.WriteLine($"Errore: {ex.Message}")`), il **logging strutturato** utilizza librerie come Serilog o NLog per registrare eventi come oggetti dati con proprietà chiave-valore. Ogni log entry include campi standardizzati come timestamp, livello (Debug/Info/Warning/Error), nome dell'applicazione, e metadati specifici dell'evento (es. `HttpMethod`, `Url`, `StatusCode`, `ResponseTimeMs`). Questo permette di filtrare, aggregare e analizzare i log in modo efficiente con strumenti come Elasticsearch, Splunk o Azure Application Insights, facilitando il debug e il monitoraggio in produzione.
 
 **Serializzazione JSON**: L'utilizzo di `System.Text.Json` garantisce prestazioni ottimali e integrazione nativa con .NET moderno. Gli attributi `[JsonPropertyName]` permettono il mapping tra la convenzione snake_case di JSON e PascalCase di C#.
 
@@ -3006,13 +3079,18 @@ Una strategia consigliata è sviluppare inizialmente contro il mock server senza
 
 Con questa comprensione della configurazione degli header HTTP, il client REST diventa pronto per interagire con qualsiasi API professionale, mantenendo al contempo la flessibilità necessaria per ambienti di sviluppo e testing.
 
-## Realizzazione di un Mock Server
+## Un esempio completo di client C# con backend mock JSON-Server e supporto all'autenticazione mediante token <Badge text="Importante" variant="tip" size="medium" />
+
+L'esempio proposto illustra una progressione didattica nell'integrazione di client C# con API REST, partendo da un'implementazione base fino a raggiungere un sistema con autenticazione JWT:
+
+1. Nella prima fase, il progetto [**mock-server-products**](https://github.com/malafronte/malafronte-doc-samples/tree/main/samples-quarta/api_client_server_demos/products/mock-server-products) implementa un server mock basato su json-server che espone un'API RESTful completa per la gestione di prodotti. Questo server supporta tutte le operazioni CRUD (GET, POST, PUT, PATCH, DELETE) sulla risorsa `/products`, utilizza dati iniziali provenienti da un file JSON e include risorse multimediali locali (immagini, miniature e QR code) servite dalla cartella `public/assets/products_media`. Il server si avvia sulla porta 3000 e offre anche la possibilità di generare dataset casuali tramite `Faker.js`. L'applicazione [**ApiClient**](https://github.com/malafronte/malafronte-doc-samples/tree/main/samples-quarta/api_client_server_demos/products/ApiClient) rappresenta il client C# che interagisce con questo server, dimostrando come effettuare richieste HTTP e gestire le risposte RESTful in un ambiente di testing controllato. 
+3. Passando alla seconda fase, il progetto [**mock-server-auth**](https://github.com/malafronte/malafronte-doc-samples/tree/main/samples-quarta/api_client_server_demos/products/mock-server-auth) estende il server mock introducendo un sistema di autenticazione basato su JWT (JSON Web Token). In questa configurazione, le operazioni di lettura (GET) rimangono pubblicamente accessibili, mentre tutte le operazioni di modifica (POST, PUT, PATCH, DELETE) richiedono un token JWT valido nell'header `Authorization`. Il server espone un endpoint `/login` che, ricevute credenziali valide (email e password), restituisce un token JWT da utilizzare nelle richieste successive. Il client [**ApiClientAuth**](https://github.com/malafronte/malafronte-doc-samples/tree/main/samples-quarta/api_client_server_demos/products/ApiClientAuth) implementa la logica necessaria per gestire questo flusso di autenticazione: effettua il login inviando le credenziali, estrae e memorizza il token JWT ricevuto, configura l'istanza di `HttpClient` per includere automaticamente il token nell'header `Authorization` (con schema Bearer) e procede con l'esecuzione delle operazioni CRUD sugli endpoint protetti. Questa progressione permette di comprendere prima le basi della comunicazione HTTP con un mock server, per poi affrontare gli aspetti di sicurezza tipici delle API RESTful professionali, dove l'autenticazione tramite token rappresenta lo standard de facto per proteggere le risorse sensibili.
+
+## Creazione di Mock Server REST con `json-server` e `faker.js` <Badge text="Approfondimento" variant="caution" size="medium" />
 
 Approfondimento: [https://it.wikipedia.org/wiki/Mock_object](https://it.wikipedia.org/wiki/Mock_object)
 
 Nel contesto della programmazione orientata agli oggetti, un **mock object** (oggetto simulato) riproduce in modo controllato il comportamento di un oggetto reale. Il mock consente di testare componenti che dipendono da risorse non disponibili, inaccessibili oppure non ancora implementate; in tali casi l'oggetto reale viene sostituito dal mock.
-
-## Creazione di Mock Server REST con `json-server` e `faker.js`
 
 ### Introduzione e Contesto Operativo
 
@@ -3312,11 +3390,11 @@ Questo file JSON centrale consente di sostituire la maggior parte dei flag da ri
 #### Analisi dei Parametri Critici
 
 | Parametro&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Valore Default&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Descrizione Tecnica                                                                                                                                    |
-| :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `host`                                                                                                                            | `"localhost"`                                                                                                  | Per permettere l'accesso da altre macchine nella rete locale (utile per testare client C# su dispositivi mobili o VM), impostare `"0.0.0.0"`.          |
-| `snapshots`                                                                                                                       | `null`                                                                                                         | Directory dove salvare lo stato del database via endpoint POST `/__snapshots__`. Utile per catturare stati specifici durante il testing del client C#. |
-| `id`                                                                                                                              | `"id"`                                                                                                         | Nome della chiave primaria. Se un client C# si aspetta `"Id"` (PascalCase per convenzione .NET), modificare questo valore.                             |
-| `foreignKeySuffix`                                                                                                                | `"Id"`                                                                                                         | Suffisso per le chiavi esterne. Standardizza la convenzione nominale tra collezioni.                                                                   |
+| :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `host`                                                                                        | `"localhost"`                                                              | Per permettere l'accesso da altre macchine nella rete locale (utile per testare client C# su dispositivi mobili o VM), impostare `"0.0.0.0"`.          |
+| `snapshots`                                                                                   | `null`                                                                     | Directory dove salvare lo stato del database via endpoint POST `/__snapshots__`. Utile per catturare stati specifici durante il testing del client C#. |
+| `id`                                                                                          | `"id"`                                                                     | Nome della chiave primaria. Se un client C# si aspetta `"Id"` (PascalCase per convenzione .NET), modificare questo valore.                             |
+| `foreignKeySuffix`                                                                            | `"Id"`                                                                     | Suffisso per le chiavi esterne. Standardizza la convenzione nominale tra collezioni.                                                                   |
 
 #### Routing Avanzato (`routes.json`)
 
@@ -4252,7 +4330,7 @@ public class PinnedCertFromFileClient
 - **Rinnovo/Rigenerazione:** Se si rigenera il certificato (`openssl req` nuovo), il thumbprint cambia. È necessario aggiornare la costante `ExpectedCertificateThumbprint` nel codice C# e ridistribuire il client (o il file `cert.pem`).
 - **Produzione:** In ambiente di produzione non si utilizzano certificati self-signed. Si utilizza invece un certificato rilasciato da una CA pubblica (Let's Encrypt, etc.) e si rimuove il callback custom, lasciando che il sistema operativo validi la catena di fiducia (`SslPolicyErrors.None`).
 
-## Postman Mock Server
+## Postman Mock Server <Badge text="Approfondimento" variant="caution" size="medium" />
 
 Video introduttivi:
 
