@@ -119,3 +119,17 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+/* Center Mermaid diagrams */
+pre.mermaid {
+    display: flex;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-block: 1.5rem;
+}
+
+pre.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}

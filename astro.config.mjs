@@ -4,20 +4,52 @@ import starlight from "@astrojs/starlight";
 import remarkEmoji from "remark-emoji";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
-import mermaid from "astro-mermaid";
-import plantuml from "astro-plantuml";
+import remarkSimplePlantuml from "@akebifiky/remark-simple-plantuml";
+import { visit } from "unist-util-visit";
 import starlightThemeGalaxy from "starlight-theme-galaxy";
 import starlightFullViewMode from "starlight-fullview-mode";
 import starlightCodeblockFullscreen from "starlight-codeblock-fullscreen";
 
+/** Remark plugin: converte i blocchi ```mermaid in <pre class="mermaid">
+ *  prima che expressive-code li processi, così vengono renderizzati lato client.
+ *  @returns {(tree: unknown) => void}
+ */
+function remarkMermaid() {
+  return function (tree) {
+    visit(
+      /** @type {any} */ (tree),
+      "code",
+      /**
+       * @param {{ lang?: string, value: string }} node
+       * @param {number | undefined} index
+       * @param {{ children: unknown[] } | undefined} parent
+       */
+      function (node, index, parent) {
+        if (node.lang !== "mermaid" || !parent || typeof index !== "number") {
+          return;
+        }
+
+        const escaped = node.value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+        const htmlNode = {
+          type: "html",
+          value: `<pre class="mermaid">${escaped}</pre>`,
+        };
+
+        parent.children[index] = htmlNode;
+      },
+    );
+  };
+}
+
+const base = "/info-quarta/";
+
 // https://astro.build/config
 export default defineConfig({
   integrations: [
-    plantuml(),
-    mermaid({
-      theme: "forest",
-      autoTheme: true,
-    }),
     starlight({
       title: {
         it: "Informatica in quarta",
@@ -50,6 +82,15 @@ export default defineConfig({
       },
       favicon: "/brand-icon-128.png",
       customCss: ["./src/styles/custom.css"],
+      head: [
+        {
+          tag: "script",
+          attrs: {
+            type: "module",
+            src: `${base}scripts/mermaid-init.js`,
+          },
+        },
+      ],
       social: [
         {
           icon: "github",
@@ -106,6 +147,13 @@ export default defineConfig({
                   },
                   collapsed: true,
                 },
+                {
+                  label: "App Development with .NET MAUI",
+                  autogenerate: {
+                    directory: "corso/advanced-csharp/mobile-apps",
+                  },
+                  collapsed: true,
+                },
               ],
             },
           ],
@@ -149,6 +197,13 @@ export default defineConfig({
               },
               collapsed: true,
             },
+            {
+              label: "📝 Markdown",
+              autogenerate: {
+                directory: "dev-tools/markdown",
+              },
+              collapsed: true,
+            },
           ],
         },
         {
@@ -180,6 +235,8 @@ export default defineConfig({
   // Enable remark plugin to convert emoji shortcodes like :tent: into unicode
   markdown: {
     remarkPlugins: [
+      remarkMermaid,
+      remarkSimplePlantuml,
       remarkEmoji,
       // Configura remark-math per gestire meglio le espressioni matematiche
       [
@@ -207,5 +264,5 @@ export default defineConfig({
     ],
   },
   site: "https://malafronte.github.io",
-  base: "/info-quarta/",
+  base: base,
 });

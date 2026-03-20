@@ -11,22 +11,21 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.6",
-    "@astrojs/starlight": "^0.37.6",
+    "@akebifiky/remark-simple-plantuml": "^1.0.2",
+    "@astrojs/check": "^0.9.8",
+    "@astrojs/starlight": "^0.38.1",
     "@expressive-code/plugin-collapsible-sections": "^0.41.3",
     "@expressive-code/plugin-line-numbers": "^0.41.3",
-    "astro": "^5.17.1",
-    "astro-mermaid": "^1.1.0",
-    "astro-plantuml": "^0.1.4",
+    "astro": "^6.0.6",
     "katex": "^0.16.25",
-    "mermaid": "^11.12.1",
     "rehype-katex": "^7.0.1",
     "remark-emoji": "^5.0.2",
     "remark-math": "^6.0.0",
     "sharp": "^0.34.5",
     "starlight-codeblock-fullscreen": "^0.1.4",
     "starlight-fullview-mode": "^0.2.6",
-    "starlight-theme-galaxy": "^0.5.2"
+    "starlight-theme-galaxy": "^0.5.2",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
