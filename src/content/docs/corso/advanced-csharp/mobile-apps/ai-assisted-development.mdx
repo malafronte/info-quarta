@@ -1650,6 +1650,20 @@ Per agganciare in scioltezza la libreria offerta da OpenRouter all'interno del p
 - Quando richiesto, popola il campo *Base URL* (oppure *API Endpoint URL*) al valore standard `https://openrouter.ai/api/v1` (o varianti analoghe suggerite dalla specifica SDK in uso all'agent).
 - Inserire nel placeholder dell'API KEY la propria stringa testuale autorizzativa OpenRouter per intercettare direttamente i LLMs gratuiti!
 
+#### Antigravity
+
+[Google Antigravity](https://antigravity.google/docs/get-started) rappresenta l'evoluzione dell'IDE tradizionale verso la nuova era *"Agent-First"*. Sviluppata da Google DeepMind, non è un semplice strumento di autocompletamento, ma una vera e propria **piattaforma di sviluppo agentica** pensata per dirigere e orchestrare AI autonome. 
+
+Mentre i copilot tradizionali spesso si fermano a un framework conversazionale, in Antigravity l'intelligenza artificiale agisce come un attore autonomo in grado di **pianificare, eseguire, validare e iterare** su compiti ingegneristici complessi con un intervento umano ad alto livello direttivo (*Man-in-the-Loop*). 
+
+Tra le sue caratteristiche avanzate per lo sviluppo di progetti moderni troviamo:
+- **Agent Manager (Mission Control):** Un cruscotto che permette di lanciare, monitorare e orbitare multipli agenti su diversi workspace.
+- **Planning Mode & Artifacts:** Prima di eseguire modifiche non banali, l'agente genera iterativamente documenti markdown strutturati e consultabili chiamati *Artifacts* (es. `implementation_plan.md`, `task.md`, `walkthrough.md`). Questa logica disinnesca radicalmente il problema del *Vibe Coding*, forzando la macchina (e mostrando allo studente) un ragionamento logico a priori.
+- **Antigravity Browser:** Un sub-agente dinamico integrato capace di aprire un browser web, interagire con la pagina (cliccare, scrollare, digitare), leggere i log della console locale, scattare screenshot e registrare flussi video. È uno strumento inestimabile per il debug visivo e il testing di interfacce utente.
+
+**Vantaggi per la didattica:** 
+Antigravity è scaricabile e installabile in locale. È attualmente disponibile in **preview pubblica senza costi** (associata a un account Google standard, richiede solo Chrome e requisiti minimi di RAM/Disco). La piattaforma offre una flessibilità enorme garantendo l'accesso **anche a numerosi modelli di terze parti** creati da altri provider, come, ad esempio i modelli di Anthropic, **Claude Sonnet** e **Claude Opus**, oppure GPT OSS. Tuttavia, essendo nativamente integrata con la potentissima famiglia di modelli **Gemini 3 Pro** via Cloud, vanta su quest'ultimi rate limit gratuiti estremamente generosi, incarnando il candidato ideale per fornire a ogni studente il suo primo vero "Junior Developer" virtuale a costo zero.
+
 ### 5.4 L'agente AI e le operazioni Git (Commit e Push)
 
 Una della funzionalità più impattanti nello sviluppo Man-in-the-Loop assistito prevede la delega delle operazioni di version control (soprattutto i branch creation, i `commit` e i `push`) direttamente all'agente AI, come Copilot in Agent Mode o OpenCode. Dato che gli studenti spesso trovano noioso o sinteticamente complesso produrre log e commit message esplicativi, formattati e formali, l'agente risulta uno strumento eccellente per automatizzare questo step alla perfezione.
