@@ -73,10 +73,10 @@ Indipendentemente dal progetto scelto, possono essere introdotte alcune estensio
 
 ### 1.5 Nota sul Workflow Git per tutti i progetti
 
-In tutte le guide passo-passo che seguono, si intende **sempre** applicato il seguente rigido loop di lavoro con Git:
-1. **Plan & Branch**: all'inizio del passo, richiedere la creazione di un branch specifico (es. `git checkout -b feature/ui-meteo-attuale`).
-2. **Execute & Test**: sviluppare e testare la feature (con o senza l'ausilio dell'Intelligenza Artificiale).
-3. **Commit & Merge**: alla fine del passo, formattare il commit (es. `git commit -am "feat: completata UI meteo attuale"`) per poi eventualmente chiudere il branch. L'agente AI può essere istruito ad eseguire queste automazioni tramite terminale a patto che gli si concedano i dovuti permessi controllati (vedi l'Esempio Completo in fondo a questo documento).
+In tutte le guide passo-passo che seguono, si intende **sempre** applicato il seguente loop di lavoro con Git, allineato alle best practices dello sviluppo software:
+1. **Plan & Branch**: all'inizio dello sviluppo di una nuova funzionalità o iterazione, richiedere la creazione di un **branch specifico** (es. `git checkout -b feature/ui-meteo-attuale`). Un branch rappresenta un ambiente di lavoro isolato, perfetto per sviluppare la feature senza intaccare il ramo principale del repository.
+2. **Execute, Test & Commit (Frequenti)**: sviluppare e testare la feature procedendo a piccoli passi. Ogni volta che si raggiunge un traguardo significativo, coerente e funzionante (es. "creato il DTO", "implementato il Service", "corretto un bug"), si esegue un **commit atomico** (es. `git commit -am "feat: aggiunto DTO meteo"` o `fix: risolto crash UI`). Un singolo branch ben gestito conterrà sempre *numerosi* commit ravvicinati.
+3. **Document & Merge**: alla fine dell'iterazione, dopo l'aggiornamento della documentazione e l'ultimo commit, si "chiude" il lavoro. Si esegue il **merge** del branch concluso nel ramo principale (es. main) e il branch può essere eliminato. L'agente AI può essere istruito ad eseguire queste automazioni tramite terminale a patto che gli si concedano i dovuti permessi controllati (vedi l'Esempio Completo in fondo a questo documento).
 
 ### 1.6 Approfondimento: I DTO (Data Transfer Object) nei progetti MAUI
 

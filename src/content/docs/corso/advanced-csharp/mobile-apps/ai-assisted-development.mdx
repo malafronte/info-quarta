@@ -107,6 +107,11 @@ Lo sviluppo non guidato da specifiche può portare rapidamente a:
 Il modello di lavoro adottato è di tipo **Man-in-the-Loop** (traducibile come "l'uomo nel ciclo di controllo").  
 In questo schema l'AI non opera da sola, ma interviene dentro una pipeline controllata in cui l'essere umano agisce come decisore, validatore e regista dell'intero processo.
 
+:::note[Scelta didattica e Pratiche Agentiche]
+È importante chiarire che l'approccio "Man-in-the-Loop" applicato in questo corso è una **scelta puramente didattica** pensata per favorire la padronanza delle fasi di sviluppo, delle logiche architetturali e dei limiti dell'AI.
+Nel panorama odierno esistono già pratiche agentiche avanzate (come [*Ralph Loop*](https://www.aihero.dev/getting-started-with-ralph), [*Ralph Loop Plugin*](https://github.com/Th0rgal/opencode-ralph-wiggum), framework [*GSD*](https://github.com/gsd-build/get-shit-done), [*BMAD*](https://docs.bmad-method.org/), ecc.) che abbattono drasticamente l'interazione umana, permettendo a un agente AI di pianificare, sviluppare, correggere e rilasciare un'intera applicazione in quasi totale autonomia. Nel nostro contesto, però, l'"imbrigliare" l'AI serve proprio ad evitare l'effetto scatola nera e garantire l'apprendimento consapevole dello studente.
+:::
+
 ### 3.1 Panoramica del ciclo
 
 Ogni iterazione di lavoro segue un ciclo a cinque fasi:
@@ -121,7 +126,7 @@ graph TD
     Test -- "❌ Fail" --> Refine["Correzione:<br/>nuovo prompt<br/>o fix manuale"]
     Refine --> Build
     
-    Test -- "✅ Pass" --> Doc["<b>5. Documentazione e Git</b><br/>Aggiornare log,<br/>eseguire Commit e Push"]
+    Test -- "✅ Pass" --> Doc["<b>5. Documentazione e Git</b><br/>Aggiornare log,<br/>eseguire Merge e Push"]
     Doc --> Next((Fine Iterazione<br/>→ Inizio Successiva))
     
     classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px
@@ -148,7 +153,7 @@ In questa fase lo sviluppatore deve:
 - identificare le dipendenze da altre parti del progetto;
 - scrivere i criteri di accettazione ("la feature è completa quando…");
 - stimare la complessità dell'iterazione;
-- **creare un nuovo branch Git** dedicato all'iterazione o alla feature (es. `git checkout -b feature/book-detail` oppure `git checkout -b it-03-dettaglio`).
+- **creare un nuovo branch Git** dedicato all'iterazione o alla feature (es. `git checkout -b feature/book-detail` oppure `git checkout -b it-03-dettaglio`). Il branch isolerà le modifiche di questa feature fino al suo completamento;
 
 **Esempio pratico di obiettivo ben formulato:**
 
@@ -270,14 +275,80 @@ Non generare ancora codice di test, solo la lista dei casi.
 
 ### 3.6 Fase 5: Documentazione e Git
 
-Al termine di ogni iterazione si aggiornano i file di documentazione e si esegue il consolidamento tramite strumento di versioning (Git):
+Durante l'intero ciclo di sviluppo dell'iterazione, le migliori pratiche (sia tradizionali che AI-assisted) prevedono di effettuare **commit frequenti e atomici**. Ogni volta che l'AI (o lo sviluppatore) genera un blocco di codice coerente, testato e funzionante (es. un DTO, un Service API, o un fix mirato), si dovrebbe registrare un commit (es. `git commit -am "feat: aggiunto Service API"`). In questo modo, il branch temporaneo della iterazione conterrà una cronologia dettagliata di piccoli passi, rendendo facile tornare indietro in caso di errori senza perdere tutto il lavoro svolto.
+
+Al termine dell'iterazione (o allo sviluppo dell'intera feature), la Fase 5 serve a fare il bilancio finale, completare la documentazione e chiudere il ciclo di lavoro:
 
 - si aggiorna il log di iterazione (`docs/iterations/it-XX.md`) con obiettivo, piano, test ed esito;
 - si aggiornano la specifica (`docs/spec.md`), il prompt log (`docs/prompt-log.md`) e la matrice di test (`docs/test-matrix.md`), laddove vi siano modifiche rilevanti;
-- si verifica lo stato dei file modificati con `git status` e si analizzano le differenze con `git diff`;
-- si esegue il commit di tutte le modifiche (o si delega all'AI la stesura di un commit message convenzionale) e si spinge il branch sul repository remoto (es. `git commit -am "feat: implementata pagina di dettaglio"`, seguito da `git push`).
+- si esegue una eventuale commit finale relativa a queste integrazioni documentali;
+- si effettua il **merge** del branch completato nel branch principale (es. `main` o `develop`), dopodiché si esegue il `git push` sul repository remoto.
 
-Questa fase chiude il ciclo dell'iterazione e la consolida tracciando la storicità ed i passaggi di sviluppo, preparando il terreno per l'iterazione successiva e l'eventuale "merge" con il branch principale.
+Questa fase chiude formalmente il ciclo dell'iterazione e ne consolida le modifiche unificandole con il codice stabile, preparando un terreno pulito per avviare l'iterazione successiva.
+
+:::note
+**Richiamo sulle best practices in ambito Git**
+
+1. **Il Branch (Lo Spazio di Lavoro)**
+
+  - **Scopo**: Un branch serve a creare un ambiente isolato in cui lavorare a una specifica "unità di lavoro" senza intaccare il ramo principale del progetto (main o master).
+  - **Quando si crea**: Si divide il ramo iniziale (con `git checkout -b <nome>`) esattamente all'inizio dello sviluppo di una nuova funzionalità (Feature), di un'iterazione descritta nel nostro piano, o della correzione di un problema architetturale (Bugfix).
+  - **Best Practice**: Un branch per una feature (feature/login, it-03-lista-meteo). Il branch vive tutto il tempo necessario per completare l'obiettivo, per poi essere "chiuso" e fuso alla fine.
+
+2. **I Commit (I Salvataggi Progressivi)**
+
+  - **Scopo**: Una commit non è "la consegna finale" del lavoro, ma un fotogramma esatto (uno snapshot) dello stato del codice in un preciso momento.
+  - **Quando si crea**: Ogni volta che si realizza un insieme significativo e coerente di codice, o quando un test passa dopo aver scritto una certa implementazione (oppure ogni volta l'AI fornisce una soluzione funzionante di un file e lo collaudiamo).
+  - **Best Practice**: Sviluppo atomico e regola del *"Commit early, commit often"* (fai commit presto e spesso). Un singolo branch può contenere decine di commit o più. Si fa un commit quando si crea l'interfaccia Service ("feat: aggiunta interfaccia web"), un altro commit quando si correda la View XAML ("feat: aggiornata UI meteo"), un altro per un fix spontaneo ("fix: risolto errore di binding null").
+
+3. **Il Merge (La Chiusura)**
+
+  - **Scopo**: Riportare il lavoro ultimato, funzionante e testato nel ramo stabile principale.
+  - **Quando si fa**: È la vera azione tecnica che si compie alla conclusione di ciascuna iterazione. Riporta all'ovile la miriade di commit che hai elaborato.
+
+```mermaid
+gitGraph
+    commit id: "Inizio progetto"
+    branch develop
+    checkout develop
+    commit id: "setup repository base"
+    branch it-01-setup
+    checkout it-01-setup
+    commit id: "feat: progetto MAUI"
+    commit id: "feat: AppShell"
+    checkout develop
+    merge it-01-setup
+    branch feature/login
+    checkout feature/login
+    commit id: "feat: Auth Service"
+    commit id: "feat: Login ViewModel"
+    commit id: "feat: Login XAML View"
+    commit id: "fix: validazione form"
+    checkout develop
+    merge feature/login
+    branch it-02-api-integrazione
+    checkout it-02-api-integrazione
+    commit id: "feat: DTO e Models"
+    commit id: "feat: HttpClient Service"
+    commit id: "test: mock response"
+    checkout develop
+    merge it-02-api-integrazione
+    branch bugfix/shell-routing
+    checkout bugfix/shell-routing
+    commit id: "fix: rotta in AppShell"
+    checkout develop
+    merge bugfix/shell-routing
+    branch it-03-lista-risultati
+    checkout it-03-lista-risultati
+    commit id: "feat: UI CollectionView"
+    commit id: "feat: loading state"
+    checkout develop
+    merge it-03-lista-risultati
+    checkout main
+    merge develop id: "Release 1.0" tag: "v1.0.0"
+```
+
+:::
 
 ### 3.7 Esempio completo di una iterazione
 
@@ -1577,7 +1648,7 @@ Segnalare:
 Non applicare fix automatici, solo elencare i problemi.
 ```
 
-### 5.3 Modelli Cloud e Locali (Ollama, KiloCode, OpenCode Zen)
+### 5.3 Provider di Modelli Locali e Cloud (Ollama, KiloCode, OpenCode Zen, OpenRouter, etc. )
 
 Quando GitHub Copilot non è disponibile o quando è necessario un controllo maggiore sul modello utilizzato, esistono alternative cloud e locali.
 
@@ -1650,7 +1721,7 @@ Per agganciare in scioltezza la libreria offerta da OpenRouter all'interno del p
 - Quando richiesto, popola il campo *Base URL* (oppure *API Endpoint URL*) al valore standard `https://openrouter.ai/api/v1` (o varianti analoghe suggerite dalla specifica SDK in uso all'agent).
 - Inserire nel placeholder dell'API KEY la propria stringa testuale autorizzativa OpenRouter per intercettare direttamente i LLMs gratuiti!
 
-#### Antigravity
+#### Antigravity e i modelli Gemini
 
 [Google Antigravity](https://antigravity.google/docs/get-started) rappresenta l'evoluzione dell'IDE tradizionale verso la nuova era *"Agent-First"*. Sviluppata da Google DeepMind, non è un semplice strumento di autocompletamento, ma una vera e propria **piattaforma di sviluppo agentica** pensata per dirigere e orchestrare AI autonome. 
 
