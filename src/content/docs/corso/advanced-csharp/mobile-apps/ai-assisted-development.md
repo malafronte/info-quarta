@@ -10,6 +10,8 @@ sidebar:
 img {display: block; margin: 0 auto;}
 </style>
 
+![Overview Image](./ai-assisted-development/man_in_the_loop_gem.png)
+
 ## 1. Introduzione
 
 Questo modulo affronta lo sviluppo di una applicazione completa in .NET MAUI con il supporto di strumenti di Intelligenza Artificiale generativa e agentica.  

@@ -10,6 +10,8 @@ sidebar:
 img {display: block; margin: 0 auto;}
 </style>
 
+![Overview Image](./maui-student-projects/AI_assisted_MAUI_projects_gem.png)
+
 ## 1. Introduzione ai progetti finali
 
 Il modulo finale propone lo sviluppo di una applicazione completa in .NET MAUI con target principale Android e supporto opzionale a iOS.  
