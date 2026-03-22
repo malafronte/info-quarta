@@ -1,0 +1,3057 @@
+---
+title: "Guida allo sviluppo di App assistito da AI"
+description: " Guida allo sviluppo di App assistito da AI: progettazione, sviluppo e distribuzione di un'applicazione mobile cross-platform con l'assistenza dell'Intelligenza Artificiale."
+sidebar:
+  label: "Guida allo sviluppo di App assistito da AI"
+  order: 20
+---
+
+<style>
+img {display: block; margin: 0 auto;}
+</style>
+
+## 1. Introduzione
+
+Questo modulo affronta lo sviluppo di una applicazione completa in .NET MAUI con il supporto di strumenti di Intelligenza Artificiale generativa e agentica.  
+L'obiettivo non consiste nel delegare la realizzazione del progetto a un sistema automatico, ma nell'imparare a guidare l'AI in modo controllato, tracciabile e verificabile.
+
+L'approccio adottato è di tipo **spec-driven**.  
+Ciò significa che ogni iterazione di lavoro parte da specifiche esplicite, passa attraverso un piano operativo e produce modifiche limitate, controllate e testate.
+
+### 1.1 Presupposti
+
+Il percorso si inserisce dopo un corso introduttivo che ha già affrontato i fondamenti di .NET MAUI, l'uso di XAML, i layout, le risorse condivise, la navigazione con Shell, la persistenza locale, il data binding, i temi, i permessi e l'analisi di sample ufficiali Microsoft.  
+Il nuovo modulo estende quindi un impianto già esistente e non sostituisce i fondamenti acquisiti.
+
+### 1.2 Obiettivi del modulo
+
+Al termine del modulo lo studente dovrebbe essere in grado di:
+
+- definire specifiche realistiche per un progetto software;
+- pianificare il lavoro in iterazioni brevi e verificabili;
+- usare l'AI per generare e rivedere codice senza rinunciare al controllo umano;
+- integrare API esterne, persistenza locale e navigazione in una applicazione MAUI completa;
+- documentare il percorso di sviluppo in modo strutturato;
+- preparare una versione finale installabile e dimostrabile;
+- presentare il progetto in modo chiaro e motivato.
+
+---
+
+## 2. AI come supporto, non come sostituto
+
+Uno strumento AI può produrre codice plausibile in pochi secondi, ma non garantisce automaticamente correttezza, coerenza architetturale, sicurezza, qualità della UX o affidabilità del risultato finale.  
+Per questo motivo il ruolo umano rimane centrale in tutte le fasi: definizione del problema, controllo delle scelte, review del codice, validazione dei test e presentazione del progetto.
+
+L'uso corretto dell'AI in questo modulo si basa su quattro principi:
+
+- **contesto chiaro**: fornire sempre all'AI informazioni sufficienti sul progetto, sull'architettura e sui vincoli;
+- **richieste precise**: evitare prompt generici e preferire richieste specifiche, limitate a una singola feature o classe;
+- **iterazioni brevi**: non chiedere mai "tutta l'app", ma procedere per piccoli passi verificabili;
+- **verifica continua**: ogni output dell'AI deve essere letto, compreso, testato e, se necessario, corretto.
+
+### 2.1 Vibe Coding vs Sviluppo Spec-Driven
+
+L'approccio più diffuso e più rischioso adottato da chi inizia a programmare con l'AI è il cosiddetto **Vibe Coding**.  
+Questo metodo si caratterizza per una serie di comportamenti problematici:
+
+- prompt vaghi e discorsivi, del tipo *"fammi un'app meteo completa"*;
+- accettazione passiva di blocchi di codice molto grandi senza lettura critica;
+- assenza di pianificazione architetturale;
+- impossibilità di spiegare il funzionamento del codice prodotto;
+- accumulo rapido di debito tecnico, codice duplicato e dipendenze inutili.
+
+Il risultato è spesso una "scatola nera" apparentemente funzionante, in cui lo sviluppatore perde rapidamente la comprensione del flusso logico dell'applicazione.  
+Quando qualcosa si rompe, o quando viene chiesto di modificare una feature, lo sviluppatore non sa dove intervenire.
+
+Per ovviare a queste criticità, si introduce il paradigma dello **Sviluppo Spec-Driven**.  
+Questo approccio richiede che la generazione del codice sia sempre guidata da specifiche tecniche rigorose prodotte preventivamente dallo sviluppatore.
+
+Nell'approccio spec-driven si applicano le seguenti regole fondamentali:
+
+1. **La specifica è il punto di origine**: prima di scrivere codice, si redige una documentazione che descrive requisiti, input/output attesi e criteri di accettazione.
+2. **L'AI è esecutrice, non architetto**: il design del software, la scelta del pattern architetturale e l'organizzazione delle dipendenze rimangono responsabilità umana.
+3. **Micro-iterazioni**: la generazione del codice avviene in segmenti modulari, focalizzati su una singola classe o metodo per volta.
+4. **La Code Review è sistematica**: nessuna riga di codice viene integrata nel progetto senza prima essere stata compresa, analizzata e testata.
+
+### 2.2 Vantaggi dello sviluppo spec-driven
+
+Questo approccio offre diversi vantaggi concreti:
+
+- riduce il rischio di modifiche casuali o incoerenti;
+- facilita la revisione del lavoro da parte del docente;
+- consente di documentare il processo in modo naturale;
+- rende più facile il testing;
+- aiuta a mantenere il controllo del progetto anche quando l'AI produce molto codice;
+- prepara lo studente a pratiche professionali reali.
+
+### 2.3 Rischi dello sviluppo non guidato
+
+Lo sviluppo non guidato da specifiche può portare rapidamente a:
+
+- file generati senza struttura logica;
+- dipendenze NuGet inutili o incompatibili;
+- naming incoerente tra classi, metodi e proprietà;
+- logica applicativa dispersa tra View e code-behind invece che nei ViewModel;
+- regressioni difficili da spiegare dopo ogni modifica;
+- impossibilità di motivare le scelte in sede di valutazione finale.
+
+---
+
+## 3. Il modello operativo: Man-in-the-Loop
+
+Il modello di lavoro adottato è di tipo **Man-in-the-Loop** (traducibile come "l'uomo nel ciclo di controllo").  
+In questo schema l'AI non opera da sola, ma interviene dentro una pipeline controllata in cui l'essere umano agisce come decisore, validatore e regista dell'intero processo.
+
+### 3.1 Panoramica del ciclo
+
+Ogni iterazione di lavoro segue un ciclo a cinque fasi:
+
+```mermaid
+graph TD
+    Start((Inizio<br/>Iterazione)) --> Plan["<b>1. Planning</b><br/>Definire obiettivo,<br/>scrivere specifica"]
+    Plan --> Build["<b>2. Build</b><br/>Generare codice<br/>con AI"]
+    Build --> Review["<b>3. Review</b><br/>Leggere, confrontare<br/>con la specifica"]
+    Review --> Test["<b>4. Testing</b><br/>Verificare con casi<br/>normali e limite"]
+    
+    Test -- "❌ Fail" --> Refine["Correzione:<br/>nuovo prompt<br/>o fix manuale"]
+    Refine --> Build
+    
+    Test -- "✅ Pass" --> Doc["<b>5. Documentazione</b><br/>Aggiornare log,<br/>spec e prompt-log"]
+    Doc --> Next((Fine Iterazione<br/>→ Inizio Successiva))
+    
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px
+    classDef human fill:#d4edda,stroke:#28a745,stroke-width:2px
+    classDef ai fill:#cce5ff,stroke:#007bff,stroke-width:2px
+    classDef fail fill:#f8d7da,stroke:#dc3545,stroke-width:2px
+    
+    class Plan,Review,Test,Doc human
+    class Build ai
+    class Refine fail
+```
+
+**Legenda**: le fasi in verde sono a prevalente responsabilità umana; la fase in azzurro è quella in cui l'AI produce il codice; la fase in rosso indica la correzione quando un test fallisce.
+
+### 3.2 Fase 1: Planning
+
+La fase di Planning precede qualsiasi attività di coding.  
+Lo sviluppatore definisce chiaramente l'obiettivo della singola iterazione e viene richiesto all'AI un piano breve e motivato.
+
+In questa fase lo sviluppatore deve:
+
+- stabilire un obiettivo verificabile (es. "aggiungere la pagina di dettaglio di un libro");
+- definire i file che verranno creati o modificati;
+- identificare le dipendenze da altre parti del progetto;
+- scrivere i criteri di accettazione ("la feature è completa quando…");
+- stimare la complessità dell'iterazione.
+
+**Esempio pratico di obiettivo ben formulato:**
+
+> *"Implementare il file `BookDetailViewModel.cs` contenente le proprietà `Title`, `Author`, `Description`, `CoverUrl` e un `ICommand LoadBookCommand` che chiami il service `IBookService.GetBookByIdAsync(string id)`. Gestire le proprietà `IsBusy`, `ErrorMessage` e `HasData`. Non creare il file XAML in questa iterazione."*
+
+**Esempio di obiettivo mal formulato:**
+
+> *"Crea la pagina del dettaglio del libro"*
+
+La differenza è evidente: il primo obiettivo è verificabile, limitato e preciso; il secondo è vago e potrebbe portare l'AI a generare contemporaneamente ViewModel, View, Service e Model senza controllo.
+
+**Prompt esempio per il planning:**
+
+```text
+Analizzare l'idea di una app MAUI chiamata BookScout Mobile.
+Restituire:
+1) obiettivo dell'app,
+2) utente target,
+3) 5 user story principali,
+4) requisiti non funzionali,
+5) rischi principali.
+Non generare codice.
+```
+
+### 3.3 Fase 2: Build
+
+Nella fase di Build vengono implementate soltanto le modifiche necessarie per quella specifica iterazione.  
+L'AI viene utilizzata per generare il codice, ma sempre partendo da un prompt strutturato che include contesto, obiettivo, vincoli e formato atteso.
+
+**Regole operative per la fase di Build:**
+
+- ogni prompt deve riguardare al massimo una feature;
+- il contesto del progetto deve essere fornito esplicitamente (architettura, file esistenti, convenzioni);
+- i vincoli tecnici devono essere dichiarati (es. "usa MVVM", "non aggiungere pacchetti NuGet");
+- il formato della risposta deve essere specificato (es. "restituisci solo il codice C#, senza spiegazioni");
+- se il codice generato è troppo lungo o tocca troppi file, è meglio dividere la richiesta in sotto-prompt.
+
+**Prompt esempio per la build:**
+
+```text
+Scrivere solo il service REST per SearchBooksAsync.
+Vincoli:
+- usare HttpClient con chiamata asincrona;
+- gestire timeout ed errori di connessione con try/catch;
+- restituire una List<BookDto> o una lista vuota in caso di errore;
+- non scrivere ancora la View o il ViewModel;
+- separare il DTO dal service in file diversi;
+- usare System.Text.Json per la deserializzazione.
+```
+
+**Altro esempio di prompt per la build:**
+
+```text
+Implementare soltanto l'iterazione 2 del piano:
+- creare il file Services/BookService.cs;
+- creare il file Models/BookDto.cs;
+- creare il file ViewModels/SearchViewModel.cs;
+- gestione base di IsBusy, ErrorMessage e lista risultati.
+Vincoli:
+- architettura MVVM;
+- usare CommunityToolkit.Mvvm per ObservableProperty e RelayCommand;
+- HttpClient iniettato tramite costruttore;
+- non toccare i file XAML esistenti.
+Aggiornare anche docs/iterations/it-02.md con il resoconto.
+```
+
+### 3.4 Fase 3: Review
+
+Il codice generato dall'AI deve essere letto interamente, confrontato con la specifica e corretto se necessario.  
+Questa fase è critica: saltarla equivale a fare Vibe Coding.
+
+Durante la review lo sviluppatore deve verificare:
+
+- che il codice rispetti l'architettura MVVM (logica nei ViewModel, non nel code-behind);
+- che i nomi di classi, metodi e proprietà siano coerenti con le convenzioni del progetto;
+- che non siano state introdotte dipendenze non richieste;
+- che la gestione degli errori sia presente e corretta;
+- che il codice sia leggibile e comprensibile;
+- che non ci siano duplicazioni rispetto a codice già esistente.
+
+**Prompt esempio per la review:**
+
+```text
+Revisionare il file seguente.
+Indicare:
+- problemi di naming,
+- logica mal collocata (es. chiamate REST nel code-behind),
+- nullability non gestita,
+- possibili refactoring,
+- test suggeriti.
+Non riscrivere ancora il codice, solo elencare i problemi trovati.
+```
+
+### 3.5 Fase 4: Testing
+
+La feature viene verificata con casi di test normali e casi limite.  
+Una feature va considerata completata solo dopo una verifica concreta sul dispositivo o sull'emulatore.
+
+**Matrice minima di test per ogni iterazione:**
+
+| Area | Verifiche da eseguire |
+|---|---|
+| **Input** | campi vuoti, input non valido, input molto lungo, caratteri speciali |
+| **API** | risposta corretta, errore HTTP (404, 500), timeout, JSON malformato, risposta vuota |
+| **UI** | stato loading visibile, stato errore mostrato, lista vuota gestita, lista lunga scrollabile |
+| **Navigazione** | apertura pagina corretta, ritorno alla pagina precedente, passaggio parametri |
+| **Persistenza** | salvataggio corretto, riapertura dopo chiusura app, modifica di un dato salvato |
+| **Device** | tema chiaro e scuro, rotazione schermo, permessi negati dall'utente |
+
+**Prompt esempio per il testing:**
+
+```text
+Dato questo ViewModel, proporre:
+- 8 casi di test manuale con passi precisi;
+- 5 edge case (casi limite);
+- eventuali test unitari utili per la logica non-UI.
+Non generare ancora codice di test, solo la lista dei casi.
+```
+
+### 3.6 Fase 5: Documentazione
+
+Al termine di ogni iterazione si aggiornano i file di documentazione:
+
+- il log di iterazione (`docs/iterations/it-XX.md`) con obiettivo, piano, file toccati, test eseguiti ed esito;
+- il file di specifica (`docs/spec.md`) se i requisiti sono cambiati;
+- il prompt log (`docs/prompt-log.md`) con i prompt significativi utilizzati;
+- la matrice di test (`docs/test-matrix.md`) con i nuovi casi verificati.
+
+Questa fase chiude il ciclo dell'iterazione e prepara il terreno per la successiva.
+
+### 3.7 Esempio completo di una iterazione
+
+Di seguito si riporta un esempio completo di come dovrebbe apparire il file `docs/iterations/it-03.md` al termine di una iterazione:
+
+```markdown
+# Iterazione 03
+
+## Obiettivo
+Aggiungere la pagina di dettaglio del libro selezionato dalla lista dei risultati.
+
+## Piano
+- creare il file Views/BookDetailPage.xaml
+- creare il file ViewModels/BookDetailViewModel.cs
+- aggiungere la route "bookdetail" nella Shell (AppShell.xaml.cs)
+- passare l'id del libro come parametro di navigazione
+- caricare i dati dal service esistente BookService.GetBookByIdAsync
+- gestire gli stati IsBusy, ErrorMessage e HasData
+
+## File coinvolti nella specifica
+- docs/spec.md (sezione "Pagina Dettaglio")
+- docs/plan.md (iterazione 3)
+
+## Prompt principali utilizzati
+1. "Creare BookDetailViewModel con proprietà Title, Author, Description, 
+   CoverUrl, IsBusy, ErrorMessage. Iniettare IBookService nel costruttore.
+   Usare CommunityToolkit.Mvvm. Gestire il caricamento asincrono."
+2. "Creare il file XAML BookDetailPage con layout ScrollView contenente
+   immagine copertina, titolo, autore e descrizione. Binding al ViewModel.
+   Gestire stato loading con ActivityIndicator e stato errore con Label."
+
+## File creati
+- Views/BookDetailPage.xaml
+- Views/BookDetailPage.xaml.cs
+- ViewModels/BookDetailViewModel.cs
+
+## File modificati
+- AppShell.xaml.cs (aggiunta route)
+- MauiProgram.cs (registrazione DI)
+
+## Test eseguiti
+- [x] Apertura dettaglio da lista risultati: OK
+- [x] Libro con id non valido: mostra messaggio errore
+- [x] Errore API (rete disconnessa): mostra "Impossibile caricare i dati"
+- [x] Ritorno alla pagina precedente con tasto back: OK
+- [x] Immagine copertina non disponibile: placeholder mostrato
+- [ ] Rotazione schermo: layout si adatta ma perde lo scroll position
+
+## Problemi trovati
+- Il ViewModel non gestiva il caso di risposta API con corpo vuoto (200 OK ma JSON null).
+- L'immagine della copertina non aveva un placeholder per il caso di URL mancante.
+
+## Correzioni effettuate
+- Aggiunto controllo null dopo la deserializzazione nel service.
+- Aggiunto placeholder image nel XAML con FallbackSource.
+- Fix manuale: non è stato necessario un nuovo prompt, la correzione è stata fatta a mano.
+
+## Esito
+Completato con riserva: il layout in landscape necessita di rifinitura nell'iterazione successiva.
+```
+
+---
+
+## 4. Struttura documentale del progetto (Docs-as-Code)
+
+Per mantenere il progetto ordinato e il processo tracciabile, si adotta l'approccio **Docs-as-Code**: i documenti di specifica, piano, test e log vivono all'interno del repository, accanto al codice sorgente, e vengono aggiornati iterazione dopo iterazione.
+
+### 4.1 Struttura completa delle cartelle
+
+La seguente struttura rappresenta il layout consigliato per ogni progetto MAUI AI-Assisted.  
+Lo studente deve copiare questa struttura all'inizio del progetto e popolare i file man mano che il lavoro procede.
+
+```text
+ProjectRoot/
+├─ AGENTS.md                          # Regole e contesto per agenti AI (OpenCode, Copilot)
+├─ README.md                          # Descrizione del progetto, setup, istruzioni di build
+├─ .github/
+│  └─ copilot-instructions.md         # Istruzioni specifiche per GitHub Copilot
+├─ docs/
+│  ├─ spec.md                         # Specifica funzionale e non funzionale completa
+│  ├─ plan.md                         # Piano di lavoro con iterazioni e rischi
+│  ├─ architecture.md                 # Architettura tecnica, pattern, flusso dati
+│  ├─ test-matrix.md                  # Matrice di test con casi, esiti e bug trovati
+│  ├─ prompt-log.md                   # Registro ragionato dei prompt significativi
+│  ├─ deployment.md                   # Note su packaging, firma, rilascio APK/AAB
+│  ├─ demo-script.md                  # Scaletta per la presentazione finale
+│  ├─ api-notes.md                    # Note sulle API esterne: endpoint, limiti, formati
+│  └─ iterations/                     # Log delle singole iterazioni Man-in-the-Loop
+│     ├─ it-01.md                     # Iterazione 1: setup progetto e Shell
+│     ├─ it-02.md                     # Iterazione 2: primo service REST
+│     ├─ it-03.md                     # Iterazione 3: UI e data binding
+│     ├─ it-04.md                     # Iterazione 4: persistenza locale
+│     ├─ it-05.md                     # Iterazione 5: gestione errori e stati UI
+│     └─ it-06.md                     # Iterazione 6: rifinitura, test finali, packaging
+├─ src/                               # Cartella principale del progetto .NET MAUI
+│  ├─ App.xaml                        # Risorse globali dell'applicazione
+│  ├─ App.xaml.cs                     # Punto di ingresso dell'applicazione
+│  ├─ AppShell.xaml                   # Definizione della Shell e delle tab/flyout
+│  ├─ AppShell.xaml.cs                # Registrazione delle route di navigazione
+│  ├─ MauiProgram.cs                  # Configurazione DI, servizi e pagine
+│  ├─ Models/                         # Classi di dominio e DTO
+│  │  ├─ BookDto.cs                   # Data Transfer Object per i dati API
+│  │  └─ FavoriteBook.cs              # Modello per la persistenza locale
+│  ├─ Services/                       # Servizi per API REST, storage, utilità
+│  │  ├─ IBookService.cs              # Interfaccia del servizio libri
+│  │  ├─ BookService.cs               # Implementazione con HttpClient
+│  │  ├─ IDatabaseService.cs          # Interfaccia per SQLite
+│  │  └─ DatabaseService.cs           # Implementazione SQLite
+│  ├─ ViewModels/                     # Logica di presentazione e stato
+│  │  ├─ SearchViewModel.cs           # ViewModel per la ricerca
+│  │  ├─ BookDetailViewModel.cs       # ViewModel per il dettaglio
+│  │  └─ FavoritesViewModel.cs        # ViewModel per i preferiti
+│  ├─ Views/                          # Pagine XAML dell'applicazione
+│  │  ├─ SearchPage.xaml              # Pagina di ricerca
+│  │  ├─ SearchPage.xaml.cs           # Code-behind (minimo)
+│  │  ├─ BookDetailPage.xaml          # Pagina dettaglio libro
+│  │  ├─ BookDetailPage.xaml.cs       # Code-behind (minimo)
+│  │  ├─ FavoritesPage.xaml           # Pagina preferiti
+│  │  └─ FavoritesPage.xaml.cs        # Code-behind (minimo)
+│  ├─ Converters/                     # Converter per il data binding XAML
+│  │  └─ BoolToVisibilityConverter.cs # Esempio: mostrare/nascondere elementi
+│  ├─ Resources/                      # Risorse condivise
+│  │  ├─ Fonts/                       # Font personalizzati
+│  │  ├─ Images/                      # Icone e immagini
+│  │  ├─ Styles/                      # Stili XAML condivisi
+│  │  └─ Raw/                         # File raw (es. database precaricato)
+│  └─ Platforms/                      # Codice specifico per piattaforma
+│     ├─ Android/                     # Manifest, risorse Android
+│     └─ iOS/                         # Info.plist, risorse iOS
+└─ assets/                            # Materiale non-codice per la consegna
+   ├─ mockups/                        # Bozzetti UI, wireframe, sketch iniziali
+   ├─ screenshots/                    # Screenshot dell'app completata
+   └─ store/                          # Icone, banner e materiale per eventuale store
+```
+
+### 4.2 File AGENTS.md
+
+Il file `AGENTS.md` è il file di configurazione principale per gli agenti AI come OpenCode.  
+Deve essere posizionato nella radice del progetto e contiene le regole che l'agente deve seguire durante tutto lo sviluppo.
+
+Di seguito un esempio completo di `AGENTS.md`:
+
+```markdown
+# AGENTS.md
+
+## Project context
+
+Questo progetto è una applicazione .NET MAUI con target principale Android.
+L'eventuale supporto iOS è opzionale e secondario.
+
+L'obiettivo didattico non è la generazione rapida di codice, ma lo sviluppo
+controllato e documentato di una applicazione completa.
+
+## Technical preferences
+
+- Framework UI: .NET MAUI
+- Architettura preferita: MVVM
+- Navigazione preferita: Shell
+- Persistenza locale: Preferences e/o SQLite (sqlite-net-pcl)
+- Chiamate remote: HttpClient (con gestione asincrona)
+- Parsing dati: System.Text.Json
+- MVVM toolkit: CommunityToolkit.Mvvm
+- Focus: robustezza, leggibilità, coerenza del codice
+
+## Rules
+
+- Proporre sempre un piano prima di modifiche ampie.
+- Limitare ogni iterazione a una feature ben definita.
+- Non introdurre nuove librerie NuGet senza motivazione esplicita.
+- Non spostare logica nei code-behind se può stare in un ViewModel o Service.
+- Gestire sempre loading state, error state ed empty state.
+- Non rimuovere codice esistente senza spiegazione.
+- Evitare duplicazioni inutili.
+- Preferire nomi chiari e coerenti (PascalCase per classi e proprietà,
+  camelCase per variabili locali).
+- Aggiornare la documentazione quando cambia il comportamento del progetto.
+- Non generare grandi blocchi di codice non richiesti.
+- Indicare sempre rischi, dipendenze e test suggeriti.
+
+## Documentation policy
+
+Quando viene implementata una feature significativa, aggiornare almeno uno tra:
+
+- docs/spec.md
+- docs/plan.md
+- docs/iterations/it-xx.md
+- docs/test-matrix.md
+
+## Output format preferred
+
+Per ogni richiesta importante restituire:
+
+1. piano breve;
+2. file da creare o modificare;
+3. implementazione richiesta;
+4. rischi o punti da controllare;
+5. test manuali suggeriti.
+
+## Coding style
+
+- classi piccole e con responsabilità chiara;
+- servizi separati dai ViewModel;
+- ViewModel con proprietà di stato esplicite (IsBusy, ErrorMessage, HasData);
+- metodi asincroni dove appropriato;
+- gestione degli errori non silenziosa;
+- commenti solo quando davvero utili, non per ripetere ciò che il codice dice.
+
+## Anti-patterns to avoid
+
+- logica REST dentro la View o il code-behind;
+- gestione confusa della navigazione (mescolare Shell e non-Shell);
+- campi e proprietà con naming incoerente;
+- dipendenze NuGet aggiunte senza controllo;
+- refactoring troppo ampi in una sola iterazione;
+- codice non spiegabile dagli autori del progetto.
+```
+
+### 4.3 File copilot-instructions.md
+
+Il file `.github/copilot-instructions.md` contiene le istruzioni specifiche per GitHub Copilot quando viene utilizzato in Visual Studio o VS Code.  
+Copilot legge automaticamente questo file per calibrare le sue risposte.
+
+Di seguito un esempio completo:
+
+```markdown
+# Copilot Instructions
+
+## Scopo
+
+Questo repository è usato per un progetto didattico .NET MAUI con sviluppo
+assistito da AI.
+Le risposte devono supportare uno sviluppo spec-driven e documentato.
+
+## Regole di comportamento
+
+- Prima di generare codice, proporre un piano sintetico.
+- Non implementare più di una feature significativa per volta.
+- Rispettare l'architettura MVVM.
+- Usare Shell per la navigazione, salvo esplicita richiesta diversa.
+- Evitare di introdurre pacchetti o framework non richiesti.
+- Tenere separati View, ViewModel, Model e Service.
+- Gestire stati di caricamento (IsBusy), errore (ErrorMessage) e dati vuoti.
+- Segnalare eventuali rischi di regressione.
+
+## Formato preferito delle risposte
+
+Per richieste tecniche importanti, restituire:
+
+1. Obiettivo dell'intervento.
+2. Piano sintetico.
+3. File coinvolti.
+4. Codice richiesto.
+5. Test manuali da eseguire.
+6. Possibili problemi o rischi.
+
+## Limiti
+
+- Non riscrivere l'intera applicazione se viene richiesto un intervento locale.
+- Non aggiungere codice non necessario (no gold plating).
+- Non rimuovere funzionalità esistenti senza motivazione.
+- Non ignorare nullability, error handling e async/await.
+
+## Convenzioni del progetto
+
+- Target principale: Android.
+- UI: XAML con data binding.
+- Architettura: MVVM con CommunityToolkit.Mvvm.
+- REST: HttpClient asincrono.
+- Storage locale: Preferences e/o SQLite.
+- Design: semplice, leggibile, mobile-first.
+
+## Esempi di richieste ben formate
+
+- "Proporre il piano per aggiungere la pagina dei preferiti."
+- "Implementare solo il service REST per la ricerca libri."
+- "Revisionare questo ViewModel senza riscriverlo."
+- "Generare i casi di test manuali per questa feature."
+- "Spiegare cosa fa questo metodo passo per passo."
+
+## Esempi di richieste da evitare
+
+- "Costruire tutta l'app completa."
+- "Rifare tutto meglio."
+- "Aggiungere qualsiasi libreria utile."
+- "Sistemare tutto il progetto."
+```
+
+### 4.4 Template per docs/spec.md
+
+La specifica è il documento fondamentale del progetto.  
+Deve essere compilata prima di scrivere qualsiasi riga di codice e deve essere aggiornata quando i requisiti cambiano.
+
+```markdown
+# Specifica del progetto
+
+## Titolo del progetto
+
+Nome dell'applicazione.
+
+## Descrizione sintetica
+
+Descrizione breve del problema che l'app risolve e del valore che offre
+all'utente finale.
+
+## Utente target
+
+Descrivere:
+- chi usa l'app;
+- in quale contesto (a casa, in viaggio, a scuola);
+- con quale obiettivo principale.
+
+## Problema affrontato
+
+Spiegare il bisogno concreto a cui l'app risponde.
+Perché un utente dovrebbe voler usare questa applicazione?
+
+## Obiettivi del progetto
+
+- O1: ...
+- O2: ...
+- O3: ...
+
+## Funzionalità obbligatorie
+
+- F1: ricerca tramite API esterna
+- F2: visualizzazione lista risultati
+- F3: pagina dettaglio con informazioni estese
+- F4: salvataggio preferiti in locale
+- F5: gestione stati UI (loading, errore, vuoto)
+
+## Funzionalità opzionali
+
+- FO1: filtri avanzati
+- FO2: cronologia ricerche
+- FO3: tema chiaro/scuro
+- FO4: condivisione contenuti
+- FO5: modalità offline con cache locale
+
+## Requisiti non funzionali
+
+- UI leggibile e coerente su schermi diversi
+- Gestione errori chiara e non silenziosa
+- Responsività (nessun blocco della UI durante le chiamate API)
+- Persistenza locale minima (preferiti o impostazioni)
+- Compatibilità Android (API level 24+)
+- Codice ordinato, manutenibile e spiegabile
+
+## Schermate principali
+
+| Schermata | Scopo | Dati mostrati | Azioni possibili |
+|---|---|---|---|
+| Home | Pagina iniziale | Contenuti in evidenza | Navigare alle sezioni |
+| Search | Ricerca | Lista risultati | Cercare, selezionare |
+| Detail | Dettaglio | Info complete | Salvare, condividere |
+| Favorites | Preferiti | Lista salvati | Rimuovere, aprire |
+| Settings | Impostazioni | Preferenze | Cambiare tema, pulire cache |
+
+## Navigazione prevista
+
+Descrivere il flusso tra le schermate, indicando:
+- la struttura della Shell (TabBar o FlyoutItem);
+- quali schermate sono raggiungibili da quali altre;
+- come vengono passati i parametri di navigazione.
+
+## API esterne
+
+| API | Scopo | Endpoint principali | Autenticazione | Limiti noti |
+|---|---|---|---|---|
+| ... | ... | GET /search?q=... | Nessuna / API Key | ... req/min |
+
+## Dati locali
+
+Indicare quali dati verranno salvati localmente:
+- preferiti (SQLite);
+- cronologia ricerche (Preferences o SQLite);
+- impostazioni utente (Preferences);
+- cache dei dati API (opzionale);
+- note personali (opzionale).
+
+## Permessi richiesti
+
+- [x] Internet (ACCESS_NETWORK_STATE, INTERNET)
+- [ ] Posizione (ACCESS_FINE_LOCATION)
+- [ ] Fotocamera
+- [ ] Storage esterno
+- [ ] Altro: ...
+
+## Vincoli
+
+- tempo disponibile: circa X settimane;
+- complessità massima: app single-user, no backend custom;
+- target principale: Android;
+- no librerie UI di terze parti non motivate.
+
+## Criteri di accettazione
+
+Per ogni funzionalità obbligatoria, definire un criterio:
+- Dato [condizione iniziale]
+- Quando [azione dell'utente]
+- Allora [risultato atteso]
+
+Esempio:
+- Dato che l'utente ha digitato "Harry Potter" nella barra di ricerca
+- Quando preme il pulsante "Cerca"
+- Allora viene mostrata una lista di libri contenenti "Harry Potter" nel titolo
+
+## Casi limite da considerare
+
+- input vuoto nella ricerca;
+- rete assente durante una chiamata API;
+- risposta API con JSON incompleto o malformato;
+- dati duplicati nella lista preferiti;
+- permesso di rete negato dall'utente;
+- device in modalità aereo.
+
+## Rischi principali
+
+- R1: API non disponibile durante lo sviluppo
+- R2: rate limit troppo basso per i test
+- R3: JSON con struttura diversa da quella attesa
+- R4: tempi stretti per la rifinitura
+
+## Versione MVP
+
+Descrivere con precisione il prodotto minimo considerato sufficiente
+per la consegna. Ad esempio:
+"L'app deve permettere la ricerca, mostrare i risultati in una lista,
+aprire il dettaglio e salvare un elemento tra i preferiti. La gestione
+degli errori e lo stato di caricamento devono essere presenti."
+```
+
+### 4.5 Template per docs/plan.md
+
+Il piano di lavoro traduce la specifica in una sequenza di iterazioni concrete.  
+Ogni iterazione ha un obiettivo verificabile, un elenco di file coinvolti e un risultato atteso.
+
+```markdown
+# Piano di lavoro
+
+## Titolo del progetto
+
+Nome dell'applicazione.
+
+## Obiettivo del piano
+
+Descrivere come si intende trasformare la specifica in un progetto
+sviluppabile attraverso iterazioni incrementali.
+
+## Architettura prevista
+
+- Pattern: MVVM
+- Navigazione: Shell (TabBar o FlyoutItem)
+- Services: separati per API REST e storage locale
+- Models/DTO: separati dai Services
+- Persistenza: Preferences e/o SQLite (sqlite-net-pcl)
+- MVVM Toolkit: CommunityToolkit.Mvvm
+
+## Struttura prevista delle cartelle
+
+​```text
+src/
+├─ Models/
+├─ Services/
+├─ ViewModels/
+├─ Views/
+├─ Converters/
+├─ Resources/
+└─ Platforms/
+​```
+
+## Dipendenze previste
+
+| Dipendenza | Motivo | Obbligatoria / Opzionale |
+|---|---|---|
+| CommunityToolkit.Mvvm | MVVM: ObservableProperty, RelayCommand | Obbligatoria |
+| sqlite-net-pcl | Persistenza locale con SQLite | Obbligatoria |
+| System.Text.Json | Deserializzazione risposte API | Obbligatoria (built-in) |
+
+## Iterazioni previste
+
+### Iterazione 1 – Setup e struttura base
+- **Obiettivo**: creare il progetto, configurare Shell, aggiungere le pagine vuote
+- **File coinvolti**: AppShell.xaml, MauiProgram.cs, Views/*.xaml
+- **Risultato atteso**: l'app si avvia e mostra la navigazione tra le tab
+
+### Iterazione 2 – Primo service REST
+- **Obiettivo**: implementare il service per la chiamata API principale
+- **File coinvolti**: Services/IApiService.cs, Services/ApiService.cs, Models/Dto.cs
+- **Risultato atteso**: il service restituisce dati corretti (verificabile da debug)
+
+### Iterazione 3 – UI lista e data binding
+- **Obiettivo**: mostrare i dati nella pagina principale con CollectionView
+- **File coinvolti**: Views/MainPage.xaml, ViewModels/MainViewModel.cs
+- **Risultato atteso**: la lista dei risultati è visibile e scrollabile
+
+### Iterazione 4 – Pagina dettaglio
+- **Obiettivo**: implementare navigazione e pagina dettaglio
+- **File coinvolti**: Views/DetailPage.xaml, ViewModels/DetailViewModel.cs, AppShell.xaml.cs
+- **Risultato atteso**: cliccando un elemento si apre il dettaglio completo
+
+### Iterazione 5 – Persistenza e preferiti
+- **Obiettivo**: salvare e recuperare i dati preferiti in SQLite
+- **File coinvolti**: Services/DatabaseService.cs, ViewModels/FavoritesViewModel.cs
+- **Risultato atteso**: i preferiti sopravvivono alla chiusura dell'app
+
+### Iterazione 6 – Gestione errori, stati UI e rifinitura
+- **Obiettivo**: gestire loading, errore, empty state; rifinire UI
+- **File coinvolti**: tutti i ViewModel (proprietà IsBusy, ErrorMessage), Views (XAML)
+- **Risultato atteso**: l'app gestisce correttamente rete assente, errori e liste vuote
+
+## Rischi tecnici
+
+| Rischio | Probabilità | Impatto | Mitigazione |
+|---|---|---|---|
+| API non disponibile | Bassa | Alto | Preparare dati mock locali |
+| JSON inatteso | Media | Medio | Validare con Postman prima |
+| UI troppo complessa | Media | Medio | Semplificare, usare template |
+| Tempi stretti | Alta | Alto | Dare priorità al MVP |
+| Problemi con permessi | Bassa | Basso | Testare su device reale |
+
+## Strategia di testing
+
+- test manuale su feature singole dopo ogni iterazione;
+- casi limite documentati nella matrice di test;
+- test finale end-to-end prima della consegna;
+- eventuali test automatici su logica non-UI (service, parsing).
+
+## Strategia di documentazione
+
+Dopo ogni iterazione aggiornare:
+- docs/iterations/it-xx.md
+- docs/prompt-log.md (se sono stati usati prompt significativi)
+- docs/test-matrix.md (se sono stati eseguiti nuovi test)
+
+## Definition of Done
+
+Una iterazione si considera conclusa quando:
+- il codice compila senza errori;
+- la feature è testata su emulatore o device;
+- la documentazione minima è aggiornata;
+- il codice è stato revisionato (letto e compreso);
+- i prompt importanti sono stati tracciati nel prompt-log.
+```
+
+### 4.6 Template per docs/architecture.md
+
+Il documento di architettura descrive l'organizzazione tecnica dell'applicazione.  
+È utile sia come riferimento durante lo sviluppo sia come materiale per la presentazione finale.
+
+```markdown
+# Architettura del progetto
+
+## Obiettivo
+
+Descrivere l'organizzazione tecnica dell'applicazione, i pattern adottati
+e il flusso dei dati tra i componenti.
+
+## Pattern architetturale
+
+L'applicazione segue il pattern **MVVM** (Model-View-ViewModel).
+Questo approccio separa nettamente:
+- la presentazione (View/XAML);
+- la logica di stato e i comandi (ViewModel);
+- i dati e i servizi (Model/Service).
+
+## Componenti principali
+
+| Componente | Responsabilità |
+|---|---|
+| **Views/** | Pagine XAML, layout, visual tree, data binding |
+| **ViewModels/** | Stato della UI, comandi, logica di presentazione |
+| **Services/** | API REST, persistenza locale, sensori, utilità |
+| **Models/DTO** | Strutture dati per API e per storage locale |
+| **Converters/** | Converter per trasformazioni nel binding XAML |
+
+## Navigazione
+
+La navigazione è gestita tramite **.NET MAUI Shell**.
+
+Struttura della Shell:
+- TabBar con N tab principali (es. Home, Search, Favorites, Settings)
+- Route registrate in AppShell.xaml.cs per le pagine di dettaglio
+- Parametri di navigazione passati tramite query string o IQueryAttributable
+
+Comportamento della back navigation:
+- Il tasto back hardware torna alla pagina precedente nello stack
+- Le tab mantengono il proprio stato indipendente
+
+## Flusso dati tipico
+
+Il flusso dati segue questo schema per ogni operazione:
+
+​```mermaid
+sequenceDiagram
+    participant U as Utente
+    participant V as View (XAML)
+    participant VM as ViewModel
+    participant S as Service
+    participant API as API Esterna
+
+    U->>V: Azione (es. tap su "Cerca")
+    V->>VM: Comando (SearchCommand)
+    VM->>VM: IsBusy = true
+    VM->>S: SearchAsync(query)
+    S->>API: GET /search?q=query
+    API-->>S: JSON response
+    S-->>VM: List<Dto>
+    VM->>VM: Items = risultati, IsBusy = false
+    VM-->>V: PropertyChanged
+    V-->>U: UI aggiornata (lista risultati)
+​```
+
+## Gestione stato UI
+
+Ogni ViewModel che carica dati remoti deve esporre almeno queste proprietà:
+
+| Proprietà | Tipo | Scopo |
+|---|---|---|
+| `IsBusy` | bool | Indica se è in corso un caricamento |
+| `ErrorMessage` | string | Messaggio di errore (vuoto se nessun errore) |
+| `HasData` | bool | Indica se ci sono dati da mostrare |
+| `IsEmptyState` | bool | Indica se la ricerca ha dato risultati vuoti |
+
+La View deve gestire almeno questi stati visivi:
+- **Loading**: ActivityIndicator visibile, contenuto nascosto
+- **Errore**: messaggio di errore visibile, pulsante "Riprova"
+- **Empty**: messaggio "Nessun risultato trovato"
+- **Dati caricati**: contenuto principale visibile
+
+## Gestione errori
+
+- Errori di rete: catch di HttpRequestException, messaggio "Connessione assente"
+- Errori HTTP (4xx, 5xx): verifica del StatusCode nella risposta
+- Errori di parsing: catch di JsonException, messaggio "Dati non validi"
+- Timeout: configurazione di HttpClient.Timeout, messaggio "Richiesta scaduta"
+- Fallback: in caso di errore, mostrare l'ultimo dato disponibile se presente
+
+## Persistenza locale
+
+| Dato | Tecnologia | Struttura |
+|---|---|---|
+| Preferiti | SQLite | Tabella con campi id, titolo, immagine, data aggiunta |
+| Impostazioni | Preferences | Coppie chiave-valore (tema, lingua, ecc.) |
+| Cronologia | SQLite o Preferences | Lista degli ultimi N elementi cercati |
+| Cache | File system o SQLite | Dati API salvati con timestamp di scadenza |
+
+## Sicurezza
+
+- Le API key non devono essere committate nel repository pubblico.
+  Usare variabili d'ambiente o file .env escluso dal .gitignore.
+- I dati locali non contengono informazioni sensibili.
+- Gli input dell'utente devono essere validati prima di essere usati.
+
+## Estendibilità
+
+L'architettura MVVM con servizi separati consente di:
+- aggiungere nuove pagine senza toccare le esistenti;
+- sostituire il service REST con un mock per i test;
+- aggiungere nuovi provider di dati (es. seconda API);
+- cambiare la tecnologia di persistenza senza toccare i ViewModel.
+```
+
+### 4.7 Template per docs/prompt-log.md
+
+Il prompt log raccoglie i prompt realmente significativi usati durante il progetto.  
+Non è una cronologia completa della chat, ma una selezione ragionata dei prompt che hanno influito su decisioni, codice, struttura o test.
+
+```markdown
+# Prompt log
+
+## Scopo
+
+Questo file raccoglie i prompt realmente significativi usati durante il
+progetto. Non deve contenere tutto, ma solo gli scambi che hanno
+influenzato decisioni, codice, struttura o test.
+
+---
+
+## Prompt 01
+
+### Data
+AAAA-MM-GG
+
+### Strumento
+- Copilot / OpenCode / altro
+
+### Obiettivo
+Descrivere lo scopo del prompt: cosa si voleva ottenere.
+
+### Prompt
+​```text
+[Testo esatto del prompt inviato all'AI]
+​```
+
+### Output utile
+Riassumere la parte davvero utile della risposta.
+Non incollare l'intero output, solo le parti rilevanti.
+
+### Decisione presa
+Spiegare se il suggerimento è stato:
+- accettato integralmente;
+- accettato con modifiche (specificare quali);
+- rifiutato (specificare perché).
+
+### Motivazione
+Spiegare il perché della decisione.
+Questa è la parte più importante: dimostra la comprensione critica.
+
+---
+
+## Prompt 02
+
+### Data
+AAAA-MM-GG
+
+### Strumento
+- Copilot / OpenCode / altro
+
+### Obiettivo
+...
+
+### Prompt
+​```text
+...
+​```
+
+### Output utile
+...
+
+### Decisione presa
+...
+
+### Motivazione
+...
+
+---
+
+## Osservazioni finali
+
+Al termine del progetto, riflettere su:
+- Quali prompt si sono rivelati più efficaci e perché.
+- Quali prompt hanno generato codice meno utile o fuorviante.
+- In che modo l'AI ha migliorato il processo di sviluppo.
+- In quali casi è stato necessario correggere o rifiutare l'output.
+- Cosa si farebbe diversamente in un progetto futuro.
+```
+
+### 4.8 Template per docs/test-matrix.md
+
+La matrice di test documenta le verifiche eseguite sul progetto.  
+Serve a dimostrare che il progetto non è stato soltanto costruito, ma anche verificato.
+
+```markdown
+# Matrice di test
+
+## Obiettivo
+
+Documentare le verifiche eseguite sul progetto in modo sistematico.
+Ogni test ha un identificativo, un'area, una descrizione e un esito.
+
+## Test funzionali
+
+| ID | Area | Caso di test | Passi | Risultato atteso | Esito | Note |
+|---|---|---|---|---|---|---|
+| T01 | Input | Campo di ricerca vuoto | Premere "Cerca" senza testo | Messaggio "Inserire un termine" | ✅ / ❌ | |
+| T02 | API | Richiesta con query valida | Cercare "pizza" | Lista di risultati non vuota | ✅ / ❌ | |
+| T03 | API | Richiesta senza connessione | Disattivare WiFi, cercare | Messaggio "Connessione assente" | ✅ / ❌ | |
+| T04 | API | Timeout della richiesta | Simulare timeout | Messaggio "Richiesta scaduta" | ✅ / ❌ | |
+| T05 | UI | Stato loading durante ricerca | Avviare una ricerca | ActivityIndicator visibile | ✅ / ❌ | |
+| T06 | UI | Stato errore mostrato | Provocare un errore | Label con messaggio visibile | ✅ / ❌ | |
+| T07 | UI | Lista vuota gestita | Cercare termine senza risultati | Messaggio "Nessun risultato" | ✅ / ❌ | |
+| T08 | Persistenza | Salvataggio preferito | Aggiungere un elemento | Elemento presente in Favorites | ✅ / ❌ | |
+| T09 | Persistenza | Persistenza dopo riavvio | Chiudere e riaprire l'app | Preferiti ancora presenti | ✅ / ❌ | |
+| T10 | Persistenza | Rimozione preferito | Eliminare un elemento | Elemento rimosso dalla lista | ✅ / ❌ | |
+| T11 | Navigazione | Apertura dettaglio | Toccare un elemento della lista | Pagina dettaglio con dati corretti | ✅ / ❌ | |
+| T12 | Navigazione | Ritorno alla lista | Premere back dal dettaglio | Lista precedente ancora visibile | ✅ / ❌ | |
+| T13 | Device | Tema chiaro | Impostare tema chiaro | UI leggibile e coerente | ✅ / ❌ | |
+| T14 | Device | Tema scuro | Impostare tema scuro | UI leggibile e coerente | ✅ / ❌ | |
+
+## Casi limite aggiuntivi
+
+| ID | Caso | Esito | Note |
+|---|---|---|---|
+| E01 | Input molto lungo (200+ caratteri) | ✅ / ❌ | |
+| E02 | Caratteri speciali nell'input (@, #, emoji) | ✅ / ❌ | |
+| E03 | Risposta JSON incompleta o malformata | ✅ / ❌ | |
+| E04 | Permesso di rete negato dall'utente | ✅ / ❌ | |
+| E05 | Doppio tap rapido su pulsante | ✅ / ❌ | |
+| E06 | Lista con molti elementi (100+) | ✅ / ❌ | |
+| E07 | Rotazione dello schermo durante caricamento | ✅ / ❌ | |
+
+## Bug trovati
+
+| ID bug | Descrizione | Gravità | Iterazione | Stato |
+|---|---|---|---|---|
+| B01 | ... | Alta/Media/Bassa | It-XX | Risolto/Aperto |
+
+## Esito complessivo
+
+Descrivere il livello di stabilità raggiunto prima della consegna.
+Indicare quanti test sono passati su quanti totali e le problematiche
+ancora aperte.
+```
+
+### 4.9 Template per docs/iterations/it-template.md
+
+Ogni iterazione deve avere il proprio file di log.  
+Lo studente può copiare questo template e rinominarlo `it-01.md`, `it-02.md`, ecc.
+
+```markdown
+# Iterazione XX
+
+## Obiettivo
+Descrivere in una frase precisa l'obiettivo di questa iterazione.
+L'obiettivo deve essere verificabile.
+
+## Piano
+- elenco dei file da creare;
+- elenco dei file da modificare;
+- eventuali dipendenze da iterazioni precedenti;
+- eventuali rischi specifici.
+
+## Prompt principali utilizzati
+1. "[Testo sintetico del primo prompt significativo]"
+2. "[Testo sintetico del secondo prompt significativo]"
+3. "[Testo sintetico di eventuali altri prompt]"
+
+## File creati
+- percorso/NuovoFile.cs
+- percorso/NuovoFile.xaml
+
+## File modificati
+- percorso/FileEsistente.cs (descrizione della modifica)
+
+## Codice prodotto dall'AI e accettato
+Indicare brevemente quali parti del codice sono state generate dall'AI
+e accettate senza modifiche.
+
+## Codice prodotto dall'AI e modificato manualmente
+Indicare quali parti del codice generato dall'AI sono state corrette
+o riscritte dallo sviluppatore, e perché.
+
+## Test eseguiti
+- [ ] Test 1: descrizione - esito
+- [ ] Test 2: descrizione - esito
+- [ ] Test 3: descrizione - esito
+
+## Problemi trovati
+- Problema 1: descrizione e causa.
+- Problema 2: descrizione e causa.
+
+## Correzioni effettuate
+- Correzione 1: cosa è stato fatto e perché.
+- Correzione 2: cosa è stato fatto e perché.
+
+## Esito
+Completato / Parziale (specificare cosa manca) / Da rifinire
+```
+
+### 4.10 Template per docs/deployment.md
+
+Il documento di deployment descrive la preparazione del progetto per la distribuzione finale.
+
+```markdown
+# Deployment
+
+## Obiettivo
+
+Documentare la preparazione del progetto per la distribuzione finale.
+
+## Target previsti
+
+- Android APK (installazione diretta)
+- Android AAB (distribuzione tramite Google Play, opzionale)
+- iOS (opzionale, richiede toolchain Apple)
+
+## Configurazioni
+
+| Piattaforma | Modalità | Framework | Note |
+|---|---|---|---|
+| Android | Release | net9.0-android | Target principale |
+| iOS | Release | net9.0-ios | Facoltativa |
+
+## Checklist pre-release
+
+- [ ] Versione dell'app aggiornata (ApplicationDisplayVersion)
+- [ ] Nome dell'app corretto (ApplicationTitle)
+- [ ] Icona definitiva inserita
+- [ ] Splash screen verificata
+- [ ] Permessi nel Manifest controllati (solo quelli necessari)
+- [ ] Build in modalità Release eseguita senza errori
+- [ ] Test finale su device o emulatore in modalità Release
+- [ ] Screenshot principali acquisiti
+- [ ] README.md aggiornato con istruzioni di build
+- [ ] Documentazione di progetto completa
+
+## APK
+
+### Scopo
+Installazione diretta su dispositivi Android senza passare dallo store.
+
+### Comando per la generazione
+​```bash
+dotnet publish -f net9.0-android -c Release
+​```
+
+### Note
+Indicare:
+- nome file APK generato;
+- percorso nel progetto;
+- versione;
+- firma usata (debug o release keystore).
+
+## AAB (opzionale)
+
+### Scopo
+Distribuzione tramite Google Play (formato richiesto da Google).
+
+### Note
+Indicare:
+- nome file;
+- versione;
+- configurazione di firma (keystore dedicato).
+
+## Keystore
+
+Descrivere in modo sintetico:
+- se è stato creato un keystore dedicato;
+- dove viene gestito (NON committare nel repository);
+- come viene protetto (password non nel codice).
+
+## Permessi e privacy
+
+Elencare i permessi usati dall'app e motivarne brevemente la presenza:
+
+| Permesso | Motivo |
+|---|---|
+| INTERNET | Chiamate API REST |
+| ACCESS_NETWORK_STATE | Verificare connettività |
+| ... | ... |
+
+## Risultato finale
+
+Descrivere cosa è stato effettivamente consegnato:
+- [ ] APK funzionante
+- [ ] Screenshot principali (almeno 3)
+- [ ] README con istruzioni
+- [ ] Documentazione completa
+- [ ] Video demo (opzionale)
+- [ ] AAB per Google Play (opzionale)
+```
+
+### 4.11 Template per docs/demo-script.md
+
+La presentazione finale è parte della valutazione.  
+Questo template aiuta a preparare una demo ordinata e di durata appropriata.
+
+```markdown
+# Script demo finale
+
+## Durata prevista
+
+8–12 minuti
+
+## Obiettivo
+
+Guidare una presentazione tecnica ordinata, breve e chiara.
+La demo non deve essere una lettura del codice, ma una dimostrazione
+ragionata del progetto e del processo di sviluppo.
+
+## Sequenza della demo
+
+### 1. Introduzione (1 minuto)
+- Nome del progetto
+- Problema affrontato
+- Utente target
+- Valore principale dell'app
+
+### 2. Specifica iniziale (1-2 minuti)
+- Funzionalità principali implementate
+- Vincoli rispettati
+- Caratteristiche del MVP
+
+### 3. Architettura (1-2 minuti)
+- Pattern MVVM: spiegare con un esempio concreto
+- Struttura Shell e navigazione
+- Services e storage locale
+- Mostrare la struttura delle cartelle
+
+### 4. Uso dell'AI nel progetto (2-3 minuti)
+- Strumenti usati (Copilot, OpenCode, altro)
+- Un esempio di prompt efficace: mostrare il prompt e il risultato
+- Un esempio di correzione: dove l'AI ha sbagliato e come è stato corretto
+- Una decisione architetturale presa dallo sviluppatore, non dall'AI
+
+### 5. Demo dell'applicazione (3-4 minuti)
+- Avvio dell'app
+- Ricerca o input principale
+- Navigazione alla pagina dettaglio
+- Salvataggio in locale (preferiti)
+- Gestione di un caso di errore (rete assente)
+- Gestione di un caso limite (ricerca vuota)
+
+### 6. Testing (1 minuto)
+- Due o tre casi di test significativi
+- Un problema trovato durante il testing e come è stato risolto
+
+### 7. Conclusione tecnica (1 minuto)
+- Punti di forza del progetto
+- Limiti residui conosciuti
+- Possibili evoluzioni future
+- Cosa si è imparato dal processo
+
+## Note per il presentatore
+
+- Non leggere il codice riga per riga: spiegare i concetti.
+- Preparare l'app già avviata per evitare attese durante la demo.
+- Avere screenshot pronti in caso di problemi tecnici.
+- Cronometrare la presentazione almeno una volta prima della consegna.
+```
+
+### 4.12 Template per docs/api-notes.md
+
+Questo file è dedicato alle note sulle API esterne utilizzate nel progetto.  
+È particolarmente utile per documentare i limiti, i formati e le particolarità di ciascuna API.
+
+```markdown
+# Note sulle API esterne
+
+## API principale
+
+### Nome
+[Nome della API]
+
+### URL base
+`https://api.example.com/v1`
+
+### Documentazione ufficiale
+[Link alla documentazione]
+
+### Autenticazione
+- Nessuna / API Key nell'header / API Key come parametro query
+
+### Endpoint utilizzati
+
+| Metodo | Endpoint | Scopo | Parametri |
+|---|---|---|---|
+| GET | /search?q={query} | Ricerca per testo | q: stringa di ricerca |
+| GET | /item/{id} | Dettaglio singolo elemento | id: identificativo |
+| GET | /popular | Lista elementi popolari | page: numero pagina |
+
+### Formato risposta
+
+​```json
+{
+  "results": [
+    {
+      "id": "abc123",
+      "title": "Titolo esempio",
+      "description": "Descrizione...",
+      "image_url": "https://..."
+    }
+  ],
+  "total_results": 42,
+  "page": 1
+}
+​```
+
+### Limiti noti
+
+| Limite | Valore | Conseguenza |
+|---|---|---|
+| Rate limit | X richieste/minuto | Inserire delay tra le chiamate |
+| Dimensione risposta | max N elementi | Implementare paginazione |
+| Quota giornaliera | X richieste/giorno | Sufficiente per sviluppo |
+
+### Problemi riscontrati
+
+- Descrivere eventuali problemi incontrati con l'API durante lo sviluppo.
+- Soluzioni adottate o workaround implementati.
+
+### Dati mock per sviluppo offline
+
+Per sviluppare senza connessione, è stato preparato un file JSON di mock:
+- percorso: src/Resources/Raw/mock-data.json
+- struttura: identica alla risposta API reale
+```
+
+---
+
+## 5. Strumenti AI disponibili e configurazione
+
+L'ecosistema di strumenti di programmazione assistita da AI è vasto e in continua evoluzione.  
+Questo modulo privilegia strumenti accessibili per studenti e integrabili direttamente nel flusso di sviluppo, riducendo l'attrito tra l'interazione con l'AI e l'applicazione del codice nel progetto.
+
+### 5.1 GitHub Copilot Pro (Student)
+
+GitHub Copilot è l'estensione di AI coding più diffusa.  
+Nella versione per studenti, inclusa nel **GitHub Student Developer Pack**, la licenza Pro è gratuita e include l'accesso a modelli avanzati tramite Copilot Chat.
+
+#### Inline Completions
+
+Le inline completions sono i suggerimenti "fantasma" che compaiono mentre si scrive codice.  
+Copilot analizza il contesto del file corrente e propone il completamento.
+
+**Come usarle correttamente:**
+
+- accettare il suggerimento con Tab solo dopo averlo letto;
+- verificare che i nomi generati corrispondano alle convenzioni del progetto;
+- non accettare blocchi troppo grandi senza review;
+- se il suggerimento non è pertinente, continuare a digitare per riorientare Copilot.
+
+**Quando sono più utili:**
+
+- implementazione di pattern ripetitivi (costruttori, proprietà, dispose);
+- scrittura di chiamate HttpClient con gestione errori;
+- completamento di data binding nel code-behind;
+- implementazione di interfacce note.
+
+#### Copilot Chat e Slash Commands
+
+La chat integrata nell'IDE permette conversazioni contestuali con l'AI.  
+È particolarmente utile per:
+
+- **`/explain`**: spiegare una porzione di codice selezionata;
+- **`/fix`**: tentare di correggere un errore di compilazione;
+- **`/test`**: suggerire test per un metodo o una classe;
+- **`/doc`**: generare documentazione XML per un metodo.
+
+**Esempio di uso efficace della chat:**
+
+```text
+@workspace Analizzare il progetto MAUI corrente e proporre un piano
+per aggiungere la gestione dei preferiti.
+Vincoli:
+- usare MVVM con CommunityToolkit.Mvvm;
+- usare SQLite per la persistenza;
+- evitare nuove dipendenze NuGet;
+- non cambiare la navigazione Shell esistente.
+Restituire:
+1) piano con file da creare/modificare,
+2) rischi,
+3) test manuali da eseguire dopo l'implementazione.
+Non generare ancora il codice.
+```
+
+**Esempio di prompt per review:**
+
+```text
+Revisionare il ViewModel seguente.
+Indicare:
+- problemi di naming (convenzioni C# e MAUI);
+- logica che dovrebbe stare in un Service;
+- nullability non gestita;
+- proprietà di stato mancanti (IsBusy, ErrorMessage);
+- possibili miglioramenti;
+- test suggeriti.
+Non riscrivere il codice, solo elencare i problemi.
+```
+
+#### Copilot come agente (Agent Mode)
+
+Nelle versioni più recenti, Copilot in VS Code supporta una modalità agente.  
+In questa modalità Copilot può:
+
+- leggere più file del progetto per costruire contesto;
+- proporre un piano prima di implementare;
+- creare o modificare più file in sequenza;
+- eseguire comandi nel terminale integrato.
+
+**Attenzione**: la modalità agente è potente ma rischiosa.  
+Lo sviluppatore deve sempre:
+
+- leggere il piano proposto prima di accettarlo;
+- verificare ogni file modificato;
+- non accettare modifiche su file che non capisce;
+- usare il version control (git) per poter annullare le modifiche.
+
+### 5.2 OpenCode (agente CLI)
+
+**OpenCode** è un framework agente che lavora da riga di comando o integrato in un editor.  
+Si differenzia da Copilot per la capacità di leggere l'intero filesystem del workspace.
+
+#### Plan Mode e Build Mode
+
+OpenCode distingue tra due modalità operative:
+
+- **Plan Mode**: l'agente analizza il progetto, legge i file markdown (in particolare `AGENTS.md`) e propone un piano delle modifiche da eseguire;
+- **Build Mode**: l'agente esegue le modifiche secondo il piano approvato.
+
+Per implementare il controllo Man-in-the-Loop con OpenCode:
+
+1. avviare sempre in Plan Mode;
+2. leggere e validare il piano proposto;
+3. se il piano è accettabile, passare a Build Mode per una singola iterazione;
+4. dopo la build, verificare i file modificati;
+5. tornare in Plan Mode per la prossima iterazione.
+
+#### Prompt esempio per OpenCode
+
+**Analisi iniziale del progetto:**
+
+```text
+Analizzare il progetto e proporre la struttura iniziale.
+Obiettivo: app MAUI per Android.
+Vincoli:
+- usare Shell per la navigazione;
+- usare MVVM con CommunityToolkit.Mvvm;
+- niente librerie extra non motivate;
+- restituire prima solo il piano, non il codice.
+```
+
+**Implementazione di una singola iterazione:**
+
+```text
+Implementare soltanto l'iterazione 2 del piano:
+- creare Services/BookService.cs
+- creare Models/BookDto.cs  
+- creare ViewModels/SearchViewModel.cs
+- gestione base di IsBusy, ErrorMessage e lista risultati.
+Aggiornare anche docs/iterations/it-02.md con il resoconto.
+Non toccare i file delle altre iterazioni.
+```
+
+**Review architetturale:**
+
+```text
+Eseguire una review architetturale del progetto.
+Segnalare:
+- duplicazioni di codice;
+- code smell;
+- responsabilità non separate (logica nel code-behind);
+- punti fragili (error handling mancante);
+- test mancanti.
+Non applicare fix automatici, solo elencare i problemi.
+```
+
+### 5.3 Modelli Cloud e Locali (Ollama, KiloCode, ZenCode)
+
+Quando GitHub Copilot non è disponibile o quando è necessario un controllo maggiore sul modello utilizzato, esistono alternative cloud e locali.
+
+#### Ollama (modelli locali)
+
+**Ollama** è un framework per eseguire modelli linguistici in locale sulla propria macchina di sviluppo.
+
+Vantaggi:
+
+- il codice non lascia la macchina locale (privacy totale);
+- non ci sono limiti di rate o di quota;
+- possibilità di scegliere il modello più adatto (Llama3, DeepSeek, Qwen2.5-Coder, ecc.).
+
+Svantaggi:
+
+- richiede hardware adeguato (GPU con sufficiente VRAM);
+- i modelli locali possono essere meno potenti dei modelli cloud;
+- configurazione iniziale necessaria.
+
+#### KiloCode e ZenCode
+
+**KiloCode** e **ZenCode** sono marketplace cloud che forniscono accesso a modelli specifici per il coding tramite API compatibili con lo standard OpenAI.
+
+Possono essere configurati come backend alternativi per:
+
+- estensioni VS Code;
+- OpenCode;
+- qualsiasi tool che supporti endpoint OpenAI-compatibili.
+
+---
+
+## 6. Fasi di sviluppo del progetto MAUI
+
+Lo sviluppo di un progetto MAUI AI-Assisted può essere organizzato in nove fasi sequenziali.  
+Ogni fase corrisponde a un periodo di lavoro con obiettivi specifici e deliverable definiti.
+
+### 6.1 Fase 1 – Analisi e definizione delle specifiche
+
+Prima di scrivere codice, occorre chiarire:
+
+- il problema da risolvere;
+- il profilo dell'utente target;
+- le schermate necessarie;
+- i flussi di navigazione;
+- le API da utilizzare;
+- i dati da salvare localmente;
+- i possibili errori o vincoli.
+
+**Domande guida per questa fase:**
+
+1. Qual è il valore principale dell'app? Perché un utente la vorrebbe usare?
+2. Quali sono le tre funzionalità senza le quali il progetto non avrebbe senso?
+3. Quali dati arrivano dall'esterno (API)? In che formato?
+4. Quali dati devono restare sul dispositivo? Come vengono salvati?
+5. Quali permessi servono? Sono tutti giustificati?
+6. L'app deve funzionare parzialmente anche offline?
+7. Quale sarà la demo finale? Cosa verrà mostrato?
+
+**Uso dell'AI in questa fase:**
+
+L'AI può essere usata per:
+
+- trasformare un'idea grezza in user stories strutturate;
+- suggerire casi limite a cui non si aveva pensato;
+- proporre la struttura iniziale delle cartelle;
+- generare una bozza della specifica da rivedere;
+- verificare la completezza di una checklist.
+
+**Prompt esempio:**
+
+```text
+Analizzare l'idea di una app MAUI chiamata BookScout Mobile.
+L'app permette di cercare libri, vedere i dettagli e salvare i preferiti.
+Restituire:
+1) obiettivo dell'app,
+2) utente target,
+3) 5 user story principali,
+4) requisiti non funzionali,
+5) rischi principali,
+6) API suggerita.
+Non generare codice.
+```
+
+### 6.2 Fase 2 – Design e mockup
+
+La progettazione della UI dovrebbe precedere l'implementazione.  
+Una schermata anche semplice deve essere pensata in termini di gerarchia visiva, leggibilità, spaziatura, stati e coerenza.
+
+**Attività consigliate:**
+
+- elenco delle schermate con il loro scopo;
+- bozza della navigazione (TabBar o FlyoutItem);
+- wireframe a bassa fedeltà (su carta, Figma o Excalidraw);
+- definizione della palette colori e dello stile base;
+- scelta dei componenti MAUI realistici (CollectionView, Grid, ScrollView).
+
+**Mini style guide consigliata:**
+
+Ogni progetto dovrebbe definire almeno:
+
+- un colore primario e un colore secondario;
+- un set coerente di margini e padding;
+- uno stile per i pulsanti principali;
+- uno stile per le card (es. Frame con ombra e bordi arrotondati);
+- supporto al tema chiaro e al tema scuro;
+- un font leggibile e coerente.
+
+**Uso di strumenti AI per il design:**
+
+Possono essere usati strumenti generativi per creare bozze di interfaccia o mockup.  
+Tuttavia il risultato deve essere poi reinterpretato in modo realistico per MAUI:
+
+- un mockup non deve essere copiato ciecamente;
+- deve essere tradotto in layout Grid, StackLayout, CollectionView, stili e risorse XAML;
+- i componenti usati devono esistere in MAUI (non in altri framework).
+
+### 6.3 Fase 3 – Pianificazione iterativa
+
+Una volta definita la specifica, il lavoro deve essere diviso in iterazioni piccole.  
+Ogni iterazione deve avere un obiettivo verificabile in modo netto.
+
+**Esempio di roadmap tipica:**
+
+| Iterazione | Obiettivo | Stima |
+|---|---|---|
+| 1 | Setup progetto, cartelle, Shell e pagina iniziale | 1-2 ore |
+| 2 | Integrazione della prima API (service e DTO) | 2-3 ore |
+| 3 | Visualizzazione dei dati nella UI (CollectionView) | 2-3 ore |
+| 4 | Pagina dettaglio e navigazione | 1-2 ore |
+| 5 | Persistenza locale (SQLite, preferiti) | 2-3 ore |
+| 6 | Gestione errori, stati UI e rifinitura | 2-3 ore |
+| 7 | Test finali, packaging APK e preparazione demo | 2-3 ore |
+
+**Definition of Done di una iterazione:**
+
+Una iterazione può essere considerata completata quando:
+
+- il codice compila senza errori;
+- la feature prevista è disponibile e funzionante;
+- la review del codice è stata eseguita (il codice è stato letto e compreso);
+- i test minimi sono stati eseguiti;
+- la documentazione dell'iterazione è stata aggiornata.
+
+### 6.4 Fase 4 – Uso di GitHub Copilot durante lo sviluppo
+
+GitHub Copilot non va usato solo come completamento automatico di singole righe.  
+Può essere impiegato anche per pianificare, spiegare, rifattorizzare e verificare modifiche.
+
+**Regole operative:**
+
+- una chat per una feature (non mescolare argomenti nella stessa conversazione);
+- richieste precise con contesto, vincoli e formato atteso;
+- file o classi chiaramente indicati nel prompt;
+- richiesta del piano prima dell'implementazione;
+- review del diff dopo ogni proposta accettata.
+
+**Cosa evitare assolutamente:**
+
+- prompt del tipo *"costruisci tutta l'app completa"*;
+- richieste prive di vincoli architetturali;
+- accettazione immediata del codice proposto senza lettura;
+- generazione di più feature insieme nella stessa richiesta;
+- uso dell'AI senza documentazione del processo.
+
+### 6.5 Fase 5 – Uso di OpenCode durante lo sviluppo
+
+OpenCode può essere inizializzato con il file `AGENTS.md` nella root del progetto.  
+Questo file fornisce regole permanenti all'agente per tutto il ciclo di sviluppo.
+
+**Raccomandazioni:**
+
+- usare istruzioni contestuali, esempi e richieste progressive;
+- evitare prompt monolitici che chiedono troppe cose insieme;
+- iniziare sempre in Plan Mode prima di passare a Build Mode;
+- verificare ogni modifica proposta prima di accettarla.
+
+### 6.6 Fase 6 – Implementazione del progetto MAUI
+
+#### Struttura di base consigliata
+
+Il progetto dovrebbe includere almeno:
+
+- `AppShell.xaml` con la definizione della navigazione;
+- una o più pagine principali (Views);
+- relativi ViewModel con proprietà di stato;
+- uno o più servizi dati (Services);
+- modelli o DTO;
+- risorse condivise (stili, colori, font);
+- eventuale servizio locale per SQLite o Preferences.
+
+#### Convenzioni utili
+
+- nomi chiari e coerenti (PascalCase per classi e proprietà);
+- una responsabilità principale per ogni classe;
+- uso limitato del code-behind (solo inizializzazione e binding context);
+- stato della UI esposto dal ViewModel, non calcolato nella View;
+- servizi isolati dalla View e dal ViewModel (injection nel costruttore).
+
+#### Stato della UI
+
+Ogni pagina che carica dati remoti dovrebbe prevedere almeno quattro proprietà nel ViewModel:
+
+```csharp
+// Esempio con CommunityToolkit.Mvvm
+[ObservableProperty]
+private bool _isBusy;
+
+[ObservableProperty]
+private string _errorMessage = string.Empty;
+
+[ObservableProperty]
+private bool _hasData;
+
+[ObservableProperty]
+private bool _isEmptyState;
+```
+
+Queste proprietà permettono alla View XAML di mostrare lo stato corretto:
+
+```xml
+<!-- ActivityIndicator durante il caricamento -->
+<ActivityIndicator IsRunning="{Binding IsBusy}" 
+                   IsVisible="{Binding IsBusy}" />
+
+<!-- Messaggio di errore -->
+<Label Text="{Binding ErrorMessage}" 
+       IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToBoolConverter}}"
+       TextColor="Red" />
+
+<!-- Messaggio lista vuota -->
+<Label Text="Nessun risultato trovato" 
+       IsVisible="{Binding IsEmptyState}" />
+
+<!-- Contenuto principale -->
+<CollectionView ItemsSource="{Binding Items}" 
+                IsVisible="{Binding HasData}" />
+```
+
+#### Persistenza locale
+
+Le opzioni di persistenza disponibili in MAUI sono:
+
+| Tecnologia | Uso consigliato | Complessità |
+|---|---|---|
+| **Preferences** | Impostazioni semplici (tema, lingua, ultimo valore) | Bassa |
+| **SQLite** | Dati strutturati (preferiti, cronologia, statistiche) | Media |
+| **File system** | File scaricati, cache immagini, export | Media |
+| **SecureStorage** | API key, token (non per grandi quantità di dati) | Bassa |
+
+### 6.7 Fase 7 – Testing
+
+Il testing serve a dimostrare che il progetto è non solo compilabile, ma utilizzabile in modo credibile.  
+Una feature va considerata completata solo dopo una verifica concreta.
+
+L'AI può aiutare nella fase di testing per:
+
+- generare checklist di test per una feature specifica;
+- suggerire casi limite a cui non si aveva pensato;
+- proporre test unitari per la logica non-UI;
+- analizzare possibili regressioni dopo un refactoring.
+
+**Prompt esempio per generare test:**
+
+```text
+Dato il ViewModel SearchViewModel che ha:
+- un comando SearchCommand che chiama IBookService.SearchAsync(query)
+- proprietà IsBusy, ErrorMessage, Items, IsEmptyState
+
+Proporre:
+- 8 casi di test manuale con passi precisi;
+- 5 edge case (casi limite improbabili ma possibili);
+- eventuali test unitari per la logica del ViewModel.
+Non generare ancora codice, solo la lista dettagliata dei casi.
+```
+
+### 6.8 Fase 8 – Target Android e iOS
+
+Il target principale del modulo è **Android**.  
+Tuttavia il progetto può essere pensato per risultare adattabile anche ad iOS.
+
+#### Android
+
+Su Android è opportuno verificare sempre:
+
+- i permessi effettivi richiesti nel `AndroidManifest.xml`;
+- il comportamento in assenza di rete;
+- la responsività della UI su diverse dimensioni di schermo;
+- la qualità delle icone e delle immagini;
+- il corretto funzionamento sia su emulatore sia su device reale;
+- il consumo di batteria e le performance generali.
+
+#### iOS (opzionale)
+
+Per chi sviluppa anche per iOS, occorre:
+
+- verificare i permessi specifici nell'`Info.plist`;
+- controllare il layout su diverse dimensioni del dispositivo (iPhone, iPad);
+- testare le differenze di comportamento dei servizi di piattaforma;
+- adattare eventuali componenti sensibili alla piattaforma.
+
+### 6.9 Fase 9 – Packaging e deployment
+
+La documentazione ufficiale Microsoft specifica che:
+
+- per Android il publishing di una app .NET MAUI produce APK o AAB;
+- AAB è il formato richiesto per la distribuzione tramite Google Play;
+- APK è il formato per l'installazione diretta (sideloading).
+
+#### Consegna minima consigliata
+
+- repository completo e ordinato;
+- APK installabile in modalità Release;
+- README con istruzioni di build e installazione;
+- screenshot principali dell'applicazione (almeno 3-5);
+- documentazione di progetto completa (tutti i file in `docs/`).
+
+#### Consegna avanzata (opzionale)
+
+- AAB firmato per Google Play;
+- icone e immagini in formato store;
+- descrizione breve e lunga dell'app;
+- note sui permessi utilizzati;
+- video demo dell'applicazione;
+- privacy note essenziali.
+
+---
+
+## 7. Sicurezza e uso responsabile dell'AI
+
+Alcune regole devono essere sempre rispettate durante lo sviluppo AI-Assisted:
+
+- **Non inserire chiavi API nel repository**: usare variabili d'ambiente, file `.env` esclusi dal `.gitignore`, o `SecureStorage` di MAUI;
+- **Non accettare codice senza lettura critica**: ogni riga generata dall'AI deve essere compresa prima di essere integrata;
+- **Non usare prompt con dati personali reali**: usare sempre dati fittizi o di esempio;
+- **Non presentare come "compreso" codice che non si è in grado di spiegare**: durante il colloquio di valutazione, questa carenza emerge immediatamente;
+- **Non confondere la rapidità di generazione con la qualità del software**: un codice prodotto in secondi può richiedere ore di debug se non è stato controllato.
+
+---
+
+## 8. Errori tipici da evitare
+
+Di seguito un elenco degli errori più comuni nello sviluppo AI-Assisted, con la spiegazione del perché sono problematici:
+
+| Errore | Perché è problematico |
+| --- | --- |
+| Partire dal codice invece che dalla specifica | Si perde il controllo dell'architettura fin dall'inizio |
+| Chiedere all'AI di sviluppare troppe parti in una volta | Si ottiene codice incoerente e difficile da integrare |
+| Mescolare logica, UI e chiamate REST nello stesso file | Viola il pattern MVVM e rende il codice non manutenibile |
+| Non documentare i prompt rilevanti | Impossibile dimostrare il processo durante la valutazione |
+| Testare solo il caso ideale (happy path) | I bug emergono nei casi limite, che sono quelli più frequenti |
+| Trascurare stati di errore e stati vuoti | L'app sembra rotta quando succede qualcosa di imprevisto |
+| Ignorare il packaging fino agli ultimi minuti | Il deployment può richiedere configurazioni non banali |
+| Accettare il codice AI senza naming review | I nomi generati spesso non corrispondono alle convenzioni |
+| Non usare il version control | Senza git, un errore dell'AI può distruggere lavoro già fatto |
+| Cambiare architettura a metà progetto | Genera confusione e regressioni difficili da gestire |
+
+---
+
+## 9. Presentazione finale del progetto
+
+La presentazione finale è parte integrante della valutazione.  
+Non si limita a mostrare che "l'app funziona", ma deve spiegare **perché** il progetto è stato costruito in quel modo e **come** l'AI è stata utilizzata in modo consapevole.
+
+La demo finale dovrebbe durare tra 8 e 12 minuti e mostrare:
+
+1. **Problema affrontato**: quale bisogno risolve l'app.
+2. **Specifica iniziale**: le funzionalità previste e i vincoli.
+3. **Architettura**: pattern MVVM, Shell, servizi, persistenza.
+4. **Uso dell'AI**: un esempio concreto di prompt efficace e una correzione ragionata.
+5. **Demo dell'app**: navigazione completa con almeno un caso d'errore gestito.
+6. **Limiti residui**: onestà riguardo a cosa non funziona o non è stato completato.
+7. **Possibili evoluzioni**: cosa si potrebbe aggiungere in futuro.
+
+Una buona presentazione non si limita a dire che "l'app funziona", ma spiega anche perché il progetto è stato costruito in quel modo e quali decisioni sono state prese durante il percorso.
+
+---
+
+## 10. Skills per agenti AI di coding
+
+Gli agenti AI di coding (come OpenCode, GitHub Copilot Agent Mode, Claude Code, Gemini CLI) non lavorano nel vuoto.  
+La loro efficacia dipende direttamente dalla qualità del contesto che ricevono.  
+Le **Skills** sono documenti strutturati che forniscono all'agente conoscenze specializzate, regole operative e pattern di comportamento per un compito specifico.
+
+### 10.1 Che cosa sono le Skills
+
+Una skill è un file Markdown (tipicamente `SKILL.md`) che descrive in modo formale:
+
+- il contesto di applicazione (quando la skill va usata);
+- le regole di comportamento che l'agente deve seguire;
+- i pattern estetici, architetturali o procedurali da applicare;
+- i vincoli tecnici da rispettare;
+- gli anti-pattern da evitare.
+
+A differenza di un semplice prompt, una skill è **persistente**: viene letta dall'agente ogni volta che è rilevante, senza che lo sviluppatore debba ripetere le istruzioni.
+
+### 10.2 Dove si collocano le Skills nel progetto
+
+Le skills possono essere posizionate in diversi punti:
+
+```text
+ProjectRoot/
+├─ AGENTS.md                    # Regole globali del progetto (letto da tutti gli agenti)
+├─ .github/
+│  └─ copilot-instructions.md   # Regole specifiche per GitHub Copilot
+├─ .agent/
+│  └─ skills/                   # Cartella Skills per agenti generici
+│     ├─ frontend-design.md     # Skill per la progettazione UI
+│     ├─ api-integration.md     # Skill per l'integrazione API REST
+│     ├─ mvvm-architecture.md   # Skill per l'architettura MVVM
+│     └─ testing-strategy.md    # Skill per la strategia di test
+├─ .opencode/                   # Cartella specifica per OpenCode
+│  └─ skills/
+│     └─ maui-development.md    # Skill specifica per lo sviluppo MAUI
+```
+
+### 10.3 Formato di una Skill
+
+Ogni file SKILL.md segue un formato con frontmatter YAML e contenuto Markdown:
+
+```markdown
+---
+name: maui-mvvm-development
+description: Guida l'agente nello sviluppo di applicazioni .NET MAUI 
+  con architettura MVVM, CommunityToolkit.Mvvm, Shell navigation 
+  e gestione degli stati UI. Usare questa skill quando si lavora 
+  su file .cs, .xaml, servizi REST o ViewModel del progetto MAUI.
+---
+
+## Contesto del progetto
+
+Questo progetto è una app .NET MAUI con target principale Android.
+L'architettura è MVVM con CommunityToolkit.Mvvm.
+La navigazione usa Shell con TabBar.
+La persistenza locale usa SQLite (sqlite-net-pcl) e Preferences.
+
+## Regole architetturali obbligatorie
+
+- Ogni pagina ha il proprio ViewModel dedicato.
+- La logica NON va nel code-behind (.xaml.cs): il code-behind contiene
+  solo l'inizializzazione e l'impostazione del BindingContext.
+- I servizi (API REST, database) sono separati dai ViewModel.
+- I servizi sono iniettati tramite costruttore (Dependency Injection).
+- Ogni ViewModel che carica dati remoti deve esporre:
+  - IsBusy (bool) – stato di caricamento
+  - ErrorMessage (string) – messaggio di errore
+  - HasData (bool) – indicatore di dati disponibili
+  - IsEmptyState (bool) – indicatore di risultato vuoto
+
+## Pattern per i ViewModel
+
+Usare sempre CommunityToolkit.Mvvm con source generators:
+
+- [ObservableProperty] per le proprietà di stato
+- [RelayCommand] per i comandi
+- ObservableCollection<T> per le liste
+- Metodi asincroni (async Task) per le operazioni remote
+
+Esempio di struttura ViewModel corretta:
+
+​```csharp
+public partial class SearchViewModel : ObservableObject
+{
+    private readonly IBookService _bookService;
+
+    [ObservableProperty]
+    private bool _isBusy;
+
+    [ObservableProperty]
+    private string _errorMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _isEmptyState;
+
+    public ObservableCollection<BookDto> Results { get; } = new();
+
+    public SearchViewModel(IBookService bookService)
+    {
+        _bookService = bookService;
+    }
+
+    [RelayCommand]
+    private async Task SearchAsync(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return;
+        try
+        {
+            IsBusy = true;
+            ErrorMessage = string.Empty;
+            Results.Clear();
+            var results = await _bookService.SearchAsync(query);
+            foreach (var item in results) Results.Add(item);
+            IsEmptyState = Results.Count == 0;
+        }
+        catch (HttpRequestException)
+        {
+            ErrorMessage = "Connessione non disponibile.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Errore: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+}
+​```
+
+## Pattern per i Service REST
+
+- Usare HttpClient iniettato dal costruttore.
+- Usare System.Text.Json per la deserializzazione.
+- Gestire: HttpRequestException, JsonException, TaskCanceledException.
+- Restituire liste vuote o null in caso di errore, mai lanciare eccezioni non gestite.
+- Configurare un timeout ragionevole (10-15 secondi).
+
+## Pattern XAML
+
+- Usare ContentPage con Shell.
+- Usare Grid come layout principale della pagina.
+- Usare CollectionView per le liste (non ListView).
+- Usare DataTemplate per definire l'aspetto degli elementi.
+- Gestire gli stati visivi con IsVisible binding:
+  - ActivityIndicator per IsBusy
+  - Label per ErrorMessage
+  - Label per IsEmptyState
+  - CollectionView per HasData
+
+## Anti-pattern da evitare
+
+- NON inserire chiamate HTTP nel code-behind.
+- NON usare eventi Click nel XAML: usare Command binding.
+- NON creare ViewModel senza proprietà di stato.
+- NON ignorare la gestione degli errori.
+- NON aggiungere pacchetti NuGet senza motivazione.
+- NON mescolare navigazione Shell con Navigation.PushAsync.
+```
+
+### 10.4 Skill per l'integrazione API REST
+
+Una skill specifica per le interazioni con API esterne:
+
+```markdown
+---
+name: api-integration
+description: Guida l'agente nella creazione e manutenzione dei servizi 
+  REST per le API esterne. Usare quando si creano o modificano file 
+  nella cartella Services/ o Models/ del progetto.
+---
+
+## Struttura dei file
+
+Ogni API esterna deve avere:
+- Un'interfaccia (es. IBookService.cs) nella cartella Services/
+- Un'implementazione (es. BookService.cs) nella cartella Services/
+- Uno o più DTO (es. BookDto.cs) nella cartella Models/
+
+## Convenzioni per i DTO
+
+- I DTO devono mappare la struttura JSON dell'API.
+- Usare [JsonPropertyName("...")] quando i nomi JSON differiscono
+  dalle convenzioni C# PascalCase.
+- Gestire esplicitamente i campi nullable con il tipo nullable (string?).
+- Non includere logica nei DTO: sono solo contenitori di dati.
+
+## Gestione degli errori
+
+Ogni metodo del service deve gestire almeno:
+- HttpRequestException → "Connessione non disponibile"
+- JsonException → "Formato dati non valido"
+- TaskCanceledException → "Richiesta scaduta (timeout)"
+- HttpResponseMessage con StatusCode != 200 → "Errore del server"
+
+Non lanciare mai eccezioni non gestite verso il ViewModel.
+
+## Esempio di service corretto
+
+​```csharp
+public class BookService : IBookService
+{
+    private readonly HttpClient _httpClient;
+    private const string BaseUrl = "https://www.googleapis.com/books/v1";
+
+    public BookService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+        _httpClient.Timeout = TimeSpan.FromSeconds(15);
+    }
+
+    public async Task<List<BookDto>> SearchAsync(string query)
+    {
+        try
+        {
+            var url = $"{BaseUrl}/volumes?q={Uri.EscapeDataString(query)}&maxResults=20";
+            var response = await _httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return new List<BookDto>();
+            var json = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<BookSearchResult>(json);
+            return result?.Items?.Select(i => i.ToBookDto()).ToList() 
+                   ?? new List<BookDto>();
+        }
+        catch (HttpRequestException) { return new List<BookDto>(); }
+        catch (JsonException) { return new List<BookDto>(); }
+        catch (TaskCanceledException) { return new List<BookDto>(); }
+    }
+}
+​```
+```
+
+### 10.5 Skill per la strategia di test
+
+```markdown
+---
+name: testing-strategy
+description: Guida l'agente nella generazione di test e nella 
+  verifica della qualità del codice. Usare quando viene richiesto 
+  di generare test, verificare una feature, o analizzare un ViewModel.
+---
+
+## Principi
+
+- Ogni feature deve avere almeno 3 test manuali documentati.
+- Ogni ViewModel con dati remoti deve avere test per:
+  - caso normale (dati presenti)
+  - caso vuoto (nessun risultato)
+  - caso errore (rete assente o timeout)
+- I casi limite devono essere esplicitamente identificati.
+- I test devono essere scritti PRIMA dell'implementazione quando possibile.
+
+## Formato output
+
+Quando viene richiesto di generare test, restituire:
+1. Lista numerata dei casi di test con passi precisi.
+2. Risultato atteso per ogni caso.
+3. Casi limite separati in una sezione dedicata.
+4. Eventuali suggerimenti per test automatici.
+
+## Anti-pattern
+
+- NON testare solo il caso positivo (happy path).
+- NON ignorare gli stati di errore della UI.
+- NON generare test senza passi precisi e risultati attesi.
+```
+
+### 10.6 Come creare le proprie Skills
+
+Per creare una nuova skill nel progetto, seguire questi passi:
+
+1. **Identificare lo scopo**: per quale tipo di lavoro la skill è utile?
+2. **Scrivere il frontmatter**: nome e descrizione con indicazione chiara di quando attivarla.
+3. **Definire il contesto**: qual è la struttura del progetto? Quali tecnologie si usano?
+4. **Elencare le regole**: cosa l'agente deve fare e cosa deve evitare.
+5. **Includere pattern ed esempi**: codice corretto da usare come template.
+6. **Specificare gli anti-pattern**: errori comuni e perché vanno evitati.
+7. **Testare la skill**: verificare che l'agente produca output coerente con le regole.
+
+**Tips per skills efficaci:**
+
+- Essere specifici: una skill vaga produce output vago.
+- Meglio più skills specializzate che una onnicomprensiva.
+- Mantenere le skills aggiornate: se l'architettura del progetto cambia, aggiornare le skills.
+- Usare esempi concreti con codice reale del progetto, non codice generico.
+- Includere sempre la sezione degli anti-pattern: è la più utile per evitare errori ricorrenti.
+
+---
+
+## 11. Progettazione UI/UX con il supporto dell'AI
+
+La progettazione dell'interfaccia utente è una delle aree dove l'AI può offrire il contributo più significativo, sia in fase di ideazione sia in fase di implementazione.  
+Tuttavia, anche in questo ambito, il ruolo dello sviluppatore rimane centrale: l'AI può suggerire, generare e velocizzare, ma le decisioni estetiche, funzionali e di usabilità restano responsabilità umana.
+
+Questo capitolo presenta tre approcci complementari per la progettazione UI/UX assistita da AI:
+
+1. **Approccio basato su prompt**: usare chat AI per generare mockup, palette, layout e codice XAML.
+2. **Approccio basato su skills**: fornire all'agente regole estetiche strutturate tramite file SKILL.md.
+3. **Approccio basato su strumenti dedicati**: usare tool come Google Stitch per generare interfacce complete a partire da descrizioni testuali o sketch.
+
+### 11.1 Approccio basato su prompt per la UI/UX
+
+L'approccio più immediato consiste nell'utilizzare prompt strutturati nella chat dell'AI per ottenere suggerimenti e codice relativi alla UI.
+
+#### Prompt per la definizione della palette colori
+
+```text
+Proporre una palette colori per una applicazione MAUI mobile 
+dedicata alla consultazione di libri.
+Requisiti:
+- tema chiaro e tema scuro;
+- un colore primario che trasmetta affidabilità e lettura;
+- un colore di accento per i pulsanti e le azioni principali;
+- un colore di sfondo principale e uno secondario;
+- un colore per il testo principale e uno per il testo secondario;
+- un colore per gli stati di errore e uno per gli stati di successo.
+Formato: restituire i colori in formato esadecimale, organizzati 
+come risorse XAML per App.xaml.
+```
+
+**Esempio di risposta attesa e come integrarla:**
+
+L'AI potrebbe restituire qualcosa come:
+
+```xml
+<!-- Tema chiaro -->
+<Color x:Key="PrimaryColor">#1B4965</Color>
+<Color x:Key="AccentColor">#5FA8D3</Color>
+<Color x:Key="BackgroundPrimary">#F7F7F7</Color>
+<Color x:Key="BackgroundSecondary">#FFFFFF</Color>
+<Color x:Key="TextPrimary">#1A1A2E</Color>
+<Color x:Key="TextSecondary">#6B7280</Color>
+<Color x:Key="ErrorColor">#DC2626</Color>
+<Color x:Key="SuccessColor">#16A34A</Color>
+
+<!-- Tema scuro -->
+<Color x:Key="PrimaryColorDark">#5FA8D3</Color>
+<Color x:Key="AccentColorDark">#BEE3F8</Color>
+<Color x:Key="BackgroundPrimaryDark">#0F172A</Color>
+<Color x:Key="BackgroundSecondaryDark">#1E293B</Color>
+<Color x:Key="TextPrimaryDark">#F1F5F9</Color>
+<Color x:Key="TextSecondaryDark">#94A3B8</Color>
+```
+
+Lo sviluppatore deve sempre validare la palette su uno schermo reale, verificando contrasto e leggibilità.
+
+#### Prompt per la generazione di layout XAML
+
+```text
+Creare il layout XAML per una pagina di ricerca libri in MAUI.
+La pagina deve contenere:
+- una SearchBar in alto;
+- sotto, un testo "Risultati" come intestazione;
+- una CollectionView con card orizzontali contenenti:
+  - immagine copertina a sinistra (60x90);
+  - titolo del libro (bold, max 2 righe);
+  - autore (testo secondario);
+  - anno di pubblicazione;
+- un ActivityIndicator centrato per lo stato di caricamento;
+- un messaggio centrato per lo stato "Nessun risultato trovato";
+- un messaggio centrato per lo stato di errore.
+
+Vincoli:
+- usare Grid come layout principale;
+- usare DataTemplate per gli elementi della collezione;
+- applicare binding ai ViewModel (IsBusy, ErrorMessage, IsEmptyState, Items);
+- usare le risorse colore definite in App.xaml;
+- non usare StackLayout per il layout della pagina.
+```
+
+#### Prompt per la definizione degli stili XAML
+
+```text
+Creare un set di stili XAML condivisi per una applicazione MAUI. 
+Includere:
+- stile per i pulsanti principali (bordi arrotondati, colore primario,
+  testo bianco, padding adeguato);
+- stile per i pulsanti secondari (bordo, sfondo trasparente);
+- stile per le card (Frame con ombra e bordi arrotondati);
+- stile per i titoli di sezione (font bold, dimensione 18-20);
+- stile per il testo del corpo (dimensione 14-16, interlinea adeguata);
+- stile per le etichette secondarie (testo grigio, dimensione 12-14).
+
+Formato: risorse XAML per App.xaml nella sezione <Application.Resources>.
+```
+
+#### Prompt per la revisione della UX
+
+```text
+Revisionare il seguente layout XAML dal punto di vista UX.
+Indicare:
+- problemi di leggibilità (contrasto, dimensione testo);
+- problemi di spaziatura (margini troppo stretti o assenti);
+- problemi di gerarchia visiva (cosa cattura l'attenzione prima?);
+- problemi di accessibilità (target touch troppo piccoli, labels mancanti);
+- suggerimenti per migliorare la navigabilità;
+- suggerimenti per una migliore gestione degli stati vuoti/errore.
+Non riscrivere il codice, solo elencare i problemi con spiegazione.
+```
+
+#### Workflow completo di progettazione UI con prompt
+
+1. **Definire le schermate**: elencare tutte le pagine e il loro scopo.
+2. **Definire la palette**: prompt per la palette colori con tema chiaro/scuro.
+3. **Definire gli stili base**: prompt per stili pulsanti, card, testi.
+4. **Generare il layout principale**: prompt per la schermata Home o principale.
+5. **Revisionare la UX**: prompt per la revisione critica del layout generato.
+6. **Iterare**: correggere i problemi trovati e rigenerare le parti necessarie.
+7. **Testare su device**: verificare la resa su emulatore o dispositivo reale.
+
+### 11.2 Approccio basato su Skills per la UI/UX
+
+Un approccio più strutturato consiste nel creare una skill dedicata alla progettazione dell'interfaccia.  
+In questo modo l'agente AI applica automaticamente le regole estetiche e di design ogni volta che lavora su file XAML o su componenti UI.
+
+Questo approccio si ispira al modello della skill **frontend-design** di Anthropic, adattato al contesto .NET MAUI.
+
+#### Skill frontend-design per MAUI
+
+Di seguito un esempio completo di skill per la progettazione UI in MAUI:
+
+```markdown
+---
+name: maui-ui-design
+description: Guida l'agente nella creazione di interfacce MAUI 
+  di alta qualità. Usare questa skill quando si creano o modificano 
+  file XAML, stili, risorse visive, layout o componenti UI del 
+  progetto. Genera codice XAML pulito, esteticamente curato e 
+  coerente con il design system del progetto.
+---
+
+## Filosofia di design
+
+Prima di scrivere codice XAML, ragionare su:
+- **Scopo**: cosa deve comunicare questa schermata? Quale azione 
+  deve compiere l'utente?
+- **Tono**: l'interfaccia deve essere minimale e pulita, oppure 
+  ricca e informativa? Formale o giocosa?
+- **Gerarchia**: cosa deve vedere l'utente per primo? Quale 
+  informazione è primaria e quale secondaria?
+- **Stati**: questa schermata ha uno stato di caricamento? Uno 
+  stato vuoto? Uno stato di errore? Tutti devono essere progettati.
+
+## Regole di layout
+
+### Grid come layout principale
+Usare SEMPRE Grid come layout principale della pagina.
+Grid offre controllo preciso su righe e colonne, evitando 
+l'annidamento eccessivo di StackLayout.
+
+Esempio di struttura di pagina:
+​```xml
+<ContentPage>
+  <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <!-- Riga 0: Header / SearchBar -->
+    <!-- Riga 1: Titolo sezione -->
+    <!-- Riga 2: Contenuto principale (lista o dettaglio) -->
+    <!-- Riga 3: Footer o azione principale -->
+  </Grid>
+</ContentPage>
+​```
+
+### Spaziatura e margini
+- Margine esterno della pagina: 16-20 pixel su tutti i lati.
+- Spaziatura tra elementi: 8-12 pixel verticalmente.
+- Padding interno delle card: 12-16 pixel.
+- Target touch minimo: 44x44 pixel (raccomandazione Apple/Google).
+
+### Tipografia
+- Titoli principali: 20-24pt, Bold.
+- Titoli di sezione: 16-18pt, SemiBold.
+- Testo corpo: 14-16pt, Regular.
+- Testo secondario: 12-14pt, Regular, colore attenuato.
+- Etichette piccole: 10-12pt, Regular, colore secondario.
+- MAI usare dimensioni inferiori a 10pt su mobile.
+- Limitare le righe di testo visibili con MaxLines e LineBreakMode.
+
+### Colori e temi
+- Usare SEMPRE riferimenti alle risorse colore definite in App.xaml.
+- NON usare colori hardcodati nel XAML (es. TextColor="#FF0000").
+- Supportare SEMPRE tema chiaro e tema scuro tramite AppThemeBinding.
+- Verificare il contrasto: rapporto minimo 4.5:1 per il testo normale.
+
+Esempio AppThemeBinding:
+​```xml
+<Label TextColor="{AppThemeBinding 
+    Light={StaticResource TextPrimary}, 
+    Dark={StaticResource TextPrimaryDark}}" />
+​```
+
+### Immagini
+- Usare AspectFit per le immagini contenute in card o liste.
+- Usare AspectFill per le immagini di sfondo o hero.
+- Fornire SEMPRE un placeholder per le immagini remote.
+- Definire dimensioni esplicite (HeightRequest, WidthRequest).
+- Usare bordi arrotondati con Clip per le immagini:
+​```xml
+<Image Source="{Binding CoverUrl}"
+       HeightRequest="120"
+       WidthRequest="80"
+       Aspect="AspectFill">
+  <Image.Clip>
+    <RoundRectangleGeometry CornerRadius="8" 
+        Rect="0,0,80,120" />
+  </Image.Clip>
+</Image>
+​```
+
+## Componenti riutilizzabili
+
+### Card
+Le card devono avere:
+- bordi arrotondati (CornerRadius 8-12);
+- ombra leggera (Shadow);
+- padding interno coerente;
+- sfondo che si distingue dallo sfondo pagina.
+
+​```xml
+<Border StrokeShape="RoundRectangle 10"
+        Stroke="{AppThemeBinding 
+            Light={StaticResource BorderLight}, 
+            Dark={StaticResource BorderDark}}"
+        StrokeThickness="1"
+        BackgroundColor="{AppThemeBinding 
+            Light={StaticResource BackgroundSecondary}, 
+            Dark={StaticResource BackgroundSecondaryDark}}"
+        Padding="12">
+  <Border.Shadow>
+    <Shadow Brush="Black" Opacity="0.1" 
+            Radius="4" Offset="0,2" />
+  </Border.Shadow>
+  <!-- Contenuto della card -->
+</Border>
+​```
+
+### Gestione stati visivi
+Ogni pagina con dati remoti DEVE gestire 4 stati:
+
+​```xml
+<!-- Stato Loading -->
+<ActivityIndicator Grid.Row="2" 
+    IsRunning="{Binding IsBusy}" 
+    IsVisible="{Binding IsBusy}"
+    HorizontalOptions="Center" 
+    VerticalOptions="Center" />
+
+<!-- Stato Errore -->
+<VerticalStackLayout Grid.Row="2" 
+    IsVisible="{Binding ErrorMessage, 
+        Converter={StaticResource StringToBoolConverter}}"
+    HorizontalOptions="Center" VerticalOptions="Center"
+    Spacing="12">
+  <Label Text="⚠️" FontSize="40" HorizontalOptions="Center" />
+  <Label Text="{Binding ErrorMessage}" 
+         HorizontalTextAlignment="Center" />
+  <Button Text="Riprova" Command="{Binding RetryCommand}" />
+</VerticalStackLayout>
+
+<!-- Stato Vuoto -->
+<VerticalStackLayout Grid.Row="2" 
+    IsVisible="{Binding IsEmptyState}"
+    HorizontalOptions="Center" VerticalOptions="Center"
+    Spacing="12">
+  <Label Text="📭" FontSize="40" HorizontalOptions="Center" />
+  <Label Text="Nessun risultato trovato" 
+         HorizontalTextAlignment="Center" />
+</VerticalStackLayout>
+
+<!-- Contenuto principale -->
+<CollectionView Grid.Row="2" 
+    ItemsSource="{Binding Items}"
+    IsVisible="{Binding HasData}">
+  <!-- DataTemplate -->
+</CollectionView>
+​```
+
+## Anti-pattern di design da evitare
+
+- NON usare colori hardcodati nei file XAML.
+- NON creare pagine senza gestione degli stati loading/errore/vuoto.
+- NON usare StackLayout per layout complessi (preferire Grid).
+- NON dimenticare il supporto al tema scuro.
+- NON usare dimensioni di testo inferiori a 10pt su mobile.
+- NON creare pulsanti più piccoli di 44x44 pixel (target touch).
+- NON sovraccaricare le schermate di informazioni: privilegiare 
+  la chiarezza e la gerarchia visiva.
+- NON ignorare la spaziatura: margini e padding coerenti fanno 
+  la differenza tra un'app amatoriale e una professionale.
+```
+
+#### Come usare la skill in pratica
+
+Una volta creata la skill `maui-ui-design.md` nella cartella `.agent/skills/` del progetto:
+
+1. L'agente la legge automaticamente quando lavora su file XAML.
+2. Quando si chiede di creare una nuova pagina, l'agente applica le regole di layout, colori e stati.
+3. Quando si chiede una review della UI, l'agente verifica la conformità alle regole della skill.
+
+**Prompt esempio con skill attiva:**
+
+```text
+Creare la pagina FavoritesPage.xaml seguendo la skill maui-ui-design.
+La pagina deve mostrare:
+- una lista di libri preferiti con copertina, titolo e autore;
+- swipe per eliminare un preferito;
+- gestione stato vuoto ("Nessun libro nei preferiti");
+- gestione stato loading;
+- pulsante "Pulisci tutto" nel footer.
+```
+
+L'agente, avendo la skill attiva, produrrà XAML con Grid, colori da risorse, AppThemeBinding, card con Border e Shadow, e tutti e quattro gli stati visivi, senza che lo sviluppatore debba specificare ogni volta queste regole.
+
+### 11.3 Google Stitch per la progettazione UI
+
+**Google Stitch** è uno strumento sperimentale di Google Labs disponibile gratuitamente all'indirizzo [stitch.withgoogle.com](https://stitch.withgoogle.com/).  
+Stitch utilizza i modelli Gemini di Google per trasformare input testuali, immagini o sketch manuali in interfacce utente ad alta fedeltà, complete di codice HTML/CSS/JavaScript esportabile.
+
+#### Che cosa è Stitch
+
+Stitch è un tool di **Vibe Design**: si parte da una descrizione o un'ispirazione e l'AI genera proposte visive concrete.  
+A differenza di un semplice prompt testuale, Stitch produce interfacce interattive visualizzabili in tempo reale nel browser.
+
+Le caratteristiche principali di Stitch sono:
+
+- **Input multimodale**: si può partire da testo, immagini, sketch a mano libera o combinazioni.
+- **Generazione di varianti**: Stitch produce più proposte tra cui scegliere.
+- **Prototyping interattivo**: è possibile connettere le schermate, definire transizioni e simulare percorsi utente completi.
+- **Estrazione del design system**: Stitch può estrarre colori, tipografia, spaziature e componenti da un qualsiasi sito web esistente e salvarli come file `DESIGN.md`.
+- **Export**: il risultato può essere esportato come file Figma (per la raffinazione) o come codice HTML/CSS/JS (per lo sviluppo).
+
+#### Perché è utile in un progetto MAUI
+
+Anche se Stitch genera codice web (HTML/CSS/JS) e non XAML, è molto utile per:
+
+1. **Prototipare rapidamente le schermate**: generare varianti visive prima di scrivere XAML.
+2. **Definire la palette e lo stile**: usare Stitch per esplorare combinazioni di colori e layout.
+3. **Comunicare l'idea**: produrre mockup condivisibili prima dell'implementazione.
+4. **Estrarre il design system**: generare un `DESIGN.md` che poi guida la creazione degli stili XAML.
+
+Il workflow è: **Stitch genera il mockup → lo sviluppatore traduce il mockup in XAML MAUI**.
+
+#### Workflow dettagliato con Google Stitch
+
+##### Fase 1: Descrizione dell'idea
+
+Accedere a [stitch.withgoogle.com](https://stitch.withgoogle.com/) e descrivere la schermata desiderata.
+
+**Esempio di prompt in Stitch:**
+
+```text
+Design a mobile app screen for searching books.
+The screen has:
+- a search bar at the top with a magnifying glass icon
+- below, a list of book cards showing:
+  - book cover image on the left
+  - book title (bold) on the right
+  - author name below the title (gray text)
+  - a small heart icon for favorites
+- at the bottom, a tab bar with 3 tabs: Search, Favorites, Settings
+- clean, modern design with a blue/white color scheme
+- include a loading state with a spinner
+```
+
+Stitch genererà una o più proposte visive per questa schermata.
+
+##### Fase 2: Raffinazione con input vocale o testuale
+
+Una volta generata la prima versione, è possibile chiedere modifiche:
+
+```text
+Make the book cards more spacious with more padding.
+Change the color scheme to a darker blue (#1B4965).
+Add a subtle shadow to each card.
+Show an empty state with a message "No books found" and an illustration.
+```
+
+##### Fase 3: Generazione di schermate multiple
+
+Chiedere a Stitch di generare le schermate successive:
+
+```text
+Now create the book detail screen.
+It should show:
+- a large book cover image at the top (hero style)
+- below, the title, author, publisher, year, page count
+- a long description text (scrollable)
+- a floating action button "Add to Favorites"
+- back navigation in the top-left corner
+```
+
+##### Fase 4: Prototyping interattivo
+
+In Stitch è possibile connettere le schermate create:
+
+- dalla schermata di ricerca, toccando una card → si naviga al dettaglio;
+- dal dettaglio, premendo "back" → si torna alla ricerca;
+- dalla tab bar → si naviga tra Search, Favorites, Settings.
+
+Questo permette di simulare l'intera esperienza utente prima di scrivere una riga di codice.
+
+##### Fase 5: Estrazione del design system
+
+Stitch può estrarre le regole di design dalle schermate generate e produrre un file strutturato con:
+
+- palette colori primaria e secondaria;
+- font principali e dimensioni;
+- spaziature standard (margini, padding);
+- forma dei componenti (bordi arrotondati, ombre);
+- stili dei pulsanti e delle card.
+
+Questo file può essere usato come riferimento per creare gli stili XAML corrispondenti in `App.xaml`.
+
+##### Fase 6: Export e traduzione in XAML
+
+Il codice HTML/CSS generato da Stitch non può essere usato direttamente in MAUI, ma fornisce un riferimento visivo preciso.
+
+La traduzione segue queste corrispondenze:
+
+| HTML/CSS (Stitch) | XAML (MAUI) |
+|---|---|
+| `<div>` con flexbox | `Grid` o `FlexLayout` |
+| `<div>` con padding e border-radius | `Border` con `StrokeShape` |
+| `<img>` | `Image` con `Source` binding |
+| `<input type="text">` | `Entry` o `SearchBar` |
+| `<button>` | `Button` con `Command` binding |
+| `<ul><li>` | `CollectionView` con `DataTemplate` |
+| CSS `color`, `font-size` | Risorse XAML `Color`, `Style` |
+| CSS `box-shadow` | `Shadow` element in XAML |
+| CSS `border-radius` | `RoundRectangleGeometry` |
+| CSS media queries (responsive) | `OnPlatform`, `OnIdiom` |
+
+**Esempio di traduzione:**
+
+Stitch genera:
+
+```html
+<div style="display: flex; padding: 12px; border-radius: 10px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            background: white;">
+  <img src="cover.jpg" style="width: 60px; height: 90px; 
+       border-radius: 6px; object-fit: cover;" />
+  <div style="margin-left: 12px;">
+    <h3 style="font-size: 16px; font-weight: bold;">Titolo Libro</h3>
+    <p style="font-size: 14px; color: #6B7280;">Nome Autore</p>
+  </div>
+</div>
+```
+
+Traduzione MAUI equivalente:
+
+```xml
+<Border StrokeShape="RoundRectangle 10"
+        Stroke="Transparent"
+        BackgroundColor="{StaticResource BackgroundSecondary}"
+        Padding="12">
+  <Border.Shadow>
+    <Shadow Brush="Black" Opacity="0.1" Radius="4" Offset="0,2" />
+  </Border.Shadow>
+  <Grid ColumnDefinitions="60,*" ColumnSpacing="12">
+    <Image Grid.Column="0"
+           Source="{Binding CoverUrl}"
+           HeightRequest="90" WidthRequest="60"
+           Aspect="AspectFill">
+      <Image.Clip>
+        <RoundRectangleGeometry CornerRadius="6" Rect="0,0,60,90" />
+      </Image.Clip>
+    </Image>
+    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+      <Label Text="{Binding Title}" 
+             FontSize="16" FontAttributes="Bold"
+             MaxLines="2" LineBreakMode="TailTruncation" />
+      <Label Text="{Binding Author}" 
+             FontSize="14" 
+             TextColor="{StaticResource TextSecondary}" />
+    </VerticalStackLayout>
+  </Grid>
+</Border>
+```
+
+#### Vantaggi e limiti di Stitch
+
+**Vantaggi:**
+
+- velocità estrema nella prototipazione visiva;
+- esplorazione rapida di varianti estetiche;
+- creazione di mockup professionali senza competenze di design;
+- estrazione automatica di design system;
+- export Figma per collaborazione con designer;
+- gratuito e utilizzabile nel browser senza installazione.
+
+**Limiti:**
+
+- genera codice web (HTML/CSS/JS), non XAML: serve traduzione manuale;
+- non conosce i componenti specifici di .NET MAUI;
+- i mockup possono dare false aspettative su cosa è realizzabile in MAUI;
+- la qualità del risultato dipende dalla qualità della descrizione;
+- è uno strumento sperimentale e potrebbe cambiare nel tempo.
+
+#### Quando usare Stitch nel progetto
+
+| Fase del progetto | Uso di Stitch |
+|---|---|
+| Analisi e specifica | Generare mockup per validare l'idea con il docente |
+| Design | Esplorare palette, layout e stili visivi |
+| Pianificazione | Creare un prototipo navigabile per pianificare le iterazioni |
+| Implementazione | Usare i mockup come riferimento per il codice XAML |
+| Presentazione | Includere i mockup Stitch nel materiale di presentazione |
+
+#### DESIGN.md: il design system portabile di Stitch
+
+Una delle funzionalità più potenti di Google Stitch è la possibilità di estrarre e generare un file **DESIGN.md** che documenta l'intero design system del progetto in formato Markdown.
+
+Il DESIGN.md è un file strutturato, leggibile sia dall'essere umano sia dall'AI, che funge da **unica fonte di verità** per tutti i token di design: colori, tipografia, spaziatura, componenti, stati visivi.
+
+##### Come generare un DESIGN.md
+
+Stitch offre due modalità:
+
+1. **Estrazione da un sito web esistente**: Stitch analizza l'URL di un sito, identifica le regole di design sottostanti e costruisce un file DESIGN.md completo.
+2. **Generazione dal progetto Stitch**: dopo aver creato le schermate nel proprio progetto, è possibile estrarre il design system come file DESIGN.md.
+
+Esiste inoltre una skill dedicata (`stitch-design-md`) che automatizza la generazione del file analizzando metadata, screenshot e codice HTML/CSS dei progetti Stitch.
+
+##### Struttura del DESIGN.md
+
+Un DESIGN.md tipico contiene:
+
+```markdown
+# DESIGN.md — Nome del Progetto
+
+## Brand Identity
+Personalità, tono, feeling dell'applicazione.
+
+## Color System
+### Primary Palette
+| Name | Hex | Usage |
+|---|---|---|
+| Deep Blue | #1B4965 | Primary brand color |
+| Sky Blue | #5FA8D3 | Secondary, active states |
+
+### Background Colors
+| Name | Hex | Theme | Usage |
+|---|---|---|---|
+| Night Sky | #0F172A | Dark | Main background |
+| Cloud White | #F0F4F8 | Light | Main background |
+
+### Semantic Colors
+| Name | Hex | Usage |
+|---|---|---|
+| Error Red | #DC2626 | Error states |
+| Success Green | #16A34A | Success states |
+
+## Typography
+| Level | Size | Weight | Usage |
+|---|---|---|---|
+| Display | 48pt | Bold | Temperature, hero numbers |
+| H1 | 24pt | Bold | Page titles |
+| Body | 14pt | Regular | General text |
+| Caption | 12pt | Regular | Labels, timestamps |
+
+## Spacing System
+| Token | Value | Usage |
+|---|---|---|
+| space-sm | 8px | Tight spacing |
+| space-md | 12px | Default spacing |
+| space-lg | 16px | Page margins |
+
+## Components
+### Card
+- Background: #1E293B
+- Border Radius: 12px
+- Padding: 14px
+- Shadow: 0 2px 8px rgba(0,0,0,0.1)
+
+### Search Bar
+- Border Radius: 24px
+- Height: 48px
+
+## States
+### Loading: ActivityIndicator centrato
+### Error: icona warning + messaggio + pulsante Riprova
+### Empty: icona + messaggio descrittivo
+```
+
+##### Dove collocare il DESIGN.md nel progetto
+
+```text
+ProjectRoot/
+├─ DESIGN.md          ← Design system principale
+├─ AGENTS.md          ← Regole progetto (riferisce DESIGN.md)
+├─ docs/
+├─ src/
+└─ assets/
+   └─ mockups/        ← Mockup Stitch esportati
+```
+
+Il file va posizionato nella **root del progetto**, accanto ad `AGENTS.md`.
+
+##### Integrazione con AGENTS.md e coding agents
+
+Per far sì che l'agente AI utilizzi il DESIGN.md automaticamente, aggiungere in `AGENTS.md`:
+
+```markdown
+## Design system
+
+Il file DESIGN.md nella root del progetto descrive l'intero design system.
+Quando si creano o modificano file XAML:
+- leggere sempre DESIGN.md prima di scrivere codice UI;
+- usare i colori, le dimensioni e le spaziature definiti nel file;
+- rispettare i componenti documentati;
+- gestire i 4 stati visivi come specificato nella sezione States.
+```
+
+A questo punto, ogni richiesta all'agente (come "Crea la pagina HomePage.xaml") produrrà XAML coerente con il design system documentato, senza che lo sviluppatore debba ripetere i valori ad ogni prompt.
+
+##### Workflow completo: Stitch → DESIGN.md → Coding Agent
+
+```mermaid
+graph LR
+    A["1. Requisiti"] --> B["2. Stitch"]
+    B --> C["3. DESIGN.md"]
+    C --> D["4. AGENTS.md"]
+    D --> E["5. Coding Agent → XAML"]
+    E --> F["6. Review su device"]
+    F -- "Correzioni" --> E
+    F -- "Nuovo screen" --> B
+```
+
+Il vantaggio di questo workflow è che il design system è **versionabile** (Git), **portabile** (leggibile da qualsiasi agente AI) e **manutenibile** (aggiornabile quando il design evolve).
+
+### 11.4 Riepilogo dei quattro approcci
+
+| Approccio | Quando usarlo | Output | Competenza richiesta |
+|---|---|---|---|
+| **Prompt-based** | Per generare singoli componenti XAML o palette | Codice XAML diretto | Conoscenza XAML base |
+| **Skill-based** | Per applicare regole di design sistematiche su tutto il progetto | XAML coerente e di qualità | Configurazione iniziale della skill |
+| **Google Stitch** | Per prototipare rapidamente e validare l'idea visiva | Mockup visivo + codice web | Traduzione HTML→XAML necessaria |
+| **DESIGN.md** | Per documentare il design system e alimentare il coding agent | Token di design strutturati | Generazione da Stitch o manuale |
+
+I quattro approcci non sono alternativi: possono essere combinati.  
+Un workflow consigliato è:
+
+1. **Stitch** per il prototipo visivo iniziale e la definizione dello stile;
+2. **DESIGN.md** per estrarre e documentare il design system;
+3. **Skill** per garantire coerenza estetica durante tutto lo sviluppo;
+4. **Prompt** per generare singoli componenti quando serve.
+
+---
+
+## 12. Testing basato su AI
+
+Il testing è una delle fasi dello sviluppo software in cui gli strumenti di intelligenza artificiale offrono il massimo ritorno sull'investimento (ROI). Scrivere test è spesso percepito come un'attività ripetitiva e time-consuming, ma è fondamentale per garantire la qualità dell'applicazione.
+
+Nei progetti MAUI, gli studenti possono (e dovrebbero) utilizzare i coding agent per generare rapidamente test automatici, validare la logica di business e identificare casi limite (edge cases) a cui non avevano pensato.
+
+### 12.1 Strumenti e Framework per il Testing in MAUI
+
+Prima di usare l'AI, è importante conoscere l'ecosistema di testing per .NET MAUI:
+
+1. **xUnit / NUnit / MSTest**: Framework per lo Unit Testing. In MAUI, si usano principalmente per testare **ViewModel**, **Service** e logica di business pura, disaccoppiata dall'interfaccia utente.
+2. **Moq / NSubstitute**: Librerie per il Mocking. Indispensabili per simulare il comportamento di dipendenze esterne (es. API REST, database locali, sensori del dispositivo).
+3. **Appium / MAUI UI Testing**: Framework per lo UI Testing (End-to-End). Permettono di simulare click e interazioni utente direttamente sull'emulatore o sul dispositivo fisico.
+
+L'approccio raccomandato per un progetto didattico è concentrarsi fortemente sullo **Unit Testing dei ViewModel** (che contengono il grosso della logica grazie al pattern MVVM) usando xUnit e Moq.
+
+### 12.2 Generazione di Unit Tests per i ViewModel
+
+I ViewModel sono i candidati perfetti per i test generati dall'AI. L'approccio migliore è fornire all'agente il codice del ViewModel e chiedere di generare in automatico tutta la test suite.
+
+#### Scenario: Test del LoginViewModel
+
+Immaginiamo che lo studente abbia scritto un `LoginViewModel` che verifica email e password tramite un `IAuthService`.
+
+**Prompt per l'agente (es. Copilot o OpenCode):**
+
+```text
+Leggi il file ViewModels/LoginViewModel.cs e l'interfaccia 
+Services/IAuthService.cs.
+Genera una classe di test xUnit chiamata LoginViewModelTests.cs.
+Usa 'Moq' per mockare IAuthService.
+
+Voglio che tu generi test per i seguenti scenari:
+1. Login fallito perché l'email è vuota (verifica IsBusy e messaggio di errore).
+2. Login fallito perché le credenziali sono errate (il servizio restituisce false).
+3. Login con successo (il servizio restituisce true, naviga alla HomePage).
+
+Usa il pattern Arrange-Act-Assert (AAA) con commenti espliciti.
+```
+
+**Output generato dall'agente (C# con xUnit e Moq):**
+
+```csharp
+using Xunit;
+using Moq;
+using CityClimate.ViewModels;
+using CityClimate.Services;
+using System.Threading.Tasks;
+
+public class LoginViewModelTests
+{
+    private readonly Mock<IAuthService> _mockAuthService;
+    private readonly LoginViewModel _viewModel;
+
+    public LoginViewModelTests()
+    {
+        // Arrange comune
+        _mockAuthService = new Mock<IAuthService>();
+        _viewModel = new LoginViewModel(_mockAuthService.Object);
+    }
+
+    [Fact]
+    public async Task LoginCommand_EmptyEmail_SetsErrorMessage()
+    {
+        // Arrange
+        _viewModel.Email = string.Empty;
+        _viewModel.Password = "password123";
+
+        // Act
+        await _viewModel.LoginCommand.ExecuteAsync(null);
+
+        // Assert
+        Assert.False(_viewModel.IsBusy);
+        Assert.Equal("L'email è obbligatoria", _viewModel.ErrorMessage);
+        // Verifica che il servizio API non sia mai stato chiamato
+        _mockAuthService.Verify(s => s.LoginAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task LoginCommand_InvalidCredentials_ShowsError()
+    {
+        // Arrange
+        _viewModel.Email = "test@test.com";
+        _viewModel.Password = "wrong";
+        _mockAuthService.Setup(s => s.LoginAsync("test@test.com", "wrong"))
+                        .ReturnsAsync(false);
+
+        // Act
+        await _viewModel.LoginCommand.ExecuteAsync(null);
+
+        // Assert
+        Assert.False(_viewModel.IsBusy);
+        Assert.Equal("Credenziali non valide", _viewModel.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task LoginCommand_ValidCredentials_NavigatesToHome()
+    {
+        // Arrange
+        _viewModel.Email = "admin@app.com";
+        _viewModel.Password = "admin123";
+        _mockAuthService.Setup(s => s.LoginAsync("admin@app.com", "admin123"))
+                        .ReturnsAsync(true);
+
+        // Act
+        await _viewModel.LoginCommand.ExecuteAsync(null);
+
+        // Assert
+        Assert.False(_viewModel.IsBusy);
+        Assert.Empty(_viewModel.ErrorMessage);
+        // Qui si dovrebbe idealmente mockare e verificare anche INavigationService
+    }
+}
+```
+
+Lo studente ottiene una suite di test completa e formattata correttamente in pochi secondi, imparando contemporaneamente come si usa la libreria `Moq` per isolare le dipendenze.
+
+### 12.3 Scoperta di Edge Cases (Casi Limite)
+
+L'AI non serve solo a scrivere codice, ma a pensare a scenari che lo sviluppatore umano potrebbe aver trascurato.
+
+**Prompt per identificare casi limite:**
+
+```text
+Analizza il mio WeatherService.cs che effettua le chiamate all'API REST 
+di OpenMeteo tramite HttpClient.
+Quali sono gli "edge cases" (casi limite o di errore) che non sto 
+gestendo e per i quali dovrei scrivere un test?
+Per ognuno, scrivimi il test xUnit corrispondente.
+```
+
+L'agente potrebbe suggerire (e generare) test critici come:
+- **Timeout di rete** (Cosa succede se l'API impiega troppo tempo?)
+- **JSON malformato** (Cosa succede se l'API restituisce HTML invece di JSON?)
+- **Assenza di connessione Internet** (Eccezione `HttpRequestException`)
+- **Status Code 429** (Too Many Requests / Rate Limiting)
+
+Questo uso dell'AI agisce come un senior developer (Code Reviewer) che istruisce lo studente sulla robustezza del software.
+
+### 12.4 Generazione di UI Tests con Appium
+
+Lo UI Testing è storicamente complesso da configurare e scrivere da zero, poiché richiede di individuare gli elementi visivi sullo schermo e simulare tap.  
+Fornendo all'agente il codice XAML della pagina, può generare la struttura del test End-to-End.
+
+**Prompt per l'agente:**
+
+```text
+Ecco il file XAML della mia HomePage (Views/HomePage.xaml) che 
+contiene un Entry con x:Name="SearchEntry" e un Button con 
+x:Name="SearchButton".
+Genera uno script di test UI basato su Appium / MAUI UI Testing 
+che:
+1. Aspetta che la pagina si carichi.
+2. Inserisce il testo "Milano" nella SearchEntry.
+3. Clicca il SearchButton.
+4. Verifica che appaia un Label con x:Name="TemperatureLabel".
+```
+
+**Output parziale generato:**
+
+```csharp
+[Test]
+public void SearchCity_ReturnsTemperature()
+{
+    // Arrange: Trova gli elementi UI (tramite AutomationId o XPath)
+    var searchEntry = driver.FindElement(MobileBy.AccessibilityId("SearchEntry"));
+    var searchButton = driver.FindElement(MobileBy.AccessibilityId("SearchButton"));
+
+    // Act: Interagisci con gli elementi
+    searchEntry.SendKeys("Milano");
+    searchButton.Click();
+
+    // Assert: Attendi e verifica il risultato
+    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+    var tempLabel = wait.Until(d => d.FindElement(MobileBy.AccessibilityId("TemperatureLabel")));
+    
+    Assert.IsNotNull(tempLabel);
+    Assert.IsTrue(tempLabel.Text.Contains("°C"));
+}
+```
+
+*Nota didattica per gli studenti:* Lo UI Testing generato dall'AI richiede spesso aggiustamenti manuali (es. configurazione del Driver, gestione dei tempi di attesa), ma avere lo scheletro generato automaticamente abbatte la barriera d'ingresso a questa pratica avanzata.
+
+### 12.5 Documentare i Test
+
+Come raccomandato nella struttura del progetto (Sezione 6), il lavoro di testing deve essere documentato nel file `docs/test-matrix.md`.
+
+Lo studente può chiedere all'AI stessa di generare o aggiornare questa matrice partendo dal codice dei test:
+
+**Prompt:**
+
+```text
+Leggi tutti i file nella cartella /Tests/. 
+Genera o aggiorna il file docs/test-matrix.md creando una tabella Markdown 
+con:
+- Modulo testato
+- Scenari coperti
+- Tipo di test (Unit, Integration, UI)
+- Stato (Pass/Fail)
+```
+
+Questo chiude il ciclo "Spec-Driven", dimostrando non solo che il software funziona, ma che c'è prova strutturata del suo funzionamento.
+
+---
+
+## 13. Conclusione
+
+Lo sviluppo assistito da AI può migliorare in modo significativo la produttività, ma solo se inserito in un processo rigoroso e controllato.
+
+Nel contesto di un progetto MAUI didattico, il vero obiettivo non è produrre più codice possibile nel minor tempo, ma costruire una applicazione:
+
+- **comprensibile**: lo sviluppatore sa spiegare ogni parte del codice;
+- **ordinata**: la struttura del progetto è chiara e le responsabilità ben separate;
+- **verificata**: ogni funzionalità è stata testata con casi normali e casi limite;
+- **documentata**: il processo è tracciabile attraverso i file in `docs/`;
+- **presentabile**: la demo finale è preparata, chiara e convincente.
+
+Il paradigma Man-in-the-Loop e l'approccio Spec-Driven non limitano la creatività dello sviluppatore: la incanalano verso un risultato di qualità superiore, preparando al contempo competenze professionali reali nell'uso responsabile dell'Intelligenza Artificiale per lo sviluppo software.

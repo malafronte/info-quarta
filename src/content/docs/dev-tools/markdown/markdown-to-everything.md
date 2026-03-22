@@ -548,6 +548,7 @@ pandoc .\file.md -o .\file-weasy.pdf --pdf-engine=weasyprint --css='file:///C:/U
 ### 5. Problemi di visualizzazione PDF in VS Code
 
 Se il PDF non si apre in VS Code ma si apre correttamente in altre applicazioni:
+
 - Chiudere VS Code.
 - Pulire la cache WebView nelle cartelle `%APPDATA%\Code\Service Worker`, `%APPDATA%\Code\Cache`, `%APPDATA%\Code\Code Cache`.
 - Riaprire VS Code.
@@ -555,4 +556,5 @@ Se il PDF non si apre in VS Code ma si apre correttamente in altre applicazioni:
 ### 6. Artefatti nei blocchi di codice con WeasyPrint
 
 Se WeasyPrint mostra piccoli artefatti nei blocchi di codice:
+
 - Verificare che in `pdf-style.css` esista il reset su `pre code` con le proprietà: `display: block; padding: 0; margin: 0; text-indent: 0;`.

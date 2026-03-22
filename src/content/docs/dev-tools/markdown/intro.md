@@ -40,24 +40,24 @@ Il secondo stile, noto come "Setext style", è disponibile solo per i primi due 
 **Esempio pratico - Codice sorgente:**
 
 ```markdown
-# Intestazione di Primo Livello
+  # Intestazione di Primo Livello
 
-## Intestazione di Secondo Livello
+  ## Intestazione di Secondo Livello
 
-### Intestazione di Terzo Livello
+  ### Intestazione di Terzo Livello
 
-#### Intestazione di Quarto Livello
+  #### Intestazione di Quarto Livello
 
-##### Intestazione di Quinto Livello
+  ##### Intestazione di Quinto Livello
 
-###### Intestazione di Sesto Livello
+  ###### Intestazione di Sesto Livello
 
-Stile alternativo per il primo livello
-======================================
+  Stile alternativo per il primo livello
+  ======================================
 
-Stile alternativo per il secondo livello
-----------------------------------------
-```
+  Stile alternativo per il secondo livello
+  ----------------------------------------
+
 
 **Output renderizzato:**
 
@@ -86,6 +86,7 @@ La gestione di paragrafi e interruzioni di riga in Markdown segue un approccio i
 Le interruzioni di riga all'interno dello stesso paragrafo richiedono invece un'attenzione particolare. Per creare un'interruzione di riga (il tag HTML `<br>`) senza iniziare un nuovo paragrafo, è necessario terminare la riga con due o più spazi seguiti da un ritorno a capo. Questa convenzione, sebbene non immediatamente visibile nel testo sorgente, è fondamentale per la poesia, gli indirizzi e altri contenuti che richiedono interruzioni specifiche senza separazione paragrafica. In alternativa, è possibile utilizzare il tag HTML `<br>` direttamente, che offre un controllo più esplicito sebbene meno elegante.
 
 È importante comprendere che una singola interruzione di riga senza spazi finali viene ignorata dal parser Markdown, che concatena le righe consecutive in un unico flusso di testo. Questo comportamento permette di scrivere paragrafi lunghi su più righe nel file sorgente mantenendo la leggibilità durante l'editing, senza preoccuparsi che ogni ritorno a capo diventi un'interruzione nel documento finale. Questa caratteristica riflette la filosofia di Markdown: il testo sorgente dovrebbe essere formattato per la massima leggibilità durante la scrittura, non per imitare il risultato finale.
+```
 
 **Esempio pratico - Codice sorgente:**
 
@@ -192,21 +193,25 @@ Lista annidata:
 **Output renderizzato:**
 
 Lista non ordinata con asterischi:
+
 * Primo elemento
 * Secondo elemento
 * Terzo elemento
 
 Lista non ordinata con trattini:
+
 - Elemento A
 - Elemento B
 - Elemento C
 
 Lista ordinata:
+
 1. Passo iniziale
 2. Passo intermedio
 3. Passo finale
 
 Lista annidata:
+
 1. Elemento principale
    - Sottolista non ordinata
    - Secondo elemento annidato
@@ -406,56 +411,56 @@ Oltre al syntax highlighting, i fenced code blocks supportano anche la numerazio
 **Esempio pratico - Codice sorgente:**
 
 ```markdown
-Codice senza syntax highlighting:
+    Codice senza syntax highlighting:
 
-```
-function greet(name) {
-  return `Hello, ${name}!`;
-}
-```
+    ```
+    function greet(name) {
+      return `Hello, ${name}!`;
+    }
+    ```
 
-Codice JavaScript con highlighting:
+    Codice JavaScript con highlighting:
 
-```javascript
-function fibonacci(n) {
-  if (n <= 1) return n;
-  return fibonacci(n - 1) + fibonacci(n - 2);
-}
+    ```javascript
+    function fibonacci(n) {
+      if (n <= 1) return n;
+      return fibonacci(n - 1) + fibonacci(n - 2);
+    }
 
-// Esempio di utilizzo
-console.log(fibonacci(10)); // Output: 55
-```
+    // Esempio di utilizzo
+    console.log(fibonacci(10)); // Output: 55
+    ```
 
-Codice Python:
+    Codice Python:
 
-```python
-def quicksort(arr):
-    if len(arr) <= 1:
-        return arr
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quicksort(left) + middle + quicksort(right)
-```
+    ```python
+    def quicksort(arr):
+        if len(arr) <= 1:
+            return arr
+        pivot = arr[len(arr) // 2]
+        left = [x for x in arr if x < pivot]
+        middle = [x for x in arr if x == pivot]
+        right = [x for x in arr if x > pivot]
+        return quicksort(left) + middle + quicksort(right)
+    ```
 
-Configurazione YAML:
+    Configurazione YAML:
 
-```yaml
-server:
-  port: 3000
-  host: localhost
-database:
-  type: postgresql
-  name: myapp_dev
-```
+    ```yaml
+    server:
+      port: 3000
+      host: localhost
+    database:
+      type: postgresql
+      name: myapp_dev
+    ```
 ```
 
 **Output renderizzato:**
 
 Codice senza syntax highlighting:
 
-```
+```text
 function greet(name) {
   return `Hello, ${name}!`;
 }
@@ -557,7 +562,7 @@ Visual Studio Code rappresenta l'editor di riferimento per un numero crescente d
 
 #### Markdown All in One
 
-Markdown All in One è un'estensione che porta le scorciatoie da tastiera, il completamento automatico e altre funzionalità di produttività direttamente nell'editor VS Code. L'obiettivo principale dell'estensione è rendere la scrittura di Markdown fluida e rapida, eliminando la necessità di digitare manualmente i marcatori sintattici più comuni. Questa sezione esplora le funzionalità principali dell'estensione e fornisce esempi pratici di utilizzo.
+Markdown All in One (Extension ID: [`yzhang.markdown-all-in-one`](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)) è un'estensione che porta le scorciatoie da tastiera, il completamento automatico e altre funzionalità di produttività direttamente nell'editor VS Code. L'obiettivo principale dell'estensione è rendere la scrittura di Markdown fluida e rapida, eliminando la necessità di digitare manualmente i marcatori sintattici più comuni. Questa sezione esplora le funzionalità principali dell'estensione e fornisce esempi pratici di utilizzo.
 
 **Funzionalità principali:**
 
@@ -571,7 +576,7 @@ Markdown All in One è un'estensione che porta le scorciatoie da tastiera, il co
 
 5. **Anteprima integrata**: L'estensione include un'anteprima sincronizzata che mostra il rendering del documento in tempo reale. L'anteprima può essere aperta premendo `Ctrl+Shift+V` o affiancata all'editor con `Ctrl+K V`.
 
-6. **Conversione da HTML e documenti Office**: Una funzionalità particolarmente utile è la conversione automatica di testo copiato da fonti esterne. Quando si incolla testo copiato da una pagina web o da un documento Word, l'estensione può convertirlo automaticamente in Markdown.
+6. **Comandi di editing e paste intelligente**: L'estensione include comandi utili come l'inserimento rapido di link su testo selezionato durante l'incolla URL e vari toggle di formattazione (bold, italic, code span, liste), utili per velocizzare la scrittura quotidiana.
 
 **Esempio pratico di utilizzo:**
 
@@ -585,45 +590,37 @@ Immaginiamo di dover creare rapidamente un file README per un progetto. Con Mark
 6. Per creare una lista, digitare `-` seguito da uno spazio; l'estensione continuerà automaticamente la lista premendo `Enter`
 7. Per generare l'indice, posizionarsi all'inizio del documento, premere `Ctrl+Shift+P` e selezionare "Markdown: Create Table of Contents"
 
-**Impostazioni per la conversione da HTML e documenti Office:**
+**Impostazioni utili di Markdown All in One:**
 
-Markdown All in One offre diverse impostazioni per controllare come il testo copiato viene convertito in Markdown. Queste impostazioni sono particolarmente utili quando si deve migrare documentazione da fonti esterne o quando si riutilizza contenuto da pagine web.
-
-Le impostazioni principali sono accessibili tramite il file `settings.json` di VS Code:
+Le impostazioni principali sono accessibili tramite il file `settings.json` di VS Code. Di seguito alcune opzioni realmente supportate e utili nella pratica:
 
 ```json
 {
-  // Abilita la conversione automatica quando si incolla
-  "markdown.extension.pasteUrlAsLink": true,
-  
-  // Controlla come vengono convertiti i paragrafi
-  "markdown.extension.pasteAsMarkdown.preserveNewlines": false,
-  
-  // Converte gli stili di testo (bold, italic, etc.)
-  "markdown.extension.pasteAsMarkdown.convertTextStyle": true,
-  
-  // Gestisce la conversione delle liste
-  "markdown.extension.pasteAsMarkdown.convertList": true,
-  
-  // Converte i link in formato Markdown
-  "markdown.extension.pasteAsMarkdown.convertLink": true,
-  
-  // Gestisce le immagini durante la conversione
-  "markdown.extension.pasteAsMarkdown.convertImage": true
+  // Aggiorna automaticamente la TOC al salvataggio
+  "markdown.extension.toc.updateOnSave": true,
+
+  // Modalita di slug della TOC (GitHub, GitLab, VS Code, ecc.)
+  "markdown.extension.toc.slugifyMode": "github",
+
+  // Gestione intelligente dell'indentazione nelle liste
+  "markdown.extension.list.indentationSize": "adaptive",
+
+  // Rinumerazione automatica delle liste ordinate
+  "markdown.extension.orderedList.autoRenumber": true,
+
+  // Apertura automatica della preview a lato
+  "markdown.extension.preview.autoShowPreviewToSide": false,
+
+  // Mostra/nasconde i pulsanti azione nell'editor
+  "markdown.extension.showActionButtons": false
 }
 ```
 
-Per la conversione specifica di paragrafi da HTML o documenti Office, l'estensione utilizza regole interne che possono essere influenzate dalle seguenti considerazioni:
-
-- **Paragrafi multipli**: Quando si incolla testo con più paragrafi, l'estensione li separa con righe vuote, rispettando la convenzione Markdown standard
-- **Interruzioni di riga**: Le interruzioni di riga singole (`<br>` in HTML) vengono convertite in base all'impostazione `preserveNewlines`. Se impostato su `true`, vengono mantenute come doppio spazio seguito da newline; se `false`, vengono eliminate
-- **Stili di paragrafo**: Gli stili applicati a interi paragrafi in Word (come intestazioni) vengono convertiti nei corrispondenti marcatori Markdown (`#`, `##`, ecc.)
-
-Per un controllo più granulare della conversione, è possibile utilizzare il comando "Paste as Markdown" dal command palette (`Ctrl+Shift+P`), che applica la conversione solo quando esplicitamente richiesto, invece della conversione automatica all'incolla.
+Nota importante: la conversione avanzata di contenuto HTML/Office in Markdown non e gestita da chiavi `markdown.extension.pasteAsMarkdown.*` di Markdown All in One. Per l'incolla URL come link formattato, VS Code espone impostazioni native come `markdown.editor.pasteUrlAsFormattedLink`.
 
 #### Markdown Preview Enhanced
 
-Markdown Preview Enhanced rappresenta un'estensione significativamente più avanzata, che trasforma l'anteprima di VS Code in un potente strumento di visualizzazione e esportazione. Sviluppata da Yiyi Wang, questa estensione supporta funzionalità che vanno ben oltre il Markdown standard, includendo diagrammi, formule matematiche, e integrazione con strumenti di produzione professionale.
+Markdown Preview Enhanced (extension ID: [`shd101wyy.markdown-preview-enhanced`](https://marketplace.visualstudio.com/items?itemName=shd101wyy.markdown-preview-enhanced)) rappresenta un'estensione significativamente più avanzata, che trasforma l'anteprima di VS Code in un potente strumento di visualizzazione e esportazione. Sviluppata da Yiyi Wang, questa estensione supporta funzionalità che vanno ben oltre il Markdown standard, includendo diagrammi, formule matematiche, e integrazione con strumenti di produzione professionale.
 
 **Funzionalità principali:**
 
@@ -644,48 +641,49 @@ Markdown Preview Enhanced rappresenta un'estensione significativamente più avan
 Creiamo un documento tecnico che combina testo, diagrammi e formule matematiche:
 
 ```markdown
-# Architettura del Sistema
+    # Architettura del Sistema
 
-## Panoramica dei Componenti
+    ## Panoramica dei Componenti
 
-Il sistema è composto da tre moduli principali che comunicano tramite API REST.
+    Il sistema è composto da tre moduli principali che comunicano tramite API REST.
 
-```mermaid
-graph TD
-    A[Client Frontend] --> B[API Gateway]
-    B --> C[Authentication Service]
-    B --> D[Business Logic]
-    D --> E[(Database)]
-    D --> F[Cache Layer]
-```
+    ```mermaid
+    graph TD
+        A[Client Frontend] --> B[API Gateway]
+        B --> C[Authentication Service]
+        B --> D[Business Logic]
+        D --> E[(Database)]
+        D --> F[Cache Layer]
+    ```
 
-## Formula di Calcolo
+    ## Formula di Calcolo
 
-Il tempo di risposta del sistema è calcolato secondo la formula:
+    Il tempo di risposta del sistema è calcolato secondo la formula:
 
-$$T_{response} = T_{processing} + T_{network} + T_{queue}$$
+    $$T_{response} = T_{processing} + T_{network} + T_{queue}$$
 
-Dove:
-- $T_{processing}$ rappresenta il tempo di elaborazione del server
-- $T_{network}$ rappresenta la latenza di rete
-- $T_{queue}$ rappresenta il tempo di attesa in coda
+    Dove:
 
-## Sequence Diagram
+    - $T_{processing}$ rappresenta il tempo di elaborazione del server
+    - $T_{network}$ rappresenta la latenza di rete
+    - $T_{queue}$ rappresenta il tempo di attesa in coda
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant A as API Gateway
-    participant S as Auth Service
-    participant D as Database
-    
-    U->>A: Login Request
-    A->>S: Validate Credentials
-    S->>D: Query User
-    D-->>S: User Data
-    S-->>A: Token
-    A-->>U: Session Established
-```
+    ## Sequence Diagram
+
+    ```mermaid
+    sequenceDiagram
+        participant U as User
+        participant A as API Gateway
+        participant S as Auth Service
+        participant D as Database
+        
+        U->>A: Login Request
+        A->>S: Validate Credentials
+        S->>D: Query User
+        D-->>S: User Data
+        S-->>A: Token
+        A-->>U: Session Established
+    ```
 ```
 
 Questo documento, quando visualizzato con Markdown Preview Enhanced, mostrerà i diagrammi renderizzati e le formule matematiche correttamente formattate.
@@ -738,11 +736,162 @@ Per un funzionamento ottimale, è consigliabile configurare i percorsi degli ese
   "markdown-preview-enhanced.pandocPath": "pandoc",
   "markdown-preview-enhanced.latexEngine": "pdflatex",
   "markdown-preview-enhanced.mathRenderingOption": "KaTeX",
-  "markdown-preview-enhanced.enableScriptExecution": true
+  "markdown-preview-enhanced.enableScriptExecution": false
 }
 ```
 
+Per motivi di sicurezza, è consigliabile mantenere `enableScriptExecution` disabilitato e abilitarlo solo quando necessario (ad esempio per code chunk fidati).
+
 La combinazione di Markdown All in One per la produttività nell'editing e Markdown Preview Enhanced per la visualizzazione avanzata e l'esportazione costituisce una soluzione completa per chi lavora con Markdown in Visual Studio Code, soddisfacendo sia le esigenze della scrittura quotidiana che quelle della produzione di documentazione professionale.
+
+#### Markdown Paste
+
+Markdown Paste (extension ID: [`telesoho.vscode-markdown-paste-image`](https://marketplace.visualstudio.com/items?itemName=telesoho.vscode-markdown-paste-image)) è un'estensione che trasforma l'operazione di incollare contenuto in Markdown da una semplice inserzione di testo grezzo in una conversione intelligente e automatica. Quando si copia contenuto da una pagina web, da Microsoft Word, da un'email o da qualunque altra fonte che produce HTML o testo formattato, l'estensione intercetta il contenuto della clipboard e lo converte in sintassi Markdown corretta prima di inserirlo nel documento. Questo elimina la necessità di ripulire manualmente il testo incollato da tag HTML residui, formattazione indesiderata o link non formattati.
+L'estensione è particolarmente utile in tre scenari principali: l'incollamento di testo formattato da pagine web o documenti Word, l'inserimento rapido di immagini dalla clipboard (screenshot, immagini copiate), e la conversione automatica di URL in link Markdown. A differenza delle funzionalità native di VS Code per l'incolla immagini (disponibili dalla versione 1.79), Markdown Paste offre un controllo più granulare sulla conversione HTML-to-Markdown e sulla gestione dei percorsi delle immagini.
+
+**Installazione:**
+
+1. Aprire la vista Estensioni in VS Code (`Ctrl+Shift+X`)
+2. Cercare "Markdown Paste"
+3. Installare l'estensione di **telesoho**
+**Comandi principali:**
+
+| Comando | Scorciatoia (Windows) | Funzione |
+| :-- | :-- | :-- |
+| `Markdown Paste` | `Ctrl+Alt+V` | Incolla contenuto intelligente: converte HTML/richtext in Markdown, oppure inserisce immagini dalla clipboard |
+| `Markdown Paste Code` | `Ctrl+Alt+C` | Incolla codice con rilevamento automatico del linguaggio |
+| `Markdown Paste Image` | — | Incolla solo immagini dalla clipboard |
+
+**Come funziona la conversione all'incolla:**
+Quando si preme `Ctrl+Alt+V`, l'estensione analizza il contenuto della clipboard e applica la seguente logica:
+
+   1. Se la clipboard contiene un'**immagine**, questa viene salvata nella cartella configurata e viene inserito un link Markdown (`![alt](percorso)`).
+   2. Se la clipboard contiene **HTML** (ad esempio copiando da una pagina web o da Word), l'HTML viene convertito in Markdown tramite la libreria Turndown.
+   3. Se la clipboard contiene **testo semplice**, l'estensione applica eventuali regole regex personalizzate definite dall'utente.
+
+**Configurazione in `settings.json`:**
+L'estensione offre numerose opzioni di configurazione per personalizzare il comportamento della conversione. Le impostazioni principali sono le seguenti:
+
+```json
+{
+  // Percorso di salvataggio delle immagini (relativo o assoluto)
+  // Variabili disponibili: ${fileDirname}, ${workspaceRoot}, ${fileName}
+  "MarkdownPaste.path": "${fileDirname}/images",
+  // Nome del file immagine
+  // Variabili disponibili: ${uuid}, ${fileName}, ${dateTime}
+  "MarkdownPaste.name": "${fileName}-${dateTime}",
+  // Abilita/disabilita la conversione HTML → Markdown
+  "MarkdownPaste.enableHtmlConverter": true,
+  // Applica le regole regex anche dopo la conversione HTML
+  "MarkdownPaste.enableRulesForHtml": true,
+  // Opzioni per Turndown (motore di conversione HTML → Markdown)
+  // Valori possibili: "setext" (default), "atx"
+  "MarkdownPaste.turndownOptions": {
+    "headingStyle": "atx",
+    "hr": "---",
+    "bulletListMarker": "-",
+    "codeBlockStyle": "fenced",
+    "fence": "```",
+    "emDelimiter": "*",
+    "strongDelimiter": "**",
+    "linkStyle": "inlined",
+    "linkReferenceStyle": "full"
+  },
+  // Codifica dei percorsi delle immagini
+  // Valori: "none", "encodeSpaceOnly" (default), "encodeURI"
+  "MarkdownPaste.encodePath": "encodeSpaceOnly",
+  // Tipo di clipboard da selezionare automaticamente
+  // Priorità predefinita: ["image", "html", "text"]
+  "MarkdownPaste.autoSelectClipboardTypePriority": ["image", "html", "text"]
+}
+```
+
+**Regole regex personalizzate:**
+Una delle funzionalità più potenti di Markdown Paste è la possibilità di definire regole regex che trasformano automaticamente il testo incollato. Questo è utile per convertire URL di YouTube in embed, per normalizzare formati di date, o per applicare trasformazioni specifiche al proprio workflow:
+
+```json
+{
+  "MarkdownPaste.rules": [
+    {
+      // Converte URL YouTube in iframe embed Markdown
+      "regex": "^(?:https?://)?(?:(?:(?:www\\.)?youtube\\.com/(?:(?:watch\\?.*?v=([^&\\s]+))|(?:(?:embed/|v/)([^/?\\s]+)))))",
+      "options": "g",
+      "replace": "[![Video YouTube](https://img.youtube.com/vi/$1$2/0.jpg)](https://www.youtube.com/watch?v=$1$2)"
+    },
+    {
+      // Converte URL GitHub in link Markdown con anteprima
+      "regex": "^(https://github\\.com/[\\w\\-]+/[\\w\\-]+)$",
+      "options": "",
+      "replace": "[$1]($1)"
+    },
+    {
+      // Rimuove spazi multipli
+      "regex": "  +",
+      "options": "g",
+      "replace": " "
+    }
+  ],
+  // Applica tutte le regole in sequenza (default: true)
+  "MarkdownPaste.applyAllRules": true
+}
+```
+
+**Configurazione specifica per linguaggi:**
+L'estensione supporta regole specifiche per diversi linguaggi (ad esempio AsciiDoc), attivate automaticamente in base al linguaggio del file corrente:
+
+```json
+{
+  "MarkdownPaste.lang_rules": [
+    {
+      "asciidoc": [
+        {
+          "regex": "^https?://.*\\.(png|jpg|gif)$",
+          "options": "",
+          "replace": "image::$0[]"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Integrazione con AI (funzionalità sperimentale):**
+Markdown Paste include un'integrazione con LLM compatibili con l'API OpenAI per la conversione avanzata di contenuto clipboard tramite AI:
+
+```json
+{
+  "MarkdownPaste.enableAI": true,
+  "MarkdownPaste.openaiConnectOption": {
+    "base_url": "https://api.openai.com/v1",
+    "api_key": "sk-...",
+    "model": "gpt-4o"
+  }
+}
+```
+
+> [!NOTE]
+> La funzionalità AI è sperimentale e richiede una chiave API. Viene utilizzata come fallback quando la conversione regex/HTML standard non produce risultati soddisfacenti.
+**Confronto con le funzionalità native di VS Code:**
+A partire dalla versione 1.79, VS Code offre funzionalità native per l'incolla immagini nei file Markdown. A partire dalla versione 1.86, è disponibile anche il comando "Paste As..." che supporta l'incolla di contenuto HTML. Tuttavia, Markdown Paste rimane superiore per:
+
+* Conversione HTML-to-Markdown più completa (usa Turndown con supporto GFM)
+* Regole regex personalizzabili per trasformazioni automatiche
+* Gestione avanzata dei nomi e percorsi dei file immagine
+* Incolla codice con rilevamento automatico del linguaggio
+* Integrazione AI opzionale
+
+Per utenti che necessitano solo dell'incolla immagini base, le funzionalità native di VS Code sono sufficienti e configurabili tramite le impostazioni:
+
+```json
+{
+  // VS Code nativo: cartella di destinazione per immagini incollate
+  "markdown.copyFiles.destination": {
+    "**/*": "${fileDirname}/images"
+  },
+  // VS Code nativo: incolla URL come link formattato
+  "markdown.editor.pasteUrlAsFormattedLink.enabled": "smartWithSelection"
+}
+```
 
 ### Convertitori e Generatori Statici
 
@@ -807,6 +956,8 @@ La padronanza di Markdown si sviluppa attraverso la pratica e l'esplorazione del
 - **[Stack Edit](https://stackedit.io/)** — Un editor Markdown nel browser con anteprima in tempo reale, sincronizzazione con cloud storage e supporto per varie estensioni, utile per provare la sintassi senza installare software.
 
 - **[Markdownlint](https://github.com/DavidAnson/markdownlint)** — Uno strumento di linting per Markdown che verifica la conformità a regole di stile configurabili, disponibile come tool da riga di comando, plugin per editor e integrazione CI/CD.
+
+Markdownlint, mantenuto da **David Anson**, ha anche una documentazione di riferimento molto pratica su **[dlaa.me](https://dlaa.me/markdownlint/)**, dove sono elencate in modo chiaro le regole (MD001, MD002, ecc.), gli esempi di violazione e le possibili soluzioni. In un contesto didattico o di team, questa risorsa e particolarmente utile per definire convenzioni condivise e spiegare in modo oggettivo il motivo di ciascun warning del linter.
 
 ---
 
