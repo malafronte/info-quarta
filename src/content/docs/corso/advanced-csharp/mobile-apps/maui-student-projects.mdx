@@ -6,9 +6,13 @@ sidebar:
   order: 30
 ---
 
-<style>
-img {display: block; margin: 0 auto;}
-</style>
+
+import { Badge } from '@astrojs/starlight/components';
+import Accordion from "@components/Accordion.astro";
+
+<style>{`
+  img {display: block; margin: 0 auto;}
+`}</style>
 
 ![Overview Image](./maui-student-projects/AI_assisted_MAUI_projects_gem.png)
 
@@ -43,6 +47,7 @@ La scelta dovrebbe basarsi su tre fattori:
 
 Indipendentemente dal progetto scelto, ogni applicazione deve includere almeno:
 
+- gestione del versioning con **Git**, utilizzando branch dedicati per la singola iterazione o feature;
 - una specifica iniziale documentata in `docs/spec.md`;
 - una pianificazione in iterazioni documentata in `docs/plan.md`;
 - una applicazione MAUI funzionante con architettura MVVM;
@@ -66,6 +71,20 @@ Indipendentemente dal progetto scelto, possono essere introdotte alcune estensio
 - screenshot e asset per una possibile pubblicazione store;
 - condivisione di contenuti tramite funzionalità di sistema.
 
+### 1.5 Nota sul Workflow Git per tutti i progetti
+
+In tutte le guide passo-passo che seguono, si intende **sempre** applicato il seguente rigido loop di lavoro con Git:
+1. **Plan & Branch**: all'inizio del passo, richiedere la creazione di un branch specifico (es. `git checkout -b feature/ui-meteo-attuale`).
+2. **Execute & Test**: sviluppare e testare la feature (con o senza l'ausilio dell'Intelligenza Artificiale).
+3. **Commit & Merge**: alla fine del passo, formattare il commit (es. `git commit -am "feat: completata UI meteo attuale"`) per poi eventualmente chiudere il branch. L'agente AI può essere istruito ad eseguire queste automazioni tramite terminale a patto che gli si concedano i dovuti permessi controllati (vedi l'Esempio Completo in fondo a questo documento).
+
+### 1.6 Approfondimento: I DTO (Data Transfer Object) nei progetti MAUI
+
+Nelle indicazioni dei vari progetti (vedi Tabella Sintetica e guide di implementazione) si troverà la ricorrente richiesta di usare file con suffisso "Dto" (come `PokemonDto.cs`, `BookDto.cs` ecc.). 
+Questa è una essenziale *best-practice* architetturale: **un DTO è un semplice contenitore di dati ("oggetto di trasferimento") senza alcun metodo logico o di calcolo al suo interno**. 
+
+Nei nostri contesti didattici, i DTO servono primariamente a isolare l'applicazione nativa dalle imperfezioni o particolarità strutturali delle API Web. Grazie ad essi mappiamo *uno a uno* le chiavi JSON ricevute in proprietà in linguaggio C#. Facendo in modo che il Service Web (o il Model Repository) restituisca esclusivamente oggetti e array DTO "puliti" ai nostri layer superiori (i ViewModel), evitiamo di dover adattare l'Interfaccia Grafica XAML a fastidiosi nomi esterni fuori standard (come le banali chiavi in *snake_case* native di molti backend) o costringerla a gestire campi nullable e imprevisti direttamente nel binding UI.
+
 ---
 
 ## 2. Tabella sintetica dei progetti
@@ -84,7 +103,7 @@ Alcune richiedono una registrazione gratuita per ottenere una API key (NASA), le
 
 ---
 
-## 3. Progetto 1 – CityClimate Companion
+## 3. Progetto 1 - CityClimate Companion
 
 ### 3.1 Idea generale
 
@@ -124,7 +143,7 @@ Risulta inoltre immediato da dimostrare durante la presentazione finale.
 **Endpoint principali:**
 
 | Endpoint | Scopo | Esempio |
-|---|---|---|
+| --- | --- | --- |
 | `GET /v1/forecast` | Previsioni meteo | `?latitude=45.07&longitude=7.68&current_weather=true` |
 | `GET /v1/search` | Geocoding (nome → coordinate) | `?name=Torino&count=5` |
 | `GET /v1/air-quality` | Qualità dell'aria | `?latitude=45.07&longitude=7.68&current=european_aqi` |
@@ -152,7 +171,7 @@ Risulta inoltre immediato da dimostrare durante la presentazione finale.
 ### 3.5 Schermate suggerite
 
 | Schermata | Scopo | Componenti MAUI |
-|---|---|---|
+| --- | --- | --- |
 | Home | Meteo attuale della località selezionata | Grid, Label, Image |
 | Forecast | Previsioni 7 giorni + orarie | CollectionView, DataTemplate |
 | Search | Ricerca città per nome | SearchBar, CollectionView |
@@ -238,7 +257,7 @@ Rifinire la UI, testare su emulatore e device, acquisire screenshot, generare l'
 
 ---
 
-## 4. Progetto 2 – BookScout Mobile
+## 4. Progetto 2 - BookScout Mobile
 
 ### 4.1 Idea generale
 
@@ -269,7 +288,7 @@ Il progetto è adatto a chi desidera realizzare una applicazione informativa con
 - Rate limit generoso per uso didattico.
 - Restituisce titolo, autori, descrizione, copertina, ISBN, categorie.
 
-In alternativa: **Open Library** ([https://openlibrary.org/developers/api](https://openlibrary.org/developers/api)) – completamente gratuita e open source.
+In alternativa: **Open Library** ([https://openlibrary.org/developers/api](https://openlibrary.org/developers/api)) - completamente gratuita e open source.
 
 **Endpoint principali Google Books:**
 
@@ -394,7 +413,7 @@ Generare APK, acquisire screenshot, preparare la presentazione finale.
 
 ---
 
-## 5. Progetto 3 – PokeDex MAUI
+## 5. Progetto 3 - PokeDex MAUI
 
 ### 5.1 Idea generale
 
@@ -537,7 +556,7 @@ Vincoli:
 Implementare la PokedexPage con CollectionView e caricamento incrementale.  
 Al raggiungimento del fondo della lista, caricare i successivi 20 Pokémon.
 
-#### Passo 4: Pagina dettaglio
+#### Passo 4: Pagina dettaglio -Progetto PokeDex
 
 Implementare PokemonDetailPage con sprite grande, tipo (con colore), statistiche base (come ProgressBar), peso e altezza.
 
@@ -559,7 +578,7 @@ Testare paginazione, ricerca, preferiti. Generare APK. Preparare demo.
 
 ---
 
-## 6. Progetto 4 – MealPlanner Recipes
+## 6. Progetto 4 - MealPlanner Recipes
 
 ### 6.1 Idea generale
 
@@ -635,7 +654,7 @@ L'utente può cercare ricette per ingrediente, visualizzarne il dettaglio con is
 
 ### 6.6 Guida passo per passo
 
-#### Passo 1: Setup e Shell
+#### Passo 1: Setup e Shell - Progetto MealPlanner
 
 Creare il progetto con pagine: SearchPage, RecipeDetailPage, FavoritesPage, PlannerPage, ShoppingListPage.
 
@@ -679,17 +698,17 @@ Salvare ricette in SQLite. Implementare il piano settimanale con assegnazione gi
 
 Generare automaticamente la lista degli ingredienti dalle ricette pianificate. Aggiungere checkbox per spuntare gli elementi acquistati.
 
-#### Passo 7: Gestione errori e rifinitura
+#### Passo 7: Gestione errori e rifinitura - progetto MealPlanner
 
 Gestire tutti gli stati UI. Rifinire il layout.
 
-#### Passo 8: Test e packaging
+#### Passo 8: Test e packaging - progetto MealPlanner
 
 Testare, generare APK, preparare demo.
 
 ---
 
-## 7. Progetto 5 – SpaceWatch Explorer
+## 7. Progetto 5 - SpaceWatch Explorer
 
 ### 7.1 Idea generale
 
@@ -725,7 +744,7 @@ Questo progetto è consigliato a chi vuole curare particolarmente l'aspetto visi
 **Endpoint principali:**
 
 | Endpoint | Scopo | Esempio |
-|---|---|---|
+| --- | --- | --- |
 | `GET /planetary/apod` | Immagine del giorno | `?api_key=YOUR_KEY&date=2025-03-15` |
 | `GET /planetary/apod` (range) | Archivio date | `?api_key=YOUR_KEY&start_date=2025-03-01&end_date=2025-03-07` |
 | `GET /neo/rest/v1/feed` | Asteroidi near-earth | `?start_date=2025-03-15&api_key=YOUR_KEY` |
@@ -767,7 +786,7 @@ Questo progetto è consigliato a chi vuole curare particolarmente l'aspetto visi
 
 ### 7.7 Guida passo per passo
 
-#### Passo 1: Setup e Shell
+#### Passo 1: Setup e Shell - progetto SpaceWatch
 
 Creare il progetto con le pagine: HomePage, ArchivePage, ApodDetailPage, FavoritesPage.
 
@@ -827,13 +846,13 @@ Curare layout, colori (tema spaziale scuro), leggibilità. Gestire lo stato offl
 
 Testare su diversi emulatori e device reali. Verificare il comportamento con chiave API valida e con DEMO_KEY.
 
-#### Passo 8: Packaging e demo
+#### Passo 8: Packaging e demo - progetto SpaceWatch
 
 Generare APK, acquisire screenshot spettacolari, preparare la presentazione con enfasi sugli aspetti visivi.
 
 ---
 
-## 8. Progetto 6 – GeoQuiz Nations
+## 8. Progetto 6 - GeoQuiz Nations
 
 ### 8.1 Idea generale
 
@@ -1029,6 +1048,8 @@ Per rendere concreto il processo Man-in-the-Loop, questa sezione presenta un ese
 
 ### 9.1 Esempio di docs/spec.md compilato
 
+<Accordion title="Esempio di spec.md" defaultOpen={false}>
+
 ```markdown
 # Specifica del progetto
 
@@ -1075,8 +1096,11 @@ persistenza locale.
 - Quando preme "Cerca"
 - Allora viene mostrata una lista di libri con "Python" nel titolo
 ```
+</Accordion>
 
 ### 9.2 Esempio di docs/iterations/it-01.md compilato
+
+<Accordion title="Esempio di file di iterazione" defaultOpen={false}>
 
 ```markdown
 # Iterazione 01
@@ -1114,11 +1138,19 @@ Creare la struttura base del progetto: Shell, pagine vuote, registrazione DI.
 ## Problemi trovati
 - Nessun problema significativo in questa iterazione.
 
+## Operazioni Git
+- Creato branch `it-01-setup`.
+- File committati con il messaggio "chore: setup iniziale del progetto MAUI e Shell".
+
 ## Esito
 Completato.
 ```
 
+</Accordion>
+
 ### 9.3 Esempio di docs/iterations/it-02.md compilato
+
+<Accordion title="Esempio di file di iterazione" defaultOpen={false}>
 
 ```markdown
 # Iterazione 02
@@ -1171,11 +1203,20 @@ e verificare che restituisca dati corretti.
 - Aggiunto '?' a tutte le stringhe nullable nel DTO (Description?, Publisher?).
 - Aggiunto valore default per CoverUrl quando imageLinks è assente.
 
+## Operazioni Git
+- Eseguito checkout su nuovo branch `it-02-service-rest`.
+- Richiesto all'Agente AI di analizzare il diff ed eseguire il commit.
+- Eseguito `git push origin it-02-service-rest`.
+
 ## Esito
-Completato. Il service funziona e gestisce i casi base.
+Completato. Il service funziona, gestisce i casi base e i file sono tracciati nel repository remoto.
 ```
 
+</Accordion>
+
 ### 9.4 Esempio di docs/prompt-log.md compilato
+
+<Accordion title="Esempio di file di prompt log" defaultOpen={false}>
 
 ```markdown
 # Prompt log
@@ -1240,31 +1281,82 @@ dipendenze non necessarie. Il caso imageLinks null è frequente
 nei libri meno noti.
 ```
 
+</Accordion>
+
+### 9.5 Delega delle operazioni Git all'Agente AI nell'Iterazione
+
+Alla fine di ogni ciclo (come descritto nell'Iterazione 02 sopra), un momento formidabile e pratico consiste nell'incaricare l'agente AI di tracciare le variazioni al codice.
+
+**Scenario Tipo:** Abbiamo terminato i test della pagina dettaglio e vogliamo fare commit delle modifiche. Piuttosto che scrivere log approssimativi, possiamo chiedere al nostro AI assistant (Copilot Chat in Agent Mode o OpenCode):
+
+> **Studente**: *"La feature dettaglio è completata e testata. Scrivi un messaggio di commit che segua la convenzione (Conventional Commits) descrivendo cosa hai aggiunto in BookDetailPage e BookDetailViewModel e procedi al commit sul branch attuale."*
+
+A questo punto, due cose cruciali avvengono:
+
+1. **L'Agente analizza i file non tracciati e le modifiche (`git diff`)** e genera un messaggio autonomo. Ad esempio: `feat: aggiunta BookDetailPage e viewmodel per il dettaglio del libro`.
+2. **L'Agente prova a eseguire il comando (`git commit -am ...`)**. 
+
+**Permessi e Sicurezza:** 
+- L'IDE intercetterà l'operazione richiedendoti di **approvare l'Esecuzione del Comando nel Terminale** o delegando l'avviso a moduli Source Control. 
+- **Non cliccare su "Always Allow" (Consenti Sempre)**: se lo facessi, daresti all'AI il potere di committare qualsiasi esperimento andato male senza permetterti di fermarla o accorgertene. Clicca su **"Allow" (Consenti una singola volta)** solo ed esclusivamente dopo aver letto il messaggio di comando Git che sta per lanciare. In questo modo mantieni il pieno controllo sulla cronologia del progetto, pur sfruttando la velocità e l'accuratezza formale dei commit generati dalla macchina.
+
 ---
 
 ## 10. Griglia di valutazione
 
 Trattandosi di un progetto sviluppato con il supporto dell'AI, i criteri di valutazione tengono conto non solo del prodotto finale, ma anche del **processo** e della **comprensione** dimostrata dallo studente.
 
-### 10.1 Tabella dei pesi
+### 10.1 Metodologia di determinazione del voto
 
-| Area di valutazione | Peso | Descrizione |
-|---|---|---|
-| **Specifiche e analisi** | 15% | Chiarezza della specifica, obiettivi definiti, criteri di accettazione, analisi dei rischi |
-| **Pianificazione** | 10% | Piano realistico, iterazioni sensate e graduali, rischi individuati |
-| **Uso consapevole dell'AI** | 15% | Prompt adeguati e strutturati, review del codice generato, correzioni motivate, documentazione del processo nel prompt-log |
-| **Qualità tecnica** | 20% | Architettura MVVM rispettata, naming coerente, separazione responsabilità, error handling presente, codice ordinato e leggibile |
-| **Implementazione funzionale** | 15% | Completezza delle funzionalità richieste nella specifica, aderenza ai criteri di accettazione |
-| **Testing e validazione** | 10% | Test documentati, casi limite verificati, matrice di test compilata, verifica reale del comportamento |
-| **UX e design** | 10% | Coerenza grafica, navigazione fluida, gestione stati UI (loading, errore, empty), chiarezza dell'interfaccia |
-| **Presentazione finale** | 5% | Efficacia della demo, qualità dell'esposizione, capacità di spiegare le scelte |
+Per valutare equamente e snellire il carico di lavoro del docente su un progetto assistito dall'Intelligenza Artificiale, il voto si determina seguendo due fasi operative sequenziali:
 
-### 10.2 Descrittori di livello
+1. **Prima fase - Lo Sbarramento (I Requisiti Minimi):** Si inizia verificando i [Requisiti minimi](#102-requisiti-minimi-per-fasce-di-valutazione) per determinare la "fascia massima" a cui lo studente può ambire. Questo step funge da vero e proprio sbarramento (un cancello di ingresso). Ad esempio, se l'app è compilata perfettamente ma **non vi è traccia della cartella `.git`**, il progetto fallisce sul processo stabilito e viene *bloccato* alla fascia della sufficienza. I requisiti minimi indicano quindi il confine in cui si può muovere il voto.
+2. **Seconda fase - Il Posizionamento Olistico (I Descrittori di Livello):** Accertata la fascia massima possibile al punto precedente, al termine del colloquio si leggono i [Descrittori di livello](#103-descrittori-di-livello) pertinenti. La determinazione del voto esatto (il decimale) all'interno della fascia sbloccata dipenderà da **quanto effettivamente gli indicatori descritti siano stati coperti pienamente** dallo studente. Se la copertura dei descrittori è totale e la padronanza architetturale è evidente, si assegna il massimo della fascia; se si denotano lacune o emergono pratiche di copia-incolla silenti (*Vibe Coding*), il voto viene tarato olisticamente verso il minimo della fascia.
 
-#### Voto 9–10 (Eccellente)
+### 10.2 Requisiti minimi per fasce di valutazione
+
+#### Fascia 6–7 (Sufficiente)
+
+- Specifica presente (`docs/spec.md`).
+- Almeno 3 funzionalità core funzionanti.
+- Persistenza locale minima (almeno Preferences).
+- UI utilizzabile, anche se non rifinita.
+- APK consegnato e installabile.
+- Uso minimo di Git, con cartella `.git`, file `.gitignore` configurato e alcuni commit storici salvati.
+- Almeno 2 iterazioni documentate.
+- Lo studente sa spiegare la struttura generale del progetto.
+
+#### Fascia 7–9 (Buono/Distinto)
+
+- Buona copertura delle funzionalità previste nella specifica.
+- Stati di errore e loading gestiti correttamente.
+- Struttura del progetto ordinata con separazione MVVM.
+- Test documentati nella matrice di test.
+- Uso strutturato di Git con branch dedicati ad ogni singola iterazione o feature essenziale.
+- Almeno 3 iterazioni documentate con qualità ragionevole.
+- Prompt-log con almeno 3-5 prompt significativi.
+- Presentazione tecnica solida.
+- Lo studente sa spiegare le scelte architetturali.
+
+#### Fascia 9–10 (Eccellente)
+
+- Progetto molto completo con funzionalità base e avanzate.
+- UX curata con attenzione ai dettagli (tema, font, spaziatura).
+- Scelte tecniche ben motivate e documentate.
+- Uso dell'AI maturo e trasparente (prompt-log ricco e ragionato).
+- Manifattura e pulizia impeccabile del versioning (commit convenzionali, cronologia pulita su Git).
+- Documentazione accurata e completa in tutti i file.
+- Eventuali estensioni personali pertinenti.
+- Testing approfondito con casi limite.
+- Lo studente sa proporre miglioramenti e identificare limiti.
+
+### 10.3 Descrittori di livello
+
+#### Voto 9-10 (Eccellente)
 
 - Progetto completo o quasi completo rispetto alla specifica.
 - Ottima qualità del processo documentato: specifiche chiare, piano realistico, iterazioni ben tracciate.
+- Version control impeccabile con l'uso regolare e descrittivo di Git, separato per branch e iterazioni.
 - Uso maturo e consapevole dell'AI: prompt strutturati, review critica, correzioni motivate.
 - Codice ordinato, architettura MVVM rispettata, naming coerente.
 - Testing approfondito con casi limite documentati.
@@ -1275,6 +1367,7 @@ Trattandosi di un progetto sviluppato con il supporto dell'AI, i criteri di valu
 
 - Progetto valido con alcune mancanze non gravi.
 - Documentazione presente e sufficientemente dettagliata.
+- Tracciamento base con Git presente e coerente.
 - Buon uso dell'AI, anche se non sempre con prompt strutturati o review approfondita.
 - Architettura per lo più corretta con qualche imprecisione.
 - Testing presente ma non sempre completo.
@@ -1295,44 +1388,12 @@ Trattandosi di un progetto sviluppato con il supporto dell'AI, i criteri di valu
 - Documentazione assente o gravemente insufficiente.
 - Processo non tracciabile: impossibile ricostruire come il progetto è stato sviluppato.
 - Scarsa comprensione del codice: lo studente non sa spiegare il funzionamento.
+- Assenza totale di tracking via Git, o presenza di un unico macro-commit di fine progetto.
 - Evidenze di Vibe Coding: codice copiato dall'AI senza review.
 - Struttura del progetto caotica e inconsistente.
 
-### 10.3 Requisiti minimi per fasce di valutazione
 
-#### Fascia 6–7 (Sufficiente)
-
-- Specifica presente (`docs/spec.md`).
-- Almeno 3 funzionalità core funzionanti.
-- Persistenza locale minima (almeno Preferences).
-- UI utilizzabile, anche se non rifinita.
-- APK consegnato e installabile.
-- Almeno 2 iterazioni documentate.
-- Lo studente sa spiegare la struttura generale del progetto.
-
-#### Fascia 7–9 (Buono/Distinto)
-
-- Buona copertura delle funzionalità previste nella specifica.
-- Stati di errore e loading gestiti correttamente.
-- Struttura del progetto ordinata con separazione MVVM.
-- Test documentati nella matrice di test.
-- Almeno 3 iterazioni documentate con qualità ragionevole.
-- Prompt-log con almeno 3-5 prompt significativi.
-- Presentazione tecnica solida.
-- Lo studente sa spiegare le scelte architetturali.
-
-#### Fascia 9–10 (Eccellente)
-
-- Progetto molto completo con funzionalità base e avanzate.
-- UX curata con attenzione ai dettagli (tema, font, spaziatura).
-- Scelte tecniche ben motivate e documentate.
-- Uso dell'AI maturo e trasparente (prompt-log ricco e ragionato).
-- Documentazione accurata e completa in tutti i file.
-- Eventuali estensioni personali pertinenti.
-- Testing approfondito con casi limite.
-- Lo studente sa proporre miglioramenti e identificare limiti.
-
-### 10.4 Indicatori di buon uso dell'AI
+### 10.5 Indicatori di buon uso dell'AI
 
 Un uso corretto dell'AI si riconosce quando:
 
@@ -1343,7 +1404,7 @@ Un uso corretto dell'AI si riconosce quando:
 - il prompt-log documenta i prompt significativi con decisioni e motivazioni;
 - il risultato finale è comprensibile dagli autori del progetto.
 
-### 10.5 Indicatori di uso debole dell'AI (Vibe Coding)
+### 10.6 Indicatori di uso debole dell'AI (Vibe Coding)
 
 Un uso debole dell'AI si riconosce quando:
 
@@ -1364,7 +1425,8 @@ La consegna finale deve comprendere:
 
 ### 11.1 Consegna minima obbligatoria
 
-- Repository completo del progetto (Git).
+- Repository Git completo, con cartella `.git` e file `.gitignore` correttamente configurato.
+- Molteplici commit descrittivi che documentino la storicità dello sviluppo e il branching.
 - File `README.md` con descrizione del progetto e istruzioni di build.
 - `AGENTS.md` con le regole del progetto.
 - `docs/spec.md` compilato.
@@ -1462,6 +1524,9 @@ Prima di consegnare il progetto, verificare che tutti i seguenti punti siano sod
 
 ### 13.3 Consegna
 
+- [ ] Il repository contiene la cartella `.git` ed il log documenta la cronologia di sviluppo.
+- [ ] Esiste il file `.gitignore` configurato per bloccare build, bin, obj o token sensibili.
+- [ ] Sono stati utilizzati regolarmente branch separati durante le iterazioni di prodotto.
 - [ ] APK Android è generato in modalità Release.
 - [ ] L'APK è installabile e funzionante.
 - [ ] Almeno 3 screenshot dell'app sono presenti in assets/screenshots/.
@@ -1490,6 +1555,8 @@ Per la progettazione UI, è possibile creare una skill dedicata che guida l'agen
 
 ```text
 ProjectRoot/
+├─ .git/                      ← Cartella sorgente Git
+├─ .gitignore                 ← File per ignorare asset compilati
 ├─ AGENTS.md
 ├─ .agent/
 │  └─ skills/
@@ -1502,6 +1569,8 @@ ProjectRoot/
 
 #### Esempio di skill UI per un progetto CityClimate
 
+<Accordion title="Esempio di skill per la progettazione UI" defaultOpen={false}>
+
 ```markdown
 ---
 name: cityclimate-ui-design
@@ -1513,9 +1582,9 @@ description: Guida l'agente nella creazione di interfacce MAUI per
 ## Design system del progetto
 
 ### Palette colori
-- Primario: #1B4965 (blu profondo – cielo notturno)
-- Secondario: #5FA8D3 (azzurro chiaro – cielo diurno)
-- Accento: #F0A500 (arancione – sole)
+- Primario: #1B4965 (blu profondo - cielo notturno)
+- Secondario: #5FA8D3 (azzurro chiaro - cielo diurno)
+- Accento: #F0A500 (arancione - sole)
 - Sfondo chiaro: #F0F4F8
 - Sfondo scuro: #0F172A
 - Testo primario chiaro: #1A1A2E
@@ -1552,6 +1621,7 @@ description: Guida l'agente nella creazione di interfacce MAUI per
 - CollectionView per tutte le liste
 - Immagini con dimensioni esplicite e Clip arrotondato
 ```
+</Accordion>
 
 #### Come usare la skill durante lo sviluppo
 
@@ -1779,6 +1849,8 @@ Esistono due modalità:
 
 #### Esempio completo di DESIGN.md per CityClimate
 
+<Accordion title="Esempio di DESIGN.md" defaultOpen={false}>
+
 ```markdown
 # DESIGN.md — CityClimate Companion
 
@@ -1915,6 +1987,8 @@ Google Sans or system default sans-serif.
 - Page transitions: fade (300ms)
 ```
 
+</Accordion>
+
 #### Dove salvare il DESIGN.md nel progetto
 
 ```text
@@ -2000,17 +2074,17 @@ graph LR
     F -- "Nuovo screen" --> B
 ```
 
-**Passo 1 – Requisiti**: lo studente definisce palette colori, stile visivo, schermate.
+**Passo 1 - Requisiti**: lo studente definisce palette colori, stile visivo, schermate.
 
-**Passo 2 – Stitch**: le schermate vengono generate come prototipo interattivo. Lo studente itera fino a ottenere il risultato visivo desiderato.
+**Passo 2 - Stitch**: le schermate vengono generate come prototipo interattivo. Lo studente itera fino a ottenere il risultato visivo desiderato.
 
-**Passo 3 – DESIGN.md**: il design system viene estratto da Stitch (o redatto manualmente basandosi sui mockup) e salvato come `DESIGN.md` nella root del progetto.
+**Passo 3 - DESIGN.md**: il design system viene estratto da Stitch (o redatto manualmente basandosi sui mockup) e salvato come `DESIGN.md` nella root del progetto.
 
-**Passo 4 – AGENTS.md**: si aggiunge il riferimento al `DESIGN.md` nel file `AGENTS.md`, in modo che l'agente di coding lo legga automaticamente.
+**Passo 4 - AGENTS.md**: si aggiunge il riferimento al `DESIGN.md` nel file `AGENTS.md`, in modo che l'agente di coding lo legga automaticamente.
 
-**Passo 5 – Coding Agent**: si chiede all'agente (OpenCode, Copilot Agent) di generare il codice XAML per ogni pagina, usando il `DESIGN.md` come riferimento. L'agente produce XAML coerente con il design system.
+**Passo 5 - Coding Agent**: si chiede all'agente (OpenCode, Copilot Agent) di generare il codice XAML per ogni pagina, usando il `DESIGN.md` come riferimento. L'agente produce XAML coerente con il design system.
 
-**Passo 6 – Review**: lo studente verifica il risultato su emulatore o device, confrontandolo con il mockup originale. Se necessario, corregge o richiede una nuova iterazione.
+**Passo 6 - Review**: lo studente verifica il risultato su emulatore o device, confrontandolo con il mockup originale. Se necessario, corregge o richiede una nuova iterazione.
 
 ### 14.5 Esempio pratico: da Stitch a XAML per la pagina Home di PokeDex
 
@@ -2035,6 +2109,8 @@ Show:
 ```
 
 #### Passo 2: DESIGN.md estratto
+
+<Accordion title="Esempio di DESIGN.md" defaultOpen={false}>
 
 ```markdown
 # DESIGN.md — PokeDex MAUI
@@ -2090,6 +2166,8 @@ Show:
 - Padding: 4px 10px
 ```
 
+</Accordion>
+
 #### Passo 3: Prompt per il coding agent
 
 ```text
@@ -2131,6 +2209,9 @@ Il processo di design deve essere documentato come parte del progetto:
 
 **In docs/iterations/it-01.md o it-02.md:**
 
+<Accordion title="Esempio di documentazione UI" defaultOpen={false}>
+
+
 ```markdown
 ## UI/UX Design
 
@@ -2156,6 +2237,8 @@ Il processo di design deve essere documentato come parte del progetto:
 - Usato arancione per la temperatura per contrasto su sfondo blu
 - Card previsioni piccole e orizzontali per risparmiare spazio
 ```
+
+</Accordion>
 
 La documentazione del processo di design contribuisce alla valutazione nella sezione "UX e design" (10% del voto) e nella sezione "Uso consapevole dell'AI" (15% del voto).
 
@@ -2195,6 +2278,8 @@ Genera tutto in C# usando il pattern Arrange-Act-Assert.
 ```
 
 **Output dell'Agente (Codice generato):**
+
+<Accordion title="Esempio di SearchViewModelTests.cs" defaultOpen={false}>
 
 ```csharp
 using Xunit;
@@ -2276,6 +2361,8 @@ public class SearchViewModelTests
 }
 ```
 
+</Accordion>
+
 Questo esempio dimostra allo studente come focalizzarsi sulla **specifica del comportamento** (cosa deve succedere) delegando all'AI i dettagli implementativi del framework di test.
 
 ### 15.2 Testing del BookService (Mocking di HttpClient)
@@ -2301,6 +2388,8 @@ Scrivi due test:
 ```
 
 **Output dell'Agente:**
+
+<Accordion title="Esempio di BookServiceTests.cs" defaultOpen={false}>
 
 ```csharp
 using Xunit;
@@ -2378,7 +2467,9 @@ public class BookServiceTests
 }
 ```
 
-Questa astrazione del `HttpMessageHandler` sarebbe molto ostica da imparare manualmente al quarto anno. Usando l'AI per generare il "boilerplate" (il codice ripetitivo o di setup astruso), lo studente impara un pattern architetturale avanzato senza farsi bloccare dalla sintassi di Moq `Protected()`.
+</Accordion>
+
+Questa astrazione del `HttpMessageHandler` sarebbe molto ostica da imparare manualmente al quarto anno. Usando l'AI per generare il "boilerplate" (il codice ripetitivo o di setup astruso), si impara un pattern architetturale avanzato senza farsi bloccare dalla sintassi di Moq `Protected()`.
 
 ### 15.3 Generazione automatica di Mocks a partire dai dati reali API
 
