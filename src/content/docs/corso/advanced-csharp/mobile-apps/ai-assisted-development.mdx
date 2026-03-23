@@ -1680,27 +1680,212 @@ Segnalare:
 Non applicare fix automatici, solo elencare i problemi.
 ```
 
-### 5.3 Provider di Modelli Locali e Cloud (Ollama, KiloCode, OpenCode Zen, OpenRouter, etc. )
+### 5.3 Provider di Modelli LLM Locali e Cloud (NVIDIA, Ollama, KiloCode, OpenCode Zen, OpenRouter, etc. )
 
-Quando GitHub Copilot non è disponibile o quando è necessario un controllo maggiore sul modello utilizzato, esistono alternative cloud e locali.
+Oltre a GitHub Copilot esistono alternative cloud e locali molto valide. Di seguito ne vengono presentate alcune.
 
-#### Ollama (modelli locali)
+#### Modelli Locali
+##### Ollama
 
-[Ollama](https://ollama.com/) è un framework per eseguire modelli linguistici in locale sulla propria macchina di sviluppo.
+[Ollama](https://ollama.com/) è un framework essenziale e leggerissimo, utilizzabile prevalentemente da riga di comando (CLI-first), che permette di eseguire modelli linguistici in locale in totale privacy. È uno degli strumenti open source più diffusi e maturi per orchestrare l'intelligenza artificiale senza pesare sul cloud.
 
 Vantaggi:
 
-- il codice non lascia la macchina locale (privacy totale);
-- non ci sono limiti di rate o di quota;
-- possibilità di scegliere il modello più adatto (Llama3, DeepSeek, Qwen3.5, ecc.).
+- il codice e i prompt non lasciano mai la macchina locale (privacy totale);
+- assenza totale di limiti di *rate* o restrizioni dovute a licenze a pagamento;
+- flessibilità estrema: leggero, si integra agilmente e si controlla programmaticamente in script e automazioni backend server;
+- infrastruttura nativamente dotata di un'API di default compatibile con le più rilevanti direttive REST di OpenAI;
+- vasto ecosistema di client di terze parti e WebUI sviluppate per agganciarsi al suo demone in locale.
 
 Svantaggi:
 
-- richiede hardware adeguato (GPU con sufficiente VRAM);
-- i modelli locali possono essere meno potenti dei modelli cloud;
-- configurazione iniziale necessaria.
+- richiede hardware adeguato per garantire un'esperienza gratificante, preferendovi architetture a GPU dedicata (buon dislocamento di VRAM) o Apple Silicon se si fa girare i modelli più capaci;
+- non è provvisto *out-of-the-box* di interfacce grafiche (*GUI*) ricche o complete da cui chattare interattivamente col mouse.
 
-#### Ollama Cloud 
+**Come avviare e usare Ollama in locale (Quickstart)**
+
+Per iniziare a usare Ollama, è sufficiente scaricarlo dal sito ufficiale per il proprio OS e sfruttarlo richiamando il terminale (su Windows può posizionarsi attivamente nella tray di avvio o in servizi background):
+
+1. **Avviare la chat interattiva nativa:** Digitando sul proprio prompt comandi `ollama run llama3` (oppure `gemma`, `phi3` o modelli specifici come `deepseek-coder`), il framework scaricherà automaticamente le dipendenze di sistema o i pesi se è avvio iniziale, per poi aprire sul momento un'interfaccia testuale a riga di terminale (*interactive chat*) per conversare.
+2. **Chiudere il prompt:** Per chiudere il processo o terminare il dialogo testuale, è sufficiente scrivere `/bye` e battere Invio, oppure premere la combinazione rapida `Ctrl+D`.
+3. **Gestire e interpellare le API:** Quando Ollama è avvitato nell'host a livello applicativo (app avviata e icona visibile), l'engine locale si manterrà tacitamente in ascolto e smisterà le API REST, solitamente situate presso l'indirizzo `11434`.
+
+**Come utilizzare OpenCode con i modelli locali di Ollama**
+
+Configurare OpenCode per connettersi a Ollama segue le orme tracciate per gli altri modelli locali sfruttando le regole OpenAI, basandosi anch'esso sulla direttiva del file JSON.
+
+1. **Modificare il file di configurazione in OpenCode:** OpenCode consente l'uso di provider custom intervenendo con la configurazione JSON. Aggiungere la seguente parentesi *provider* nell'apposito file `config.json` (solitamente situato nella cartella utente sotto `~/.opencode/config.json` per Mac/Linux o `%USERPROFILE%\.opencode\config.json` su Windows, oppure generato localmente nel workspace di progetto) dichiarando di usare una dipendenza OpenAI-compatibile mirata sul local server Ollama.
+    ```json
+    {
+      "$schema": "https://opencode.ai/config.json",
+      "provider": {
+        "ollama": {
+          "npm": "@ai-sdk/openai-compatible",
+          "name": "Ollama (local)",
+          "options": {
+            "baseURL": "http://localhost:11434/v1"
+          },
+          "models": {
+            "llama3.1": {
+              "name": "Llama 3.1"
+            }
+          }
+        }
+      }
+    }
+    ```
+    *(Nota bene: assicurarsi che nello spazio dedicato ai `models`, l'ID impiegato come chiave JSON (es. `llama3.1`) incroci fedelmente il vero indicatore del modello presente nell'OS, di solito verificabile lanciando `ollama list` dal terminale).*
+    *(Suggerimento aggiuntivo per Tool Calling: qualora riscontrassero problematiche di fallimento col tool execution nei task e agent, la documentazione ufficiale suppone di sovrascrivere o aumentare il parametro di output context size `num_ctx` dalle opzioni di default di Ollama per risolverle).*
+2. **Selezionare il provider locale:** Una volta sovrascritti e aggiornati tali parametri JSON, riavviando l'agente OpenCode il nuovo provider emergerà nelle tendine sotto il nominativo di "Ollama (local)", offrendo libere iterazioni gratuite e computazioni assorbite dal proprio PC!
+
+##### LM Studio
+
+[LM Studio](https://lmstudio.ai/) è un'applicazione desktop (disponibile per Windows, Mac e Linux) che permette di scoprire, scaricare ed eseguire modelli linguistici in locale sulla propria macchina di sviluppo, offrendo nativamente un server web integrato e potenti strumenti per sviluppatori.
+
+Vantaggi:
+
+- interfaccia grafica (GUI) integrata e molto intuitiva per la ricerca e il download rapido dei modelli direttamente da Hugging Face;
+- server locale out-of-the-box compatibile con lo standard API di OpenAI (Chat, Responses, Embeddings) e di Anthropic (Messages);
+- supporto avanzato integrato per **Tool calling**, output strutturato (JSON schema) e funzionalità **MCP (Model Context Protocol)**;
+- include SDK dedicati per sviluppatori ([lmstudio-js](https://lmstudio.ai/docs/typescript) per TypeScript/Node e [lmstudio-python](https://lmstudio.ai/docs/python) per Python);
+- mette a disposizione sia la CLI standard (`lms`) sia un demone specializzato per deploy headless o in server di CI/CD (`llmster`);
+- il codice e i dati non lasciano mai la macchina locale.
+
+Svantaggi:
+
+- l'interfaccia completa rende il pacchetto leggermente più "pesante" rispetto a soluzioni puramente da riga di comando;
+- come tutti i modelli locali, richiede hardware adeguato con buona VRAM (GPU dedicata o architettura Apple Silicon) per modelli di grandi dimensioni.
+
+**Come utilizzare OpenCode con i modelli locali di LM Studio**
+
+Grazie al server nativo integrato in LM Studio, è immediato configurare l'agente OpenCode (o qualsiasi altra estensione compatibile) per fargli scrivere e analizzare codice attingendo al LLM caricato sul proprio computer, a costo zero e in totale privacy.
+
+1. **Avviare il Server in LM Studio:** Nella barra di sinistra dell'applicazione, accedi alla tab "Local Server" (o "Developer"). Seleziona dalla libreria il modello linguistico desiderato (solitamente ottimizzato per il coding, come *Qwen 2.5 Coder* o *DeepSeek Coder*) e fai clic su *Start Server* (di default si attiverà sulla porta `1234`).
+2. **Modificare il file di configurazione in OpenCode:** OpenCode gestisce l'aggiunta di modelli locali alterando il proprio file `config.json` (situato di default nella cartella utente, ad esempio in `~/.opencode/config.json` per Mac/Linux o `%USERPROFILE%\.opencode\config.json` su Windows). Aprire la configurazione globale o di workspace e aggiungere il blocco `provider` custom come segue:
+    ```json
+    {
+      "$schema": "https://opencode.ai/config.json",
+      "provider": {
+        "lmstudio": {
+          "npm": "@ai-sdk/openai-compatible",
+          "name": "LM Studio (local)",
+          "options": {
+            "baseURL": "http://127.0.0.1:1234/v1"
+          },
+          "models": {
+            "google/gemma-3n-e4b": {
+              "name": "Gemma 3n-e4b (local)"
+            }
+          }
+        }
+      }
+    }
+    ```
+    *(Nota: sostituire la dicitura `google/gemma-3n-e4b` in `models` con l'indicatore esatto del modello che si è effettivamente caricato nel server di LM Studio).*
+3. **Selezionare il modello:** Una volta salvato il file json, avviare l'agente (o usare un apposito comando di switch modello). Si troverà nella tendina UI il provider "LM Studio (local)" e il relativo Modello, pronti a essere adoperati senza alcuna API Key a pagamento! D'ora in poi i Task di Build e Plan dell'agente verranno processati dal processore di casa propria!
+
+##### Confronto: Ollama vs LM Studio
+
+Sia Ollama che LM Studio sono strumenti eccellenti per eseguire e testare LLM in locale, ma si rivolgono a filosofie e flussi di lavoro leggermente diversi:
+
+- **Approccio primario:** **Ollama** nasce come framework CLI-first (da riga di comando), essenziale e leggerissimo, risultando pervasivo negli ecosistemi terminal-based. L'interfaccia utente per chattare in Ollama è delegata a web-app esterne (come *Open WebUI* o *AnythingLLM*). **LM Studio**, invece, è un'applicazione Desktop-first: fornisce un'interfaccia grafica completa e autonoma immediatamente pronta all'uso per chattare con l'AI e gestire i modelli, aggiungendo gli strumenti CLI (`lms`, `llmster`) come estensioni facoltative.
+- **Ricerca modelli:** LM Studio integra un browser interno per cercare e far scaricare con un click i vari file *.GGUF* creati dalla community direttamente da Hugging Face, rendendo l'esplorazione infinita. Ollama possiede un registro web curato (Ollama Library) simile al Docker Hub o richiede la scrittura esplicita di file di testo (`Modelfile`) per caricare pesi custom.
+- **Sviluppo avanzato:** Entrambi offrono server REST compatibili con OpenAI. LM Studio si differenzia per la fornitura nativa degli endpoint Anthropic e per il rilascio di SDK ufficiali completi per integrarsi stabilmente dentro script Python o framework JS/TS.
+- **Uso didattico:** Per studenti che si approcciano per la primissima volta ai Local LLM gradendo una vetrina confortevole, LM Studio è visivamente più amichevole e appagante. Per studenti che debbano invece orchestrare servizi background, container Docker, o sfruttare cli tools che di default puntano all'ecosistema di Ollama, quest'ultimo resta una scelta minimalista e universale.
+
+##### NVIDIA NIM (modelli NIM in locale)
+
+[NVIDIA NIM](https://docs.nvidia.com/nim/) (NVIDIA Inference Microservices) è una suite di microservizi pre-compilati e altamente ottimizzati, pensati per accelerare drasticamente il *deployment* di modelli linguistici fondanti (LLM) sfruttando al massimo le GPU NVIDIA. Offrendo container Docker nativamente provvisti di engine specializzati (come *TensorRT-LLM*), risulta la base enterprise per l'IA moderna.
+
+Vantaggi:
+
+- **Prestazioni estreme:** massimizza il *throughput* (token generati al secondo) e abbatte la latenza servendosi dell'accelerazione hardware dedicata e dei *preset* TensorRT precostituiti.
+- **Portabilità e scalabilità assoluta:** il medesimo microservizio testato sulla propria workstation locale può essere trasferito su ecosistemi *cloud* o su cluster Kubernetes senza alterazioni.
+- **Standardizzazione delle API:** espone endpoints completamente conformi allo standard OpenAI, fungendo da perfetto sostitutivo trasparente per tool nati nel cloud.
+- **Sicurezza dati:** se adoperati *on-premise* o in locale, tutto il codice analizzato assicura rigorosa privacy aziendale.
+
+Svantaggi:
+
+- **Ecosistema chiuso e requisiti ferrei:** i NIM sono compilati univocamente per architetture NVIDIA; occorre obbligatoriamente possedere una GPU della famiglia RTX (o data center Ampere/Hopper/Blackwell) con quantitativi abbondanti di VRAM.
+- **Architettura enterprise laboriosa:** per l'avvio locale necessita non solo del motore [Docker](https://www.docker.com/) pre-installato, ma anche della corretta configurazione su di esso del `NVIDIA Container Toolkit`, rendendone lo start-up decisamente più tecnico rispetto alla comoda interfaccia stand-alone di LM Studio.
+- **Autenticazione richiesta:** al netto dell'eseguibilità gratuita locale, impone comunque la registrazione a NVIDIA Developer per ottenere da NGC una speciale *API Key* autorizzativa, indispensabile a scaricarne l'immagine.
+
+**Come scaricare e avviare NVIDIA NIM in locale (Quickstart)**
+
+Per istanziare il microservizio NIM, è necessario accertare che Docker e i driver NVIDIA siano operativi, e recuperare il *token* d'autenticazione.
+
+1. **Ottenere e iniettare le credenziali:** Registrarsi al portale NGC e generare un'API Key personale. Effettuare successivamente l'accesso (*login*) Docker al registry NVIDIA digitando nel proprio terminale o powershell l'autenticazione: `echo $NGC_API_KEY | docker login nvcr.io -u '$oauthtoken' --password-stdin` (la variabile `$oauthtoken` resta letterale).
+2. **Avviare il Microservizio:** Selezionato il modello aderente alle proprie disponibilità di VRAM dal catalogo NIM (es. variante a 8 miliardi di parametri di Llama 3), invocarne il download e l'accensione:
+   ```bash
+   docker run -it --rm --gpus all \
+     -e NGC_API_KEY=$NGC_API_KEY \
+     -p 8000:8000 \
+     nvcr.io/nim/meta/llama3-8b-instruct:latest
+   ```
+3. **Endpoint vivo in ascolto:** Il container scaricherà prima i pesi ottimizzati necessari per profilare la specifica famiglia di GPU montata; poi si stabilizzerà. Da quell'istante, rimarrà servito regolarmente alla porta `8000`.
+
+**Come utilizzare OpenCode appoggiandosi al container locale NIM**
+
+Godendo del forte allineamento strutturale REST di NIM, agganciare un coding agent performante alla propria GPU NVIDIA è analogo all'operazione per Ollama.
+
+1. **Modificare il file di configurazione in OpenCode:** Esaminare il `config.json` dell'agente OpenCode (solitamente reperibile all'indirizzo `~/.opencode/config.json` su Unix, o `%USERPROFILE%\.opencode\config.json` su Windows, oppure nel proprio spazio workspace) aggiungendo il seguente blocco per istruire l'impiego del gateway OpenAI-compatibile mirato su localhost.
+    ```json
+    {
+      "$schema": "https://opencode.ai/config.json",
+      "provider": {
+        "nim-local": {
+          "npm": "@ai-sdk/openai-compatible",
+          "name": "NVIDIA NIM (local)",
+          "options": {
+            "baseURL": "http://localhost:8000/v1"
+          },
+          "models": {
+            "meta/llama3-8b-instruct": {
+              "name": "Llama 3 8B (NIM locale)"
+            }
+          }
+        }
+      }
+    }
+    ```
+    *(Nota: assicurarsi che l'identificatore del campo modelli rispecchi accuratamente il target URL lanciato dentro il container Docker)*.
+2. **Pronti alla Build:** Accendendo o rinfrescando OpenCode, scorrere la consueta selezione di modelli e preferire per le iterazioni di *Plan* e codice la neo-creata voce "Llama 3 8B (NIM locale)". OpenCode lavorerà da quel momento protetto dietro l'incredibile spinta elaborativa della propria GPU!
+
+#### Modelli Cloud
+
+##### NVIDIA Developer Inference Endpoints 
+
+Il programma [NVIDIA Developer](https://developer.nvidia.com/) offre l'accesso a un vasto catalogo cloud di modelli di intelligenza artificiale accelerati tramite il portale **[build.nvidia.com](https://build.nvidia.com/)**. Questo servizio mette a disposizione degli sviluppatori una suite di *endpoint serverless* per interrogare i modelli NIM direttamente dall'infrastruttura NVIDIA.
+
+**Vantaggi per la didattica e gli studenti:**
+
+- **Catalogo all'avanguardia:** garantisce l'accesso gratuito (per rigorosi fini di sviluppo logico e non commerciali) a moltissimi dei migliori modelli *Open Weights* mondiali (quali *GLM*, *DeepSeek*, *Qwen*, *Llama*, *Gemma*, *MiniMax*, *Mistral*, *Nemotron*, *Phi* e molti altri).
+- **Infrastruttura di altissimo livello:** l'elaborazione del codice (*inferenza*) è eseguita direttamente sui potentissimi cluster cloud NVIDIA, azzerando i tempi di risposta senza appesantire minimamente l'hardware domestico dello studente.
+- **Quote generose:** l'account gratuito offre *rate limit* eccezionalmente agevolati per scopi educazionali (ad esempio 40 richieste per minuto - RPM - al momento della stesura del presente documento).
+- **Estrema portabilità:** le API rispettano rigorosamente le specifiche standard OpenAI, rendendo semplice configurare estensioni REST o CLI (compreso OpenCode).
+
+**Fasi di registrazione e accesso al servizio:**
+
+L'iter di attivazione per generare credenziali e invocare le API nel cloud di NVIDIA richiede una precisa procedura di validazione:
+
+1. **Iscrizione al programma Developer:** Visitare il portale istituzionale [NVIDIA Developer](https://developer.nvidia.com/) e creare un account gratuito. *(Nota bene d'impiego didattico: l'accettazione dei Termini di Servizio è vincolata alla maggiore età. Per gli studenti minorenni, l'iscrizione è subordinata al consenso espresso e alla supervisione di un genitore o di un tutore legale).*
+2. **Accesso a NVIDIA Build:** Ultimata la validazione dell'account, eseguire regolarmente il login alla vetrina dei modelli interattivi raggiungibile su [build.nvidia.com](https://build.nvidia.com/).
+3. **Verifica della sicurezza (2FA e Telefono):** Prima di poter rilasciare chiavi di sviluppo private, l'hub impone severe politiche di contrasto allo *spam*. Di norma risulterà indispensabile abilitare sul proprio account utente un'autenticazione a due fattori (2FA) e associare/verificare un numero di telefono cellulare autentico.
+4. **Generazione della API Key:** Completati con successo i controlli anti-bot, navigando nella pagina di un qualsiasi specifico modello (ad esempio testando il prompt nell'anteprima gratuita) sarà reso disponibile il tasto *"Get API Key"*. La stringa generata (da conservare gelosamente) fungerà da chiave token universale per autenticare l'accesso a buona parte degli attuali *Inference Endpoints* erogati sulla piattaforma.
+
+**Come collegare OpenCode agli Endpoints NVIDIA**
+
+L'agente OpenCode dispone per NVIDIA di una comoda procedura guidata nativa, esonerando così lo sviluppatore o lo studente dalla scrittura manuale dei file JSON.
+
+1. Avviare regolarmente OpenCode dal terminale o dall'apposita estensione nell'IDE.
+2. Digitare il comando operativo `/connect` per invocare l'accoppiamento dei provider.
+3. Cercare e selezionare **NVIDIA** (spesso etichettato proprio come provider cloud NIM/Build) dall'elenco delle opzioni.
+4. Fornire incollando in *input* la preziosa **API Key** personale generata in precedenza al termine della registrazione su *build.nvidia.com*.
+
+Ultimato questo breve setup, basterà lanciare l'istruzione `/models` per sfogliare comodamente il catalogo di intelligenze artificiali NVIDIA e instradarvi gratuitamene tutto il carico ingegneristico!
+
+
+##### Ollama Cloud 
 
 **[Ollama Cloud](https://ollama.com/pricing)** è l'infrastruttura ufficiale ospitata in rete dai creatori di Ollama. 
 Questo servizio permette agli sviluppatori di accedere ed eseguire modelli linguistici open source molto potenti o esosi in termini di memoria (come ad esempio `gpt-oss:120b` e modelli affini) senza la necessità di disporre di macchine locali costose o dotate di GPU dedicate di fascia alta.
@@ -1717,7 +1902,7 @@ Ollama Cloud si comporta strutturalmente come un provider di intelligenza artifi
    ```
 4. **Setup nell'Agent di Coding:** Quando si configura l'estensione o l'agente via CLI, di solito sarà richiesto di selezionare un fornitore custom **compatibile in API con OpenAI** (OpenAI-compatible endpoint). Impostare il Base URL dell'host cloud a `https://ollama.com` (inserendo ad esempio gli endpoints Chat `https://ollama.com/api/chat` se richiesto dalla documentazione specifica del tuo client CLI) e fornire l'**OLLAMA_API_KEY** generata in precedenza al posto del token OpenAI primario. Da quel momento in poi, specificando formalmente il corretto *model identifier*, si potrà interrogare direttamente tutti i grandi LLMs Cloud offerti dal servizio.
 
-#### KiloCode e OpenCode Zen
+##### KiloCode e OpenCode Zen
 
 **KiloCode** ([kilo.ai/docs](https://kilo.ai/docs/)) e **OpenCode Zen** ([opencode.ai/docs/zen/](https://opencode.ai/docs/zen/)) sono formidabili **AI Gateway** e marketplace cloud avanzati che forniscono accesso unificato a centinaia di modelli linguistici di svariati produttori (Anthropic, OpenAI, Google, Mistral, DeepSeek) tramite una singola API centralizzata. KiloCode, inoltre, produce estensioni dedicate e ufficiali (es. per VS Code e JetBrains) volte ad automatizzare il coding ai massimi livelli.
 
@@ -1733,7 +1918,7 @@ Pertanto, questi gateway possono essere configurati come flessibili backend dida
 - agenti CLI indipendenti e specializzati come OpenCode *Zen*;
 - qualsiasi tool o plugin IDE che supporti flessibilmente il pattern host/endpoint generico di "OpenAI-compatible API".
 
-#### OpenRouter
+##### OpenRouter
 
 **OpenRouter** ([openrouter.ai](https://openrouter.ai/)) è in ambito storiografico l'AI Gateway e l'aggregatore di modelli di intelligenza artificiale di gran lunga più rinomato. 
 Esattamente come le alternative sopra descritte, appronta un layer intermedio e fornisce un endpoint unificato e standard ("OpenAI-compatible endpoints") per dialogare sistematicamente con oltre trecento LLM di punta del panorama mondiale (producibili da Anthropic, DeepSeek, Google, OpenAI, Mistral, Meta e dalla scena open source).
@@ -1753,7 +1938,7 @@ Per agganciare in scioltezza la libreria offerta da OpenRouter all'interno del p
 - Quando richiesto, popola il campo *Base URL* (oppure *API Endpoint URL*) al valore standard `https://openrouter.ai/api/v1` (o varianti analoghe suggerite dalla specifica SDK in uso all'agent).
 - Inserire nel placeholder dell'API KEY la propria stringa testuale autorizzativa OpenRouter per intercettare direttamente i LLMs gratuiti!
 
-#### Antigravity e i modelli Gemini
+##### Antigravity e i modelli Cloud di Google Gemini
 
 [Google Antigravity](https://antigravity.google/) rappresenta l'evoluzione dell'IDE tradizionale verso la nuova era *"Agent-First"*. Sviluppata da Google DeepMind, non è un semplice strumento di autocompletamento, ma una vera e propria **piattaforma di sviluppo agentica** pensata per dirigere e orchestrare AI autonome. 
 
