@@ -289,22 +289,22 @@ Questa fase chiude formalmente il ciclo dell'iterazione e ne consolida le modifi
 :::note
 **Richiamo sulle best practices in ambito Git**
 
-1. **Il Branch (Lo Spazio di Lavoro)**
+1. **Il Branch (lo spazio di lavoro)**
 
-  - **Scopo**: Un branch serve a creare un ambiente isolato in cui lavorare a una specifica "unità di lavoro" senza intaccare il ramo principale del progetto (main o master).
-  - **Quando si crea**: Si divide il ramo iniziale (con `git checkout -b <nome>`) esattamente all'inizio dello sviluppo di una nuova funzionalità (Feature), di un'iterazione descritta nel nostro piano, o della correzione di un problema architetturale (Bugfix).
-  - **Best Practice**: Un branch per una feature (feature/login, it-03-lista-meteo). Il branch vive tutto il tempo necessario per completare l'obiettivo, per poi essere "chiuso" e fuso alla fine.
+    - **Scopo**: Un branch serve a creare un ambiente isolato in cui lavorare a una specifica "unità di lavoro" senza intaccare il ramo principale del progetto (main o master).
+    - **Quando si crea**: Si divide il ramo iniziale (con `git checkout -b <nome>`) esattamente all'inizio dello sviluppo di una nuova funzionalità (Feature), di un'iterazione descritta nel nostro piano, o della correzione di un problema architetturale (Bugfix).
+    - **Best Practice**: Un branch per una feature (feature/login, it-03-lista-meteo). Il branch vive tutto il tempo necessario per completare l'obiettivo, per poi essere "chiuso" e fuso alla fine.
 
-2. **I Commit (I Salvataggi Progressivi)**
+2. **Le Commit (i salvataggi progressivi)**
 
-  - **Scopo**: Una commit non è "la consegna finale" del lavoro, ma un fotogramma esatto (uno snapshot) dello stato del codice in un preciso momento.
-  - **Quando si crea**: Ogni volta che si realizza un insieme significativo e coerente di codice, o quando un test passa dopo aver scritto una certa implementazione (oppure ogni volta l'AI fornisce una soluzione funzionante di un file e lo collaudiamo).
-  - **Best Practice**: Sviluppo atomico e regola del *"Commit early, commit often"* (fai commit presto e spesso). Un singolo branch può contenere decine di commit o più. Si fa un commit quando si crea l'interfaccia Service ("feat: aggiunta interfaccia web"), un altro commit quando si correda la View XAML ("feat: aggiornata UI meteo"), un altro per un fix spontaneo ("fix: risolto errore di binding null").
+    - **Scopo**: Una commit non è "la consegna finale" del lavoro, ma un fotogramma esatto (uno snapshot) dello stato del codice in un preciso momento.
+    - **Quando si crea**: Ogni volta che si realizza un insieme significativo e coerente di codice, o quando un test passa dopo aver scritto una certa implementazione (oppure ogni volta l'AI fornisce una soluzione funzionante di un file e lo collaudiamo).
+    - **Best Practice**: Sviluppo atomico e regola del *"Commit early, commit often"* (fai commit presto e spesso). Un singolo branch può contenere decine di commit o più. Si fa un commit quando si crea l'interfaccia Service ("feat: aggiunta interfaccia web"), un altro commit quando si correda la View XAML ("feat: aggiornata UI meteo"), un altro per un fix spontaneo ("fix: risolto errore di binding null").
 
-3. **Il Merge (La Chiusura)**
+3. **La Merge (la chiusura)**
 
-  - **Scopo**: Riportare il lavoro ultimato, funzionante e testato nel ramo stabile principale.
-  - **Quando si fa**: È la vera azione tecnica che si compie alla conclusione di ciascuna iterazione. Riporta all'ovile la miriade di commit che hai elaborato.
+    - **Scopo**: Riportare il lavoro ultimato, funzionante e testato nel ramo stabile principale.
+    - **Quando si fa**: È la vera azione tecnica che si compie alla conclusione di ciascuna iterazione. Riporta all'ovile la miriade di commit che hai elaborato.
 
 ```mermaid
 gitGraph

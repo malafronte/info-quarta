@@ -76,7 +76,7 @@ Indipendentemente dal progetto scelto, possono essere introdotte alcune estensio
 In tutte le guide passo-passo che seguono, si intende **sempre** applicato il seguente loop di lavoro con Git, allineato alle best practices dello sviluppo software:
 1. **Plan & Branch**: all'inizio dello sviluppo di una nuova funzionalità o iterazione, richiedere la creazione di un **branch specifico** (es. `git checkout -b feature/ui-meteo-attuale`). Un branch rappresenta un ambiente di lavoro isolato, perfetto per sviluppare la feature senza intaccare il ramo principale del repository.
 2. **Execute, Test & Commit (Frequenti)**: sviluppare e testare la feature procedendo a piccoli passi. Ogni volta che si raggiunge un traguardo significativo, coerente e funzionante (es. "creato il DTO", "implementato il Service", "corretto un bug"), si esegue un **commit atomico** (es. `git commit -am "feat: aggiunto DTO meteo"` o `fix: risolto crash UI`). Un singolo branch ben gestito conterrà sempre *numerosi* commit ravvicinati.
-3. **Document & Merge**: alla fine dell'iterazione, dopo l'aggiornamento della documentazione e l'ultimo commit, si "chiude" il lavoro. Si esegue il **merge** del branch concluso nel ramo principale (es. main) e il branch può essere eliminato. L'agente AI può essere istruito ad eseguire queste automazioni tramite terminale a patto che gli si concedano i dovuti permessi controllati (vedi l'Esempio Completo in fondo a questo documento).
+3. **Document & Merge**: alla fine dell'iterazione, dopo l'aggiornamento della documentazione e l'ultimo commit, si "chiude" il lavoro. Si esegue la **merge** del branch concluso nel ramo principale (es. main) e il branch può essere eliminato. L'agente AI può essere istruito ad eseguire queste automazioni tramite terminale a patto che gli si concedano i dovuti permessi controllati (vedi l'Esempio Completo in fondo a questo documento).
 
 ### 1.6 Approfondimento: I DTO (Data Transfer Object) nei progetti MAUI
 
@@ -154,16 +154,16 @@ Risulta inoltre immediato da dimostrare durante la presentazione finale.
 {
   "current_weather": {
     "temperature": 18.5,
-    "windspeed": 12.3,
-    "winddirection": 180,
-    "weathercode": 3,
+    "winds_peed_10m": 12.3,
+    "wind_direction_10m": 180,
+    "weather_code": 3,
     "time": "2025-03-15T14:00"
   },
   "daily": {
     "time": ["2025-03-15", "2025-03-16", "2025-03-17"],
     "temperature_2m_max": [20.1, 18.3, 15.7],
     "temperature_2m_min": [8.2, 7.5, 6.1],
-    "weathercode": [3, 61, 80]
+    "weather_code": [3, 61, 80]
   }
 }
 ```
@@ -294,37 +294,895 @@ In alternativa: **Open Library** ([https://openlibrary.org/developers/api](https
 
 | Endpoint | Scopo | Esempio |
 | --- | --- | --- |
-| `GET /volumes?q={query}` | Ricerca libri | `?q=harry+potter&maxResults=20` |
-| `GET /volumes/{id}` | Dettaglio libro | `/volumes/abc123` |
+| `GET /volumes?q={query}` | Ricerca libri | `?q=Pride+and+Prejudice` |
+| `GET /volumes/{id}` | Dettaglio libro | `/volumes/s1gVAAAAYAAJ` |
 
 **Esempio di risposta JSON:**
 
+
+<Accordion title="Esempio JSON completo (Google Books API - dettaglio libro ricercato per id)"  defaultOpen={false}>
+
+GET https://www.googleapis.com/books/v1/volumes/s1gVAAAAYAAJ
+
 ```json
 {
-  "totalItems": 1234,
+  "kind": "books#volume",
+  "id": "s1gVAAAAYAAJ",
+  "etag": "kOAktg8JCHo",
+  "selfLink": "https://www.googleapis.com/books/v1/volumes/s1gVAAAAYAAJ",
+  "volumeInfo": {
+    "title": "Pride and Prejudice",
+    "authors": [
+      "Jane Austen"
+    ],
+    "publisher": "C. Scribner's sons",
+    "publishedDate": "1918",
+    "description": "Austen’s most celebrated novel tells the story of Elizabeth Bennet, a bright, lively young woman with four sisters, and a mother determined to marry them to wealthy men. At a party near the Bennets’ home in the English countryside, Elizabeth meets the wealthy, proud Fitzwilliam Darcy. Elizabeth initially finds Darcy haughty and intolerable, but circumstances continue to unite the pair. Mr. Darcy finds himself captivated by Elizabeth’s wit and candor, while her reservations about his character slowly vanish. The story is as much a social critique as it is a love story, and the prose crackles with Austen’s wry wit.",
+    "readingModes": {
+      "text": true,
+      "image": true
+    },
+    "pageCount": 401,
+    "printedPageCount": 448,
+    "dimensions": {
+      "height": "18.00 cm"
+    },
+    "printType": "BOOK",
+    "averageRating": 4,
+    "ratingsCount": 360,
+    "maturityRating": "NOT_MATURE",
+    "allowAnonLogging": false,
+    "contentVersion": "1.6.14.0.full.3",
+    "panelizationSummary": {
+      "containsEpubBubbles": false,
+      "containsImageBubbles": false
+    },
+    "imageLinks": {
+      "smallThumbnail": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=5&edge=curl&imgtk=AFLRE70qVGO4N0DVy91nTsonlVx_h3KrYJLVkgRWjQHjOvhQoAKqs0zWcCujRv7OF5QqT5C0kpk8sAT2sH6fuafr-fKSDjcXG5xrpnEFsVd67TdtWKnZnmQT7tqSxI9MNtHjZhWADEiM&source=gbs_api",
+      "thumbnail": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE70LB3iYlaI6BP6SZ2zOvIM_qJGu3YL91S3GKfOBi0JXgEfw5jqPzMuAG9ysXCZvn5Y5g3Kd_9-3tgzG7Idm04ZgFRjZ76ZZnT3BkmpXzxIIURVUHv3jifBaxVe7jBZmdzRNge-1&source=gbs_api",
+      "small": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=2&edge=curl&imgtk=AFLRE71C-vbDHx8JGtgVuplE5oyEA0HAZxrkbG-y9UXlRHk-FJ898j5dMvNxoO5mCOR6gX3lUByGaRwGJdJ94owHtDHBNGU4NhqnGz0PDt-k4ihwr12Y_3KKv-zsNCqNKCPWVMGFls-3&source=gbs_api",
+      "medium": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=3&edge=curl&imgtk=AFLRE73g-QhLXz7HwcBBs1aALprne9qd1hBiHeSiGgPPBQucU67vWGrNOuNKw7RQqCf6QqV2zmqmSpAuBdNMa879pmwDnkNfulV1w4AQFpg_msw-FIcddjvh2YBzgfrXkZwEIyH_Q1X0&source=gbs_api",
+      "large": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=4&edge=curl&imgtk=AFLRE73QBnBAQ6VCy26zueVwreq61eILBWKoKBBLUcgMm1ezK2Hqi6HswUA9jreHhhUxSHM8H_3nG4G7HM3zjLoYLYI9A-2K4w6L_VssrnbGkAJd7irt2t316azXflYODu4xaUKmELJG&source=gbs_api",
+      "extraLarge": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=6&edge=curl&imgtk=AFLRE72SE6MR4KaH10qny0ZgqeU_MQwaNFDw9-qtg2KYUXxo7L9XstODyCvcSEe-Wa7071s6hKzoUu1qHWGSVSRww16uaMTP-r7SzqCFINF6q4dmTye1-48t8WZS_z6VVPvyMCG9B1ZT&source=gbs_api"
+    },
+    "language": "en",
+    "previewLink": "http://books.google.it/books?id=s1gVAAAAYAAJ&hl=&source=gbs_api",
+    "infoLink": "https://play.google.com/store/books/details?id=s1gVAAAAYAAJ&source=gbs_api",
+    "canonicalVolumeLink": "https://play.google.com/store/books/details?id=s1gVAAAAYAAJ"
+  },
+  "layerInfo": {
+    "layers": [
+      {
+        "layerId": "geo",
+        "volumeAnnotationsVersion": "28"
+      }
+    ]
+  },
+  "saleInfo": {
+    "country": "IT",
+    "saleability": "FREE",
+    "isEbook": true,
+    "buyLink": "https://play.google.com/store/books/details?id=s1gVAAAAYAAJ&rdid=book-s1gVAAAAYAAJ&rdot=1&source=gbs_api"
+  },
+  "accessInfo": {
+    "country": "IT",
+    "viewability": "ALL_PAGES",
+    "embeddable": true,
+    "publicDomain": true,
+    "textToSpeechPermission": "ALLOWED",
+    "epub": {
+      "isAvailable": true,
+      "downloadLink": "http://books.google.it/books/download/Pride_and_Prejudice.epub?id=s1gVAAAAYAAJ&hl=&output=epub&source=gbs_api"
+    },
+    "pdf": {
+      "isAvailable": true,
+      "downloadLink": "http://books.google.it/books/download/Pride_and_Prejudice.pdf?id=s1gVAAAAYAAJ&hl=&output=pdf&sig=ACfU3U3dQw5JDWdbVgk2VRHyDjVMT4oIaA&source=gbs_api"
+    },
+    "webReaderLink": "http://play.google.com/books/reader?id=s1gVAAAAYAAJ&hl=&source=gbs_api",
+    "accessViewStatus": "FULL_PUBLIC_DOMAIN",
+    "quoteSharingAllowed": false
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="Esempio JSON completo (Open Library API - dettaglio libro ricercato per query string)"  defaultOpen={false}>
+
+In questo caso la ricerca può restituire più risultati, quindi si mostra un esempio di risposta per la ricerca con query string "Pride and Prejudice":
+
+GET https://www.googleapis.com/books/v1/volumes/?q=Pride+and+Prejudice
+
+```json
+{
+  "kind": "books#volumes",
+  "totalItems": 1000000,
   "items": [
     {
-      "id": "abc123",
+      "kind": "books#volume",
+      "id": "cUdSEQAAQBAJ",
+      "etag": "wkGq5IK/YsM",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/cUdSEQAAQBAJ",
       "volumeInfo": {
-        "title": "Harry Potter e la Pietra Filosofale",
-        "authors": ["J.K. Rowling"],
-        "publisher": "Salani",
-        "publishedDate": "1998",
-        "description": "Un ragazzo scopre di essere un mago...",
-        "pageCount": 293,
-        "categories": ["Juvenile Fiction"],
+        "title": "Pride and Prejudice / Orgoglio e pregiudizio",
+        "authors": [
+          "Jane Austen"
+        ],
+        "publisher": "Edizioni Mondadori",
+        "publishedDate": "2025-04-29",
+        "description": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. L'immaginazione di una donna corre sempre: dall'ammirazione passa all'amore, dall'amore al matrimonio, tutto in un istante. In vain have I struggled. It will not do. My feelings will not be repressed. You must allow me to tell you how ardently I admire and love you.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_13",
+            "identifier": "9788835741978"
+          },
+          {
+            "type": "ISBN_10",
+            "identifier": "8835741971"
+          }
+        ],
+        "readingModes": {
+          "text": true,
+          "image": true
+        },
+        "pageCount": 750,
+        "printType": "BOOK",
+        "categories": [
+          "Fiction"
+        ],
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "0.2.3.0.preview.3",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
         "imageLinks": {
-          "thumbnail": "https://books.google.com/..."
+          "smallThumbnail": "http://books.google.com/books/content?id=cUdSEQAAQBAJ&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=cUdSEQAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
         },
         "language": "it",
-        "industryIdentifiers": [
-          {"type": "ISBN_13", "identifier": "9788831003384"}
+        "previewLink": "http://books.google.it/books?id=cUdSEQAAQBAJ&printsec=frontcover&dq=Pride+and+Prejudice&hl=&cd=1&source=gbs_api",
+        "infoLink": "https://play.google.com/store/books/details?id=cUdSEQAAQBAJ&source=gbs_api",
+        "canonicalVolumeLink": "https://play.google.com/store/books/details?id=cUdSEQAAQBAJ"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "FOR_SALE",
+        "isEbook": true,
+        "listPrice": {
+          "amount": 9.99,
+          "currencyCode": "EUR"
+        },
+        "retailPrice": {
+          "amount": 9.99,
+          "currencyCode": "EUR"
+        },
+        "buyLink": "https://play.google.com/store/books/details?id=cUdSEQAAQBAJ&rdid=book-cUdSEQAAQBAJ&rdot=1&source=gbs_api",
+        "offers": [
+          {
+            "finskyOfferType": 1,
+            "listPrice": {
+              "amountInMicros": 9990000,
+              "currencyCode": "EUR"
+            },
+            "retailPrice": {
+              "amountInMicros": 9990000,
+              "currencyCode": "EUR"
+            }
+          }
         ]
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "PARTIAL",
+        "embeddable": true,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": true,
+          "acsTokenLink": "http://books.google.it/books/download/Pride_and_Prejudice_Orgoglio_e_pregiudiz-sample-epub.acsm?id=cUdSEQAAQBAJ&format=epub&output=acs4_fulfillment_token&dl_type=sample&source=gbs_api"
+        },
+        "pdf": {
+          "isAvailable": true,
+          "acsTokenLink": "http://books.google.it/books/download/Pride_and_Prejudice_Orgoglio_e_pregiudiz-sample-pdf.acsm?id=cUdSEQAAQBAJ&format=pdf&output=acs4_fulfillment_token&dl_type=sample&source=gbs_api"
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=cUdSEQAAQBAJ&hl=&source=gbs_api",
+        "accessViewStatus": "SAMPLE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "&quot;Orgoglio e pregiudizio&quot; è uno dei primi romanzi di Jane Austen."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "s1gVAAAAYAAJ",
+      "etag": "Xy69B9RLOIQ",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/s1gVAAAAYAAJ",
+      "volumeInfo": {
+        "title": "Pride and Prejudice",
+        "authors": [
+          "Jane Austen"
+        ],
+        "publishedDate": "1918",
+        "description": "Austen’s most celebrated novel tells the story of Elizabeth Bennet, a bright, lively young woman with four sisters, and a mother determined to marry them to wealthy men. At a party near the Bennets’ home in the English countryside, Elizabeth meets the wealthy, proud Fitzwilliam Darcy. Elizabeth initially finds Darcy haughty and intolerable, but circumstances continue to unite the pair. Mr. Darcy finds himself captivated by Elizabeth’s wit and candor, while her reservations about his character slowly vanish. The story is as much a social critique as it is a love story, and the prose crackles with Austen’s wry wit.",
+        "industryIdentifiers": [
+          {
+            "type": "OTHER",
+            "identifier": "HARVARD:32044086796588"
+          }
+        ],
+        "readingModes": {
+          "text": true,
+          "image": true
+        },
+        "pageCount": 448,
+        "printType": "BOOK",
+        "categories": [
+          "Courtship"
+        ],
+        "averageRating": 4,
+        "ratingsCount": 360,
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "1.6.14.0.full.3",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=s1gVAAAAYAAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=s1gVAAAAYAAJ&pg=PR11&dq=Pride+and+Prejudice&hl=&cd=2&source=gbs_api",
+        "infoLink": "https://play.google.com/store/books/details?id=s1gVAAAAYAAJ&source=gbs_api",
+        "canonicalVolumeLink": "https://play.google.com/store/books/details?id=s1gVAAAAYAAJ"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "FREE",
+        "isEbook": true,
+        "buyLink": "https://play.google.com/store/books/details?id=s1gVAAAAYAAJ&rdid=book-s1gVAAAAYAAJ&rdot=1&source=gbs_api"
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "ALL_PAGES",
+        "embeddable": true,
+        "publicDomain": true,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": true,
+          "downloadLink": "http://books.google.it/books/download/Pride_and_Prejudice.epub?id=s1gVAAAAYAAJ&hl=&output=epub&source=gbs_api"
+        },
+        "pdf": {
+          "isAvailable": true,
+          "downloadLink": "http://books.google.it/books/download/Pride_and_Prejudice.pdf?id=s1gVAAAAYAAJ&hl=&output=pdf&sig=ACfU3U3dQw5JDWdbVgk2VRHyDjVMT4oIaA&source=gbs_api"
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=s1gVAAAAYAAJ&hl=&source=gbs_api",
+        "accessViewStatus": "FULL_PUBLIC_DOMAIN",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "... <b>Pride and Prejudice</b> the tenth or fifteenth time at the close of 1917 for the purposes of this Introduction , I found it as fresh as when I read it first in 1889 , after long shying off from it . I found it as fresh as at any earlier&nbsp;..."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "EvqJCGeqKhsC",
+      "etag": "V7jZMZtt0a4",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/EvqJCGeqKhsC",
+      "volumeInfo": {
+        "title": "Pride and Prejudice",
+        "authors": [
+          "Jane Austen"
+        ],
+        "publisher": "Oxford University Press, USA",
+        "publishedDate": "1980",
+        "description": "The text of Pride and Prejudice is the 1813 first edition text.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "0192815032"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9780192815033"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 388,
+        "printType": "BOOK",
+        "categories": [
+          "Fiction"
+        ],
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "0.4.1.0.preview.0",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=EvqJCGeqKhsC&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=EvqJCGeqKhsC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=EvqJCGeqKhsC&q=Pride+and+Prejudice&dq=Pride+and+Prejudice&hl=&cd=3&source=gbs_api",
+        "infoLink": "http://books.google.it/books?id=EvqJCGeqKhsC&dq=Pride+and+Prejudice&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Pride_and_Prejudice.html?hl=&id=EvqJCGeqKhsC"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=EvqJCGeqKhsC&hl=&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "The text of Pride and Prejudice is the 1813 first edition text."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "mdnrlnf9IGwC",
+      "etag": "lv9yU+47VIo",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/mdnrlnf9IGwC",
+      "volumeInfo": {
+        "title": "Pride and Prejudice",
+        "authors": [
+          "Jane Austen"
+        ],
+        "publishedDate": "1918",
+        "industryIdentifiers": [
+          {
+            "type": "OTHER",
+            "identifier": "UOM:39015007047361"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 444,
+        "printType": "BOOK",
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "0.1.6.0.preview.0",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=mdnrlnf9IGwC&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=mdnrlnf9IGwC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=mdnrlnf9IGwC&q=Pride+and+Prejudice&dq=Pride+and+Prejudice&hl=&cd=4&source=gbs_api",
+        "infoLink": "http://books.google.it/books?id=mdnrlnf9IGwC&dq=Pride+and+Prejudice&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Pride_and_Prejudice.html?hl=&id=mdnrlnf9IGwC"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=mdnrlnf9IGwC&hl=&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "c91Vrl20Y4sC",
+      "etag": "CuvhkMQtTeA",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/c91Vrl20Y4sC",
+      "volumeInfo": {
+        "title": "Literary Afterlife",
+        "subtitle": "The Posthumous Continuations of 325 Authors' Fictional Characters",
+        "authors": [
+          "Bernard A. Drew"
+        ],
+        "publisher": "McFarland",
+        "publishedDate": "2010-03-08",
+        "description": "This is an encyclopedic work, arranged by broad categories and then by original authors, of literary pastiches in which fictional characters have reappeared in new works after the deaths of the authors that created them. It includes book series that have continued under a deceased writer's real or pen name, undisguised offshoots issued under the new writer's name, posthumous collaborations in which a deceased author's unfinished manuscript is completed by another writer, unauthorized pastiches, and \"biographies\" of literary characters. The authors and works are entered under the following categories: Action and Adventure, Classics (18th Century and Earlier), Classics (19th Century), Classics (20th Century), Crime and Mystery, Espionage, Fantasy and Horror, Humor, Juveniles (19th Century), Juveniles (20th Century), Poets, Pulps, Romances, Science Fiction and Westerns. Each original author entry includes a short biography, a list of original works, and information on the pastiches based on the author's characters.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_13",
+            "identifier": "9780786457212"
+          },
+          {
+            "type": "ISBN_10",
+            "identifier": "078645721X"
+          }
+        ],
+        "readingModes": {
+          "text": true,
+          "image": true
+        },
+        "pageCount": 421,
+        "printType": "BOOK",
+        "categories": [
+          "Literary Criticism"
+        ],
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "2.4.6.0.preview.3",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=c91Vrl20Y4sC&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=c91Vrl20Y4sC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=c91Vrl20Y4sC&pg=PA269&dq=Pride+and+Prejudice&hl=&cd=5&source=gbs_api",
+        "infoLink": "https://play.google.com/store/books/details?id=c91Vrl20Y4sC&source=gbs_api",
+        "canonicalVolumeLink": "https://play.google.com/store/books/details?id=c91Vrl20Y4sC"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "FOR_SALE",
+        "isEbook": true,
+        "listPrice": {
+          "amount": 26.56,
+          "currencyCode": "EUR"
+        },
+        "retailPrice": {
+          "amount": 26.56,
+          "currencyCode": "EUR"
+        },
+        "buyLink": "https://play.google.com/store/books/details?id=c91Vrl20Y4sC&rdid=book-c91Vrl20Y4sC&rdot=1&source=gbs_api",
+        "offers": [
+          {
+            "finskyOfferType": 1,
+            "listPrice": {
+              "amountInMicros": 26560000,
+              "currencyCode": "EUR"
+            },
+            "retailPrice": {
+              "amountInMicros": 26560000,
+              "currencyCode": "EUR"
+            }
+          }
+        ]
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "PARTIAL",
+        "embeddable": true,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": true,
+          "acsTokenLink": "http://books.google.it/books/download/Literary_Afterlife-sample-epub.acsm?id=c91Vrl20Y4sC&format=epub&output=acs4_fulfillment_token&dl_type=sample&source=gbs_api"
+        },
+        "pdf": {
+          "isAvailable": true,
+          "acsTokenLink": "http://books.google.it/books/download/Literary_Afterlife-sample-pdf.acsm?id=c91Vrl20Y4sC&format=pdf&output=acs4_fulfillment_token&dl_type=sample&source=gbs_api"
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=c91Vrl20Y4sC&hl=&source=gbs_api",
+        "accessViewStatus": "SAMPLE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "... <b>Pride and Prejudice</b> (2004); Lions and Liquorice (1995) Phyllis Furley, The Darcys: Scenes from a Married Life (2004) Jane Gillespie, Teverton Hall (1984); Deborah (1995) Seth Grahame-Smith, <b>Pride and Prejudice</b> and Zombies (2009) Amanda&nbsp;..."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "-1VHAAAAMAAJ",
+      "etag": "tf6ufmFZY2w",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/-1VHAAAAMAAJ",
+      "volumeInfo": {
+        "title": "Pride & Prejudice",
+        "subtitle": "Working with Lesbian, Gay and Bisexual Youth",
+        "authors": [
+          "Central Toronto Youth Services"
+        ],
+        "publisher": "Horsdal & Schubart Publishers",
+        "publishedDate": "1997",
+        "description": "\"'Pride and prejudice' is a critical resource for professional who work with adolescents of all kinds. The book is a thorough course in lesbian, gay and bisexual youth issues, as well as a practical guide about how to help. It will be especially useful in working with youth with specific challenges: those dealing with HIV/AIDS, homelessness, and youth who are victimized by others as a result of their sexuality. Lesbian, gay and bisexual youth deserve informed and compassionate care, and this book will be a great asset toward that goal.\" -- from Tony D'Augelli's rear cover blurb.",
+        "industryIdentifiers": [
+          {
+            "type": "OTHER",
+            "identifier": "UOM:39015048948908"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 272,
+        "printType": "BOOK",
+        "categories": [
+          "Political Science"
+        ],
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "0.5.2.0.preview.0",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=-1VHAAAAMAAJ&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=-1VHAAAAMAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=-1VHAAAAMAAJ&q=Pride+and+Prejudice&dq=Pride+and+Prejudice&hl=&cd=6&source=gbs_api",
+        "infoLink": "http://books.google.it/books?id=-1VHAAAAMAAJ&dq=Pride+and+Prejudice&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Pride_Prejudice.html?hl=&id=-1VHAAAAMAAJ"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=-1VHAAAAMAAJ&hl=&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "... Gay and Bisexual Youth &#39; 11 Chapter 1 12 easy one and cannot be travelled alone . At Pride &amp; Prejudice : working with lesbian , gay and bisexual GAY AND BISEXUAL YOUTH CHAPTER <b>Pride</b>, <b>Prejudice</b> and Lesbian, Gay and Bisexual Youth."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "vlaPuAAACAAJ",
+      "etag": "0tFgbOae3+Q",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/vlaPuAAACAAJ",
+      "volumeInfo": {
+        "title": "Pride and Prejudice",
+        "authors": [
+          "Jane Austen",
+          "Linda Marion Jennings"
+        ],
+        "publisher": "Puffin Books",
+        "publishedDate": "1995",
+        "description": "Mr and Mrs Bennet live with their five daughters. Jane, the eldest daughter, falls in love with Charles Bingley, a rich batchelor who takes a house nearby with his two sisters and friend, Fitzwilliam Darcy. Darcy is attracted to the second daugher, Elizabeth, but a bad account of him is given to Elizabeth. He and Bingley's effect the separation of Bingley and Jane. William Collins, cousin to the sisters and as only male, heir to the Bennet estate, proposes to Elizabeth but is rejected. Darcy proposes to Elizabeth but she refuses. When Elizabeth travels north she is invited with friends to Darcy's place in Berbyshire, and thinking Darcy is absent she goes. However, he is there and she is surprised by his much-improved manners. She hears news that her sister Lydia has eloped with Wickham, an unprincipled adventurer. With Darcy's help the fugitives are found. The attachment between Bingley and Jane is renewed and leads to an engagement. In spite of the insolent intervention of Lady Catherine, Darcy and Elizabeth become engaged.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "0140373373"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9780140373370"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 0,
+        "printType": "BOOK",
+        "categories": [
+          "COURTSHIP--FICTION."
+        ],
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "preview-1.0.0",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=vlaPuAAACAAJ&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=vlaPuAAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=vlaPuAAACAAJ&dq=Pride+and+Prejudice&hl=&cd=7&source=gbs_api",
+        "infoLink": "http://books.google.it/books?id=vlaPuAAACAAJ&dq=Pride+and+Prejudice&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Pride_and_Prejudice.html?hl=&id=vlaPuAAACAAJ"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=vlaPuAAACAAJ&hl=&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "Mr and Mrs Bennet live with their five daughters. Jane, the eldest daughter, falls in love with Charles Bingley, a rich batchelor who takes a house nearby with his two sisters and friend, Fitzwilliam Darcy."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "_BzNEAAAQBAJ",
+      "etag": "Oynume6nHf0",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/_BzNEAAAQBAJ",
+      "volumeInfo": {
+        "title": "Cataloging and Classification",
+        "subtitle": "An Introduction",
+        "authors": [
+          "Athena Salaba",
+          "Lois Mai Chan"
+        ],
+        "publisher": "Bloomsbury Publishing PLC",
+        "publishedDate": "2023-07-24",
+        "description": "\"The new edition of this essential work has raised the bar on an already excellent text about cataloguing.\" - Library Journal, Starred Review The fifth edition of the classic Cataloging and Classification covers the analysis and representation of methods used in describing, organizing, and providing access to resources made available in or through libraries. Since the last edition, there have new developments in cataloging, with the introduction of the IFLA Library Reference Model (LRM) and the new, official RDA, following the 3R Project. This text presents the essence of library cataloging and classification in terms of four basic functions: descriptive cataloging, authority work, subject access, and classification. Within this framework, content has been re-organized, all chapters have been rewritten, and new chapters have been introduced to incorporate the changes that have occurred during the interval between the four and fifth editions. In each part, the historical development and underlying principles of the retrieval mechanism at issue are treated first, because these are considered essential to an understanding of cataloging and classification. Discussion and examples of provisions in the standards and tools are then presented to illustrate the operations covered in each chapter. Divided into seven parts-a general overview; record production and structure, encoding formats, and metadata records; RDA (original and official); subject access and controlled vocabularies; the organization of library resources; encoding & records of bibliographic and authority data; and cataloging ethics--this book includes lists of the standards and tools used in the preparation and processing of cataloging records covered, lists of RDA elements, and sample records. Its companion website with interactive learning activities and supplementary materials located at catclassintro.org make it a true multimedia tool.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_13",
+            "identifier": "9781538132937"
+          },
+          {
+            "type": "ISBN_10",
+            "identifier": "1538132931"
+          }
+        ],
+        "readingModes": {
+          "text": true,
+          "image": true
+        },
+        "pageCount": 791,
+        "printType": "BOOK",
+        "categories": [
+          "Language Arts & Disciplines"
+        ],
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": true,
+        "contentVersion": "0.18.3.0.preview.3",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=_BzNEAAAQBAJ&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=_BzNEAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=_BzNEAAAQBAJ&pg=PA743&dq=Pride+and+Prejudice&hl=&cd=8&source=gbs_api",
+        "infoLink": "https://play.google.com/store/books/details?id=_BzNEAAAQBAJ&source=gbs_api",
+        "canonicalVolumeLink": "https://play.google.com/store/books/details?id=_BzNEAAAQBAJ"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "FOR_SALE",
+        "isEbook": true,
+        "listPrice": {
+          "amount": 62.62,
+          "currencyCode": "EUR"
+        },
+        "retailPrice": {
+          "amount": 43.83,
+          "currencyCode": "EUR"
+        },
+        "buyLink": "https://play.google.com/store/books/details?id=_BzNEAAAQBAJ&rdid=book-_BzNEAAAQBAJ&rdot=1&source=gbs_api",
+        "offers": [
+          {
+            "finskyOfferType": 1,
+            "listPrice": {
+              "amountInMicros": 62620000,
+              "currencyCode": "EUR"
+            },
+            "retailPrice": {
+              "amountInMicros": 43830000,
+              "currencyCode": "EUR"
+            }
+          }
+        ]
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "PARTIAL",
+        "embeddable": true,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": true
+        },
+        "pdf": {
+          "isAvailable": true
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=_BzNEAAAQBAJ&hl=&source=gbs_api",
+        "accessViewStatus": "SAMPLE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "... <b>Pride and prejudice</b> continued , 1993 . 670 $ a Tennant , Emma . An unequal marriage : <b>Pride and prejudice</b> continued , 1994 . 670 $ a Herendeen , Ann . <b>Pride</b> / <b>prejudice</b> , 2010 : $ b cover ( <b>Pride</b> / <b>prejudice</b> : a novel of Mr. Darcy&nbsp;..."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "8Y08xwEACAAJ",
+      "etag": "W40awH9SLLo",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/8Y08xwEACAAJ",
+      "volumeInfo": {
+        "title": "Pride and Prejudice",
+        "subtitle": "Over 30 Million Copies Sold",
+        "authors": [
+          "Jane Austen"
+        ],
+        "publishedDate": "2019-07-06",
+        "description": "Pride and Prejudice is an 1813 romantic novel of manners written by Jane Austen. The novel follows the character development of Elizabeth Bennet, the dynamic protagonist of the book, who learns about the repercussions of hasty judgments and eventually comes to appreciate the difference between superficial goodness and actual goodness. A classic piece filled with comedy, its humor lies in its honest depiction of manners, education, marriage and money during the Regency era in Great Britain.Mr. Bennet of Longbourn estate has five daughters, but because his property is entailed it can only be passed from male heir to male heir. Consequently, Mr. Bennet's family will be destitute upon his death. Because his wife also lacks an inheritance, it is imperative that at least one of the girls marry well to support the others upon his death, which is a motivation that drives the plot. Jane Austen's opening line--\"It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife\"-- is a sentence filled with irony and sets the tone for the book. The novel revolves around the importance of marrying for love, not simply for economic gain or social prestige, despite the communal pressure to make a good (i.e., wealthy) match.Pride and Prejudice have delighted readers for years, consistently appearing near the top of lists of \"most-loved books\" among literary scholars and the reading public. It has become one of the most popular novels in English literature with over 20 million copies sold and has inspired many derivatives that abound in modern literature. For more than a century, amateur and professional dramatic adaptations, reprints, unofficial sequels, films, and TV versions of Pride and Prejudice have portrayed the memorable characters and themes of the novel, reaching mass audiences.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "1078390975"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9781078390972"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 394,
+        "printType": "BOOK",
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "preview-1.0.0",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=8Y08xwEACAAJ&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=8Y08xwEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=8Y08xwEACAAJ&dq=Pride+and+Prejudice&hl=&cd=9&source=gbs_api",
+        "infoLink": "http://books.google.it/books?id=8Y08xwEACAAJ&dq=Pride+and+Prejudice&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Pride_and_Prejudice.html?hl=&id=8Y08xwEACAAJ"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=8Y08xwEACAAJ&hl=&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "The novel revolves around the importance of marrying for love, not simply for economic gain or social prestige, despite the communal pressure to make a good (i.e., wealthy) match.Pride and Prejudice have delighted readers for years, ..."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "QHySswEACAAJ",
+      "etag": "1c1WNJfob5M",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/QHySswEACAAJ",
+      "volumeInfo": {
+        "title": "Pride and Prejudice",
+        "subtitle": "By Jane Austen - Illustrated",
+        "authors": [
+          "Jane Austen"
+        ],
+        "publishedDate": "2017-07-21",
+        "description": "How is this book unique? Font adjustments & biography included Unabridged (100% Original content) Illustrated About Pride and Prejudice by Jane Austen Pride and Prejudice is a novel of manners by Jane Austen, first published in 1813. The story follows the main character, Elizabeth Bennet, as she deals with issues of manners, upbringing, morality, education, and marriage in the society of the landed gentry of the British Regency. Elizabeth is the second of five daughters of a country gentleman, Mr. Bennet living in Longbourn. Page 2 of a letter from Jane Austen to her sister Cassandra (11 June 1799) in which she first mentions Pride and Prejudice, using its working title First Impressions. Set in England in the early 19th century, Pride and Prejudice tells the story of Mr and Mrs Bennet's five unmarried daughters after the rich and eligible Mr Bingley and his status-conscious friend, Mr Darcy, have moved into their neighbourhood. While Bingley takes an immediate liking to the eldest Bennet daughter, Jane, Darcy has difficulty adapting to local society and repeatedly clashes with the second-eldest Bennet daughter, Elizabeth. Pride and Prejudice retains a fascination for modern readers, continuing near the top of lists of \"most loved books.\" It has become one of the most popular novels in English literature, selling over 20 million copies, and receives considerable attention from literary scholars. Modern interest in the book has resulted in a number of dramatic adaptations and an abundance of novels and stories imitating Austen's memorable characters or themes.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "1521900833"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9781521900833"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 310,
+        "printType": "BOOK",
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "preview-1.0.0",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "language": "en",
+        "previewLink": "http://books.google.it/books?id=QHySswEACAAJ&dq=Pride+and+Prejudice&hl=&cd=10&source=gbs_api",
+        "infoLink": "http://books.google.it/books?id=QHySswEACAAJ&dq=Pride+and+Prejudice&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Pride_and_Prejudice.html?hl=&id=QHySswEACAAJ"
+      },
+      "saleInfo": {
+        "country": "IT",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "IT",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=QHySswEACAAJ&hl=&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "How is this book unique? Font adjustments &amp; biography included Unabridged (100% Original content) Illustrated About Pride and Prejudice by Jane Austen Pride and Prejudice is a novel of manners by Jane Austen, first published in 1813."
       }
     }
   ]
 }
 ```
+
+
+</Accordion>
 
 ### 4.5 Schermate suggerite
 
@@ -454,7 +1312,7 @@ Generare APK, acquisire screenshot, preparare la presentazione finale.
 | `GET /api/v2/type/{id}` | Pokémon per tipo | `/api/v2/type/fire` |
 | `GET /api/v2/pokemon-species/{id}` | Info specie ed evoluzioni | `/api/v2/pokemon-species/25` |
 
-**Esempio di risposta JSON (dettaglio Pokémon):**
+**Esempio di risposta JSON (dettaglio Pokémon sintetizzato: la risposta effettiva dell'API è molto più ricca):**
 
 ```json
 {
@@ -474,10 +1332,10 @@ Generare APK, acquisire screenshot, preparare la presentazione finale.
     {"base_stat": 90, "stat": {"name": "speed"}}
   ],
   "sprites": {
-    "front_default": "https://raw.githubusercontent.com/.../25.png",
+    "front_default": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/brilliant-diamond-shining-pearl/25.png",
     "other": {
       "official-artwork": {
-        "front_default": "https://raw.githubusercontent.com/.../25.png"
+        "front_default": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
       }
     }
   },
@@ -621,24 +1479,73 @@ L'utente può cercare ricette per ingrediente, visualizzarne il dettaglio con is
 
 **Esempio di risposta JSON:**
 
+<Accordion title="Esempio di risposta JSON (ricetta dettagliata)" defaultOpen={false}>
+
+GET https://www.themealdb.com/api/json/v1/1/lookup.php?i=52772
+
 ```json
 {
   "meals": [
     {
       "idMeal": "52772",
       "strMeal": "Teriyaki Chicken Casserole",
+      "strMealAlternate": null,
       "strCategory": "Chicken",
       "strArea": "Japanese",
-      "strInstructions": "Preheat oven to 350...",
-      "strMealThumb": "https://www.themealdb.com/images/media/...",
+      "strInstructions": "Preheat oven to 350° F. Spray a 9x13-inch baking pan with non-stick spray.\r\nCombine soy sauce, ½ cup water, brown sugar, ginger and garlic in a small saucepan and cover. Bring to a boil over medium heat. Remove lid and cook for one minute once boiling.\r\nMeanwhile, stir together the corn starch and 2 tablespoons of water in a separate dish until smooth. Once sauce is boiling, add mixture to the saucepan and stir to combine. Cook until the sauce starts to thicken then remove from heat.\r\nPlace the chicken breasts in the prepared pan. Pour one cup of the sauce over top of chicken. Place chicken in oven and bake 35 minutes or until cooked through. Remove from oven and shred chicken in the dish using two forks.\r\n*Meanwhile, steam or cook the vegetables according to package directions.\r\nAdd the cooked vegetables and rice to the casserole dish with the chicken. Add most of the remaining sauce, reserving a bit to drizzle over the top when serving. Gently toss everything together in the casserole dish until combined. Return to oven and cook 15 minutes. Remove from oven and let stand 5 minutes before serving. Drizzle each serving with remaining sauce. Enjoy!",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg",
+      "strTags": "Meat,Casserole",
+      "strYoutube": "https://www.youtube.com/watch?v=4aZr5hZXP_s",
       "strIngredient1": "soy sauce",
-      "strMeasure1": "3/4 cup",
       "strIngredient2": "water",
-      "strMeasure2": "1/2 cup"
+      "strIngredient3": "brown sugar",
+      "strIngredient4": "ground ginger",
+      "strIngredient5": "minced garlic",
+      "strIngredient6": "cornstarch",
+      "strIngredient7": "chicken breasts",
+      "strIngredient8": "stir-fry vegetables",
+      "strIngredient9": "brown rice",
+      "strIngredient10": "",
+      "strIngredient11": "",
+      "strIngredient12": "",
+      "strIngredient13": "",
+      "strIngredient14": "",
+      "strIngredient15": "",
+      "strIngredient16": null,
+      "strIngredient17": null,
+      "strIngredient18": null,
+      "strIngredient19": null,
+      "strIngredient20": null,
+      "strMeasure1": "3/4 cup",
+      "strMeasure2": "1/2 cup",
+      "strMeasure3": "1/4 cup",
+      "strMeasure4": "1/2 teaspoon",
+      "strMeasure5": "1/2 teaspoon",
+      "strMeasure6": "4 Tablespoons",
+      "strMeasure7": "2",
+      "strMeasure8": "1 (12 oz.)",
+      "strMeasure9": "3 cups",
+      "strMeasure10": "",
+      "strMeasure11": "",
+      "strMeasure12": "",
+      "strMeasure13": "",
+      "strMeasure14": "",
+      "strMeasure15": "",
+      "strMeasure16": null,
+      "strMeasure17": null,
+      "strMeasure18": null,
+      "strMeasure19": null,
+      "strMeasure20": null,
+      "strSource": null,
+      "strImageSource": null,
+      "strCreativeCommonsConfirmed": null,
+      "dateModified": null
     }
   ]
 }
 ```
+
+</Accordion>
 
 **Nota importante:** TheMealDB restituisce gli ingredienti e le misure come 20 coppie di campi separati (`strIngredient1`...`strIngredient20`, `strMeasure1`...`strMeasure20`). Il DTO deve gestire questa struttura e convertirla in una lista pulita.
 
@@ -751,15 +1658,18 @@ Questo progetto è consigliato a chi vuole curare particolarmente l'aspetto visi
 
 **Esempio di risposta JSON (APOD):**
 
+GET https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY
+
 ```json
 {
-  "date": "2025-03-15",
-  "title": "The Great Nebula in Orion",
-  "explanation": "The Great Nebula in Orion is a place where new stars are forming...",
-  "url": "https://apod.nasa.gov/apod/image/2503/OrionNebula.jpg",
-  "hdurl": "https://apod.nasa.gov/apod/image/2503/OrionNebula_full.jpg",
+  "copyright": "Jeff Dai\n(TWAN)",
+  "date": "2026-03-23",
+  "explanation": "What's happening at the end of that street?  Pictured here are not auroras but light pillars, a phenomenon typically much closer.  In most places on Earth, a lucky viewer can see a Sun pillar, a column of light appearing to extend up from the Sun caused by flat fluttering ice-crystals reflecting sunlight from the upper atmosphere.  Usually, these ice crystals evaporate before reaching the ground.  During freezing temperatures, however, flat fluttering ice crystals may form near the ground and are sometimes known as a crystal fog.  These small ice crystals may then reflect not the Sun but ground lights.  The featured image captured not only numerous light pillars but also the iconic constellation of Orion, and was taken in Mohe, the northernmost city in China.",
+  "hdurl": "https://apod.nasa.gov/apod/image/2603/LightPillarsMohe_Dai_2000.jpg",
   "media_type": "image",
-  "copyright": "John Doe"
+  "service_version": "v1",
+  "title": "Light Pillars and Orion over Mohe",
+  "url": "https://apod.nasa.gov/apod/image/2603/LightPillarsMohe_Dai_1080.jpg"
 }
 ```
 
@@ -898,36 +1808,236 @@ Questo progetto è consigliato a chi preferisce una logica applicativa semplice 
 
 **Esempio di risposta JSON:**
 
+<Accordion title="Esempio di risposta JSON" defaultOpen={false}>
+
+GET https://restcountries.com/v3.1/name/italy
+
 ```json
 [
   {
+    "tld": [
+      ".it"
+    ],
+    "cca2": "IT",
+    "ccn3": "380",
+    "cca3": "ITA",
+    "cioc": "ITA",
+    "independent": true,
+    "status": "officially-assigned",
+    "unMember": true,
+    "idd": {
+      "root": "+3",
+      "suffixes": [
+        "9"
+      ]
+    },
+    "capital": [
+      "Rome"
+    ],
+    "altSpellings": [
+      "IT",
+      "Italian Republic",
+      "Repubblica italiana"
+    ],
+    "region": "Europe",
+    "subregion": "Southern Europe",
+    "landlocked": false,
+    "borders": [
+      "AUT",
+      "FRA",
+      "SMR",
+      "SVN",
+      "CHE",
+      "VAT"
+    ],
+    "area": 301336.0,
+    "maps": {
+      "googleMaps": "https://goo.gl/maps/8M1K27TDj7StTRTq8",
+      "openStreetMaps": "https://www.openstreetmap.org/relation/365331"
+    },
+    "population": 58927633,
+    "fifa": "ITA",
+    "car": {
+      "signs": [
+        "I"
+      ],
+      "side": "right"
+    },
+    "timezones": [
+      "UTC+01:00"
+    ],
+    "continents": [
+      "Europe"
+    ],
+    "flag": "🇮🇹",
     "name": {
       "common": "Italy",
       "official": "Italian Republic",
       "nativeName": {
-        "ita": {"official": "Repubblica italiana", "common": "Italia"}
+        "ita": {
+          "official": "Repubblica italiana",
+          "common": "Italia"
+        }
       }
     },
-    "capital": ["Rome"],
-    "region": "Europe",
-    "subregion": "Southern Europe",
-    "population": 59554023,
-    "languages": {"ita": "Italian"},
-    "currencies": {"EUR": {"name": "Euro", "symbol": "€"}},
+    "currencies": {
+      "EUR": {
+        "symbol": "€",
+        "name": "euro"
+      }
+    },
+    "languages": {
+      "ita": "Italian",
+      "cat": "Catalan"
+    },
+    "latlng": [
+      42.83333333,
+      12.83333333
+    ],
+    "demonyms": {
+      "eng": {
+        "f": "Italian",
+        "m": "Italian"
+      },
+      "fra": {
+        "f": "Italienne",
+        "m": "Italien"
+      }
+    },
+    "translations": {
+      "ara": {
+        "official": "الجمهورية الإيطالية",
+        "common": "إيطاليا"
+      },
+      "bre": {
+        "official": "Republik Italia",
+        "common": "Italia"
+      },
+      "ces": {
+        "official": "Italská republika",
+        "common": "Itálie"
+      },
+      "cym": {
+        "official": "Italian Republic",
+        "common": "Italy"
+      },
+      "deu": {
+        "official": "Italienische Republik",
+        "common": "Italien"
+      },
+      "est": {
+        "official": "Itaalia Vabariik",
+        "common": "Itaalia"
+      },
+      "fin": {
+        "official": "Italian tasavalta",
+        "common": "Italia"
+      },
+      "fra": {
+        "official": "République italienne",
+        "common": "Italie"
+      },
+      "hrv": {
+        "official": "talijanska Republika",
+        "common": "Italija"
+      },
+      "hun": {
+        "official": "Olasz Köztársaság",
+        "common": "Olaszország"
+      },
+      "ind": {
+        "official": "Republik Italia",
+        "common": "Italia"
+      },
+      "ita": {
+        "official": "Repubblica italiana",
+        "common": "Italia"
+      },
+      "jpn": {
+        "official": "イタリア共和国",
+        "common": "イタリア"
+      },
+      "kor": {
+        "official": "이탈리아 공화국",
+        "common": "이탈리아"
+      },
+      "nld": {
+        "official": "Italiaanse Republiek",
+        "common": "Italië"
+      },
+      "per": {
+        "official": "جمهوری ایتالیا",
+        "common": "ایتالیا"
+      },
+      "pol": {
+        "official": "Republika Włoska",
+        "common": "Włochy"
+      },
+      "por": {
+        "official": "República Italiana",
+        "common": "Itália"
+      },
+      "rus": {
+        "official": "итальянская Республика",
+        "common": "Италия"
+      },
+      "slk": {
+        "official": "Talianska republika",
+        "common": "Taliansko"
+      },
+      "spa": {
+        "official": "República Italiana",
+        "common": "Italia"
+      },
+      "srp": {
+        "official": "Италијанска Република",
+        "common": "Италија"
+      },
+      "swe": {
+        "official": "Republiken Italien",
+        "common": "Italien"
+      },
+      "tur": {
+        "official": "İtalyan Cumhuriyeti",
+        "common": "İtalya"
+      },
+      "urd": {
+        "official": "جمہوریہ اطالیہ",
+        "common": "اطالیہ"
+      },
+      "zho": {
+        "official": "意大利共和国",
+        "common": "意大利"
+      }
+    },
+    "gini": {
+      "2017": 35.9
+    },
     "flags": {
       "png": "https://flagcdn.com/w320/it.png",
-      "svg": "https://flagcdn.com/it.svg"
+      "svg": "https://flagcdn.com/it.svg",
+      "alt": "The flag of Italy is composed of three equal vertical bands of green, white and red."
     },
     "coatOfArms": {
-      "png": "https://mainfacts.com/media/images/.../it.png"
+      "png": "https://mainfacts.com/media/images/coats_of_arms/it.png",
+      "svg": "https://mainfacts.com/media/images/coats_of_arms/it.svg"
     },
-    "timezones": ["UTC+01:00"],
-    "latlng": [42.83, 12.83],
-    "area": 301336.0,
-    "borders": ["AUT", "FRA", "SMR", "SVN", "CHE", "VAT"]
+    "startOfWeek": "monday",
+    "capitalInfo": {
+      "latlng": [
+        41.9,
+        12.48
+      ]
+    },
+    "postalCode": {
+      "format": "#####",
+      "regex": "^(\\d{5})$"
+    }
   }
 ]
 ```
+
+</Accordion>
 
 ### 8.5 Schermate suggerite
 
