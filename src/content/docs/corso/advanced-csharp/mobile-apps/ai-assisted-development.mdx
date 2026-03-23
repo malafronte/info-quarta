@@ -1591,8 +1591,36 @@ Lo sviluppatore deve sempre:
 
 ### 5.2 OpenCode (agente CLI)
 
-[OpenCode](https://opencode.ai/) è un framework agente che lavora da riga di comando o integrato in un editor.  
-Si differenzia da Copilot per la capacità di leggere l'intero filesystem del workspace.
+[OpenCode](https://opencode.ai/) è un agente AI che lavora da riga di comando o integrato in un editor. Ad esempio VS Code ha un'estensione ufficiale per OpenCode che permette di interagire con l'agente direttamente dall'IDE. OpenCode si differenzia da Copilot Chat per la capacità di leggere l'intero filesystem del workspace.
+
+OpenCode permette di accedere a moltissimi provider di modelli LLM (OpenAI, Ollama, Lollama Cloud, KiloCode, OpenCode Zen, OpenRouter, etc.) e di eseguire iterazioni di sviluppo del codice con agenti autonomi con funzionalità molto simili a quelle di [Claude Code](https://claude.com/product/claude-code) che attualmente è considerato il coding agent più avanzato.
+
+#### Installazione di OpenCode
+
+Per installare OpenCode, è possibile seguire le istruzioni ufficiali sul sito [https://opencode.ai/docs#install](https://opencode.ai/docs#install). L'installazione più semplice è quella basata sul package manager `npm`:
+
+```bash
+npm install -g opencode-ai
+npm install -g opencode-windows-x64
+```
+
+A scuola occorre configurare il proxy per npm:
+
+```bash
+npm config set proxy http://proxy:3128
+npm config set https-proxy http://proxy:3128
+```
+
+Per togliere il proxy di npm (non a scuola):
+
+```bash
+npm config rm proxy
+npm config rm https-proxy
+```
+
+Se il comando `opencode` dopo l'installazione non venisse riconosciuto nella shell:
+ 
+Aggiungere nel Path utente e di sistema il percorso: `C:\Users\<user-name>\AppData\Roaming\npm` dove `<user-name>` è il nome dell'utente Windows.
 
 #### Plan Mode e Build Mode
 
@@ -1600,6 +1628,10 @@ OpenCode distingue tra due modalità operative:
 
 - **Plan Mode**: l'agente analizza il progetto, legge i file markdown (in particolare `AGENTS.md`) e propone un piano delle modifiche da eseguire;
 - **Build Mode**: l'agente esegue le modifiche secondo il piano approvato.
+
+Il passaggio da Plan Mode a Build Mode può essere fatto il tasto `Tab`. 
+
+[La guida ufficiale di OpenCode](https://opencode.ai/docs#usage) mostra i vari comandi che si possono usare.
 
 Per implementare il controllo Man-in-the-Loop con OpenCode:
 
@@ -1670,7 +1702,7 @@ Svantaggi:
 
 #### Ollama Cloud 
 
-**[ Ollama Cloud](https://docs.ollama.com/cloud)** è l'infrastruttura ufficiale ospitata in rete dai creatori di Ollama. 
+**[Ollama Cloud](https://ollama.com/pricing)** è l'infrastruttura ufficiale ospitata in rete dai creatori di Ollama. 
 Questo servizio permette agli sviluppatori di accedere ed eseguire modelli linguistici open source molto potenti o esosi in termini di memoria (come ad esempio `gpt-oss:120b` e modelli affini) senza la necessità di disporre di macchine locali costose o dotate di GPU dedicate di fascia alta.
 
 **Come utilizzare Ollama Cloud con il proprio Agente di Coding**
@@ -1703,7 +1735,7 @@ Pertanto, questi gateway possono essere configurati come flessibili backend dida
 
 #### OpenRouter
 
-**OpenRouter** ([openrouter.ai/docs/quickstart](https://openrouter.ai/docs/quickstart)) è in ambito storiografico l'AI Gateway e l'aggregatore di modelli di intelligenza artificiale di gran lunga più rinomato. 
+**OpenRouter** ([openrouter.ai](https://openrouter.ai/)) è in ambito storiografico l'AI Gateway e l'aggregatore di modelli di intelligenza artificiale di gran lunga più rinomato. 
 Esattamente come le alternative sopra descritte, appronta un layer intermedio e fornisce un endpoint unificato e standard ("OpenAI-compatible endpoints") per dialogare sistematicamente con oltre trecento LLM di punta del panorama mondiale (producibili da Anthropic, DeepSeek, Google, OpenAI, Mistral, Meta e dalla scena open source).
 
 **Modello "Pay-As-You-Go" rigoroso e libreria sterminata di Modelli Gratuiti**
@@ -1723,7 +1755,7 @@ Per agganciare in scioltezza la libreria offerta da OpenRouter all'interno del p
 
 #### Antigravity e i modelli Gemini
 
-[Google Antigravity](https://antigravity.google/docs/get-started) rappresenta l'evoluzione dell'IDE tradizionale verso la nuova era *"Agent-First"*. Sviluppata da Google DeepMind, non è un semplice strumento di autocompletamento, ma una vera e propria **piattaforma di sviluppo agentica** pensata per dirigere e orchestrare AI autonome. 
+[Google Antigravity](https://antigravity.google/) rappresenta l'evoluzione dell'IDE tradizionale verso la nuova era *"Agent-First"*. Sviluppata da Google DeepMind, non è un semplice strumento di autocompletamento, ma una vera e propria **piattaforma di sviluppo agentica** pensata per dirigere e orchestrare AI autonome. 
 
 Mentre i copilot tradizionali spesso si fermano a un framework conversazionale, in Antigravity l'intelligenza artificiale agisce come un attore autonomo in grado di **pianificare, eseguire, validare e iterare** su compiti ingegneristici complessi con un intervento umano ad alto livello direttivo (*Man-in-the-Loop*). 
 
@@ -1734,6 +1766,8 @@ Tra le sue caratteristiche avanzate per lo sviluppo di progetti moderni troviamo
 
 **Vantaggi per la didattica:** 
 Antigravity è scaricabile e installabile in locale. È attualmente disponibile in **preview pubblica senza costi** (associata a un account Google standard, richiede solo Chrome e requisiti minimi di RAM/Disco). La piattaforma offre una flessibilità enorme garantendo l'accesso **anche a numerosi modelli di terze parti** creati da altri provider, come, ad esempio i modelli di Anthropic, **Claude Sonnet** e **Claude Opus**, oppure GPT OSS. Tuttavia, essendo nativamente integrata con la potentissima famiglia di modelli **Gemini 3 Pro** via Cloud, vanta su quest'ultimi rate limit gratuiti estremamente generosi, incarnando il candidato ideale per fornire a ogni studente il suo primo vero "Junior Developer" virtuale a costo zero.
+
+La guida ufficiale di Antigravity è disponibile a questo link: [https://antigravity.google/docs/get-started](https://antigravity.google/docs/get-started).
 
 ### 5.4 L'agente AI e le operazioni Git (Commit e Push)
 
@@ -1746,7 +1780,7 @@ Tuttavia, queste automazioni richiedono l'abilitazione di permessi sensibili nel
 Per far sì che l'agente esegua dei commit ed effettui push, è necessario che il framework o l'IDE gli garantiscano la "**Terminal Command Execution**" (Esecuzione di comandi nel terminale, spesso richiesta da agenti come Claude Code o da VS Code per GitHub Copilot Workspace), o fornirgli autorizzazione via Source Control API.
 In pratica, l'IDE vi chiederà regolarmente di approvare, confermare o negare l'esecuzione di comandi proposti nel terminale direttamente dall'agente.
 
-- **Il potenziale dell'automazione**: Chiedere semplicemente *"Crea il branch it-04-persistenza e committa le modifiche che abbiamo appena testato con un messaggio convenzionale"* fa risparmiare tempo e migliora vertiginosamente la qualità del log di Git, che terrà esattamente traccia di ogni variazione del software.
+- **Il potenziale dell'automazione**: Chiedere semplicemente *"Crea il branch it-04-persistenza e fai la commit delle modifiche che abbiamo appena testato con un messaggio convenzionale"* fa risparmiare tempo e migliora vertiginosamente la qualità del log di Git, che terrà esattamente traccia di ogni variazione del software.
 - **I rischi da evitare**: Lasciare che l'agente esegua commit ed effettui operazioni nel terminale in *auto-approve* o senza aver letto le query generate comporta il rischio concreto di inquinare irreparabilmente la cronologia (`git log`) e caricare sul repository remoto codice *spaccato* e non testato. A tal punto che un ripristino o reset tramite Git potrebbe diventare impraticabile per lo studente in via autonoma.
 
 #### Workflow corretto per affidare Git all'AI:
@@ -1820,7 +1854,7 @@ Una schermata anche semplice deve essere pensata in termini di gerarchia visiva,
 
 - elenco delle schermate con il loro scopo;
 - bozza della navigazione (TabBar o FlyoutItem);
-- wireframe a bassa fedeltà (su carta, Figma o Excalidraw);
+- wireframe a bassa fedeltà (su carta,Google Stitch, Figma o Excalidraw);
 - definizione della palette colori e dello stile base;
 - scelta dei componenti MAUI realistici (CollectionView, Grid, ScrollView).
 
@@ -2751,7 +2785,7 @@ Stitch utilizza i modelli Gemini di Google per trasformare input testuali, immag
 
 #### Che cosa è Stitch
 
-Stitch è un tool di **Vibe Design**: si parte da una descrizione o un'ispirazione e l'AI genera proposte visive concrete.  
+[Stitch](https://stitch.withgoogle.com/) è un tool di **Vibe Design**: si parte da una descrizione o un'ispirazione e l'AI genera proposte visive concrete.  
 A differenza di un semplice prompt testuale, Stitch produce interfacce interattive visualizzabili in tempo reale nel browser.
 
 Le caratteristiche principali di Stitch sono:
