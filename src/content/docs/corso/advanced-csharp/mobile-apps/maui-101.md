@@ -271,7 +271,7 @@ Per eseguire l'applicazione su un emulatore Android, è necessario selezionare i
 
 **Video tutorial:** [.NET MAUI For Beginners - Video Series](https://youtube.com/playlist?list=PLdo4fOcmZ0oUBAdL2NwBpDs32zwGqb9DY)[^6]
 
-Il Hot Reload permette di modificare il codice XAML e vedere le modifiche applicate in tempo reale sull'emulatore senza necessità di ricompilare l'intera applicazione. Questa funzionalità è particolarmente utile durante la fase di sviluppo dell'interfaccia utente, poiché consente iterazioni rapide e un feedback immediato sulle modifiche apportate.
+L'Hot Reload permette di modificare il codice XAML e vedere le modifiche applicate in tempo reale sull'emulatore senza necessità di ricompilare l'intera applicazione. Questa funzionalità è particolarmente utile durante la fase di sviluppo dell'interfaccia utente, poiché consente iterazioni rapide e un feedback immediato sulle modifiche apportate.
 
 ---
 
@@ -283,7 +283,7 @@ XAML (eXtensible Application Markup Language) è un linguaggio di markup dichiar
 
 **Documentazione ufficiale:** [Create a user interface in XAML](https://learn.microsoft.com/en-us/training/modules/create-user-interface-xaml/)[^7]
 
-La sintassi XAML si basa su elementi XML che rappresentano controlli, layout e risorse. Ogni elemento XAML corrisponde a una classe .NET, e gli attributi XML vengono mappati alle proprietà di tali classi. Il namespace principale per i controlli MAUI è `http://schemas.microsoft.com/dotnet/2021/maui`, che deve essere dichiarato come namespace predefinito in ogni file XAML.
+La sintassi XAML si basa su elementi XML che rappresentano controlli, layout e risorse. Ogni elemento XAML corrisponde a una classe .NET, e gli attributi XML vengono mappati sulle proprietà di tali classi. Il namespace principale per i controlli MAUI è `http://schemas.microsoft.com/dotnet/2021/maui`, che deve essere dichiarato come namespace predefinito in ogni file XAML.
 
 Un esempio di pagina XAML semplice:
 

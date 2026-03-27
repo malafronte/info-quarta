@@ -496,8 +496,8 @@ ProjectRoot/
 
 ### 4.2 File AGENTS.md
 
-Il file `AGENTS.md` è il file di configurazione principale per gli agenti AI come OpenCode.  
-Deve essere posizionato nella radice del progetto e contiene le regole che l'agente deve seguire durante tutto lo sviluppo.
+Il file `AGENTS.md` è il file di configurazione principale per gli agenti AI come OpenCode. Deve essere posizionato nella radice del progetto e contiene le regole che l'agente deve seguire durante tutto lo sviluppo.
+Per creare automaticamente il file `AGENTS.md` si può eseguire il comando `/init` in OpenCode, come specificato nella [documentazione di OpenCode]((https://opencode.ai/docs/rules/#initialize)). In Claude Code il comando `/init` crea il file `CLAUDE.md` che oltre a definire le regole ed i ruoli dell'agente AI, viene usato anche per memorizzare standard di codifica, decisioni architetturali, comandi di build e checklist di revisione specifici per quel repository. Ulteriori dettagli sull'uso di `CLAUDE.md` sono disponibili nella [documentazione di Claude Code](https://code.claude.com/docs/en/memory#claude-md-files).
 
 Di seguito un esempio completo di `AGENTS.md`:
 
@@ -1680,7 +1680,43 @@ Segnalare:
 Non applicare fix automatici, solo elencare i problemi.
 ```
 
-### 5.3 Provider di Modelli LLM Locali e Cloud (NVIDIA, Ollama, KiloCode, OpenCode Zen, OpenRouter, etc. )
+
+
+### 5.3 Claude Code (Agent CLI di Anthropic)
+
+[Claude Code](https://claude.com/product/claude-code) è un agente CLI assistito da intelligenza artificiale sviluppato da Anthropic che lavora direttamente nel terminale. Al momento in cui si scrivono queste note, Claude Code è il coding agent più usato dagli sviluppatori professionisti per la sua notevole capacità di comprendere il contesto dell'intero repository e per i modelli avanzati della famiglia Claude.
+
+A differenza degli assistenti integrati nell'editor (come Copilot Chat) o degli agenti che operano in un'interfaccia grafica a sé stante, Claude Code si integra nativamente nell'ambiente iterativo su console, eccellendo nel manovrare codice sorgente, analizzare log d'errore ed eseguire comandi pre e post iterazione.
+
+#### Installazione di Claude Code e Quickstart
+
+Claude Code viene oggi distribuito e installato nativamente per i vari sistemi operativi. È possibile installarlo a livello di sistema operativo, come spiegato nella [documentazione ufficiale rapida di Claude Code](https://code.claude.com/docs/en/quickstart).
+
+Ad esempio, su Windows si consiglia l'installazione tramite WinGet (eseguendo nel terminale):
+
+```powershell
+winget install Anthropic.ClaudeCode
+```
+
+In alternativa (sempre su Windows via PowerShell):
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+Per macOS o Linux:
+
+```bash
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Dopo l'installazione, navigando tramite console nella radice del proprio progetto, è sufficiente digitare il comando `claude` per instradare l'agente (la prima esecuzione richiederà il login e avvierà una procedura di autenticazione assistita tramite tab del browser).
+
+:::note
+In questo contesto didattico verrà usato principalmente OpenCode. Sebbene sia possibile usare Claude Code anche con provider di terze parti come ad esempio OpenRouter (come descritto nella [guida ufficiale di OpenRouter](https://openrouter.ai/docs/guides/coding-agents/claude-code-integration)), di solito gli step di configurazione possono risultare piuttosto complessi e per questo motivo non verranno approfonditi in questo documento.
+:::
+
+### 5.4 Provider di Modelli LLM Locali e Cloud (NVIDIA, Ollama, KiloCode, OpenCode Zen, OpenRouter, etc. )
 
 Oltre a GitHub Copilot esistono alternative cloud e locali molto valide. Di seguito ne vengono presentate alcune.
 
@@ -1954,7 +1990,7 @@ Antigravity è scaricabile e installabile in locale. È attualmente disponibile 
 
 La guida ufficiale di Antigravity è disponibile a questo link: [https://antigravity.google/docs/get-started](https://antigravity.google/docs/get-started).
 
-### 5.4 L'agente AI e le operazioni Git (Commit e Push)
+### 5.5 L'agente AI e le operazioni Git (Commit e Push)
 
 Una della funzionalità più impattanti nello sviluppo Man-in-the-Loop assistito prevede la delega delle operazioni di version control (soprattutto i branch creation, i `commit` e i `push`) direttamente all'agente AI, come Copilot in Agent Mode o OpenCode. Dato che gli studenti spesso trovano noioso o sinteticamente complesso produrre log e commit message esplicativi, formattati e formali, l'agente risulta uno strumento eccellente per automatizzare questo step alla perfezione.
 
@@ -2339,49 +2375,368 @@ Gli agenti AI di coding (come OpenCode, GitHub Copilot Agent Mode, Claude Code, 
 La loro efficacia dipende direttamente dalla qualità del contesto che ricevono.  
 Le **Skills** sono documenti strutturati che forniscono all'agente conoscenze specializzate, regole operative e pattern di comportamento per un compito specifico.
 
+Il concetto di skill è oggi uno degli elementi più importanti del workflow di sviluppo AI-Assisted: permette di **"programmare l'Intelligenza Artificiale"** stessa, definendo in modo permanente e riutilizzabile le regole, i pattern e le best practice che l'agente deve seguire ogni volta che lavora sul vostro progetto.  
+In questa sezione analizzeremo in dettaglio che cosa sono le skills, come sono strutturate, come si installano, dove vivono nei diversi strumenti, e come sfruttarle al meglio nel contesto dello sviluppo .NET MAUI.
+
 ### 10.1 Che cosa sono le Skills
 
-Una skill è un file Markdown (tipicamente `SKILL.md`) che descrive in modo formale:
+#### 10.1.1 Definizione secondo lo standard Agent Skills
 
-- il contesto di applicazione (quando la skill va usata);
-- le regole di comportamento che l'agente deve seguire;
-- i pattern estetici, architetturali o procedurali da applicare;
-- i vincoli tecnici da rispettare;
-- gli anti-pattern da evitare.
+Secondo la definizione ufficiale del progetto **Agent Skills** ([agentskills.io/what-are-skills](https://agentskills.io/what-are-skills)):
 
-A differenza di un semplice prompt, una skill è **persistente**: viene letta dall'agente ogni volta che è rilevante, senza che lo sviluppatore debba ripetere le istruzioni.
+> Le **Agent Skills** sono un formato aperto e leggero per estendere le capacità degli agenti AI con conoscenze specializzate e workflow strutturati.
 
-### 10.2 Dove si collocano le Skills nel progetto
+Una skill **non è semplicemente un file Markdown** contenente istruzioni testuali. È un'unità strutturata e completa di conoscenza che può includere molteplici componenti. Il suo cuore è il file `SKILL.md` (obbligatorio), ma una skill ben costruita può contenere anche script eseguibili, documentazione di riferimento, template e risorse aggiuntive.
 
-Le skills possono essere posizionate in diversi punti:
+#### 10.1.2 Struttura completa di una Skill
+
+La struttura di una skill è organizzata come una cartella con una gerarchia precisa:
 
 ```text
-ProjectRoot/
-├─ .git/                        # Folder di Git
-├─ .gitignore                   # Esclusioni per il version control
-├─ AGENTS.md                    # Regole globali del progetto (letto da tutti gli agenti)
-├─ .github/
-│  └─ copilot-instructions.md   # Regole specifiche per GitHub Copilot
-├─ .agent/
-│  └─ skills/                   # Cartella Skills per agenti generici
-│     ├─ frontend-design.md     # Skill per la progettazione UI
-│     ├─ api-integration.md     # Skill per l'integrazione API REST
-│     ├─ mvvm-architecture.md   # Skill per l'architettura MVVM
-│     └─ testing-strategy.md    # Skill per la strategia di test
-├─ .opencode/                   # Cartella specifica per OpenCode
-│  └─ skills/
-│     └─ maui-development.md    # Skill specifica per lo sviluppo MAUI
+my-skill/
+├── SKILL.md        # Obbligatorio: istruzioni principali + metadati (frontmatter YAML)
+├── scripts/        # Opzionale: codice eseguibile (script di supporto, automazione)
+├── references/     # Opzionale: documentazione aggiuntiva, API docs, guide dettagliate
+├── examples/       # Opzionale: snippet di codice di esempio, output atteso
+└── assets/         # Opzionale: template, risorse, file di configurazione
 ```
 
-### 10.3 Formato di una Skill
+Questa struttura va ben oltre un semplice file di testo. Vediamo ciascun componente:
 
-Ogni file SKILL.md segue un formato con frontmatter YAML e contenuto Markdown:
+| Componente | Scopo | Esempio |
+| --- | --- | --- |
+| `SKILL.md` | File principale con frontmatter YAML e istruzioni in Markdown | Regole MVVM, pattern per ViewModel, anti-pattern |
+| `scripts/` | Script che l'agente può eseguire per automatizzare operazioni | Script di validazione, generazione di boilerplate, linting |
+| `references/` | Documentazione dettagliata caricata on-demand | API reference, specifiche tecniche, guide di stile |
+| `examples/` | Esempi concreti di codice e output atteso | ViewModel completo, Service REST, layout XAML |
+| `assets/` | Template, risorse e file di configurazione riutilizzabili | Template per pagine XAML, file di configurazione base |
 
-<Accordion title="Esempio di Skill per lo sviluppo MAUI">
+#### 10.1.3 Il file SKILL.md nel dettaglio
+
+Il file `SKILL.md` è l'unico componente obbligatorio di ogni skill. Deve iniziare con un **frontmatter YAML** che contiene i metadati fondamentali, seguito dal contenuto in formato Markdown.
+
+**Campi del frontmatter:**
+
+| Campo | Obbligatorio | Descrizione |
+| --- | --- | --- |
+| `name` | Sì | Identificatore breve della skill (1-64 caratteri, lowercase con trattini) |
+| `description` | Sì | Descrizione di quando usare la skill (1-1024 caratteri) |
+| `license` | No | Licenza della skill (es. MIT, Apache-2.0) |
+| `compatibility` | No | Compatibilità con specifici agenti (es. `opencode`, `claude`) |
+| `metadata` | No | Mappa chiave-valore per metadati aggiuntivi |
+
+**Regole di validazione per il `name`:**
+
+- Deve contenere solo caratteri alfanumerici minuscoli e trattini singoli
+- Non può iniziare o terminare con un trattino
+- Non può contenere trattini consecutivi (`--`)
+- Deve corrispondere al nome della cartella che contiene `SKILL.md`
+- Regex equivalente: `^[a-z0-9]+(-[a-z0-9]+)*$`
+
+**Esempio minimo di `SKILL.md`:**
 
 ```markdown
 ---
-name: maui-mvvm-development
+name: pdf-processing
+description: Extract PDF text, fill forms, merge files. 
+  Use when handling PDFs.
+---
+
+# PDF Processing
+
+## When to use this skill
+Use this skill when the user needs to work with PDF files...
+
+## How to extract text
+1. Use pdfplumber for text extraction...
+
+## How to fill forms
+...
+```
+
+#### 10.1.4 Come funzionano le Skills: Discovery, Activation, Execution
+
+Il ciclo di vita di una skill segue tre fasi fondamentali:
+
+1. **Discovery (Scoperta)**: all'avvio, l'agente carica **solo il nome e la descrizione** di ogni skill disponibile. Questo è sufficiente per sapere quando una skill potrebbe essere rilevante, senza appesantire il contesto con tutto il contenuto.
+
+2. **Activation (Attivazione)**: quando un task corrisponde alla descrizione di una skill, l'agente legge le istruzioni complete dal file `SKILL.md` e le carica nel proprio contesto operativo.
+
+3. **Execution (Esecuzione)**: l'agente segue le istruzioni della skill, caricando opzionalmente file di riferimento aggiuntivi (dalla cartella `references/` o `examples/`) ed eseguendo eventuali script dalla cartella `scripts/` quando necessario.
+
+Questo meccanismo a tre fasi è essenziale perché:
+
+- **Ottimizza l'uso del contesto**: le skills non consumano token preziosi finché non sono effettivamente necessarie;
+- **Permette la specializzazione**: ogni skill può essere attivata solo quando il task lo richiede;
+- **Scala con il progetto**: un progetto può avere decine di skills senza penalizzare le performance.
+
+#### 10.1.5 Proprietà fondamentali delle Skills
+
+Le skills sono progettate per essere:
+
+- **Self-documenting (Auto-documentate)**: chiunque può leggere un file `SKILL.md` e comprenderne immediatamente lo scopo, rendendo le skills facili da verificare, migliorare e condividere con il team.
+- **Extensible (Estensibili)**: una skill può variare in complessità, da semplici istruzioni testuali a un pacchetto completo con codice eseguibile, asset e template riutilizzabili.
+- **Portable (Portabili)**: le skills sono semplici file su disco, quindi possono essere versionati con Git, condivisi tra progetti, pubblicati in repository open source e installati con un singolo comando.
+- **Persistent (Persistenti)**: a differenza di un prompt che si perde al termine della conversazione, una skill resta nel progetto e viene letta dall'agente ogni volta che è rilevante, senza che lo sviluppatore debba ripetere le istruzioni.
+
+#### 10.1.6 Come creare le proprie Skills
+
+Per creare una nuova skill nel progetto, seguire questi passi:
+
+1. **Identificare lo scopo**: per quale tipo di lavoro la skill è utile?
+2. **Scrivere il frontmatter**: nome e descrizione con indicazione chiara di quando attivarla.
+3. **Definire il contesto**: qual è la struttura del progetto? Quali tecnologie si usano?
+4. **Elencare le regole**: cosa l'agente deve fare e cosa deve evitare.
+5. **Includere pattern ed esempi**: codice corretto da usare come template.
+6. **Specificare gli anti-pattern**: errori comuni e perché vanno evitati.
+7. **Testare la skill**: verificare che l'agente produca output coerente con le regole.
+
+**Tips per skills efficaci:**
+
+- Essere specifici: una skill vaga produce output vago.
+- Meglio più skills specializzate che una onnicomprensiva.
+- Mantenere le skills aggiornate: se l'architettura del progetto cambia, aggiornare le skills.
+- Usare esempi concreti con codice reale del progetto, non codice generico.
+- Includere sempre la sezione degli anti-pattern: è la più utile per evitare errori ricorrenti.
+
+:::note
+Sebbene sia possibile scrivere manualmente un file `SKILL.md` con qualsiasi contenuto, è consigliabile utilizzare un agente AI per sviluppare la skill e seguire lo standard Agent Skills per garantire compatibilità e sfruttare al meglio le funzionalità avanzate offerte dagli agenti AI di coding più evoluti. Questo può essere ottenuto facilmente chiedendo all'agente di generare una skill usando una meta skill come [`skill-creator`](https://skills.sh/anthropics/skills/skill-creator).
+:::
+
+### 10.2 Skills nei diversi agenti AI
+
+Ogni agente AI di coding gestisce le skills in modo leggermente diverso per quanto riguarda il posizionamento nel filesystem, le convenzioni di denominazione e le funzionalità avanzate.  
+Di seguito analizziamo i tre principali ecosistemi.
+
+#### Skills in OpenCode
+
+OpenCode ([opencode.ai/docs/skills](https://opencode.ai/docs/skills/)) implementa le skills come strumenti nativi ricaricabili on-demand. L'agente vede le skills disponibili e può caricare il contenuto completo quando necessario attraverso la chiamata allo strumento interno `skill`.
+
+**Percorsi di ricerca delle skills in OpenCode:**
+
+OpenCode cerca le skills in molteplici posizioni, sia a livello di progetto sia a livello globale:
+
+```text
+# Percorsi a livello di PROGETTO (specifici per il repository corrente)
+.opencode/skills/<nome>/SKILL.md      # Cartella nativa OpenCode
+.claude/skills/<nome>/SKILL.md        # Compatibilità con Claude Code
+.agents/skills/<nome>/SKILL.md        # Compatibilità con lo standard Agent Skills
+
+# Percorsi a livello GLOBALE (condivisi tra tutti i progetti)
+~/.config/opencode/skills/<nome>/SKILL.md    # Configurazione globale OpenCode
+~/.claude/skills/<nome>/SKILL.md             # Compatibilità globale Claude
+~/.agents/skills/<nome>/SKILL.md             # Compatibilità globale Agent Skills
+```
+
+**Scoperta automatica**: per i percorsi locali al progetto, OpenCode risale la struttura delle cartelle a partire dalla directory di lavoro corrente fino alla radice del worktree Git, caricando tutte le skills trovate nelle cartelle `.opencode/`, `.claude/skills/` e `.agents/skills/` lungo il percorso.
+
+**Permessi per le skills in OpenCode:**
+
+È possibile controllare quali skills gli agenti possono utilizzare tramite pattern nel file `opencode.json`:
+
+```json
+{
+  "permission": {
+    "skill": {
+      "*": "allow",
+      "pr-review": "allow",
+      "internal-*": "deny",
+      "experimental-*": "ask"
+    }
+  }
+}
+```
+
+I valori disponibili sono:
+- `allow`: la skill è sempre disponibile
+- `deny`: la skill è nascosta all'agente
+- `ask`: l'agente chiede conferma prima di usarla
+
+#### Skills in Claude Code
+
+Claude Code ([code.claude.com/docs/en/skills](https://code.claude.com/docs/en/skills)) utilizza una propria cartella dedicata `.claude/` per la gestione delle skills, con funzionalità avanzate come i comandi slash personalizzati, l'esecuzione in subagent e l'iniezione di contesto dinamico.
+
+**Struttura delle cartelle per le skills in Claude Code:**
+
+```text
+# Skills personali (globali, per tutti i progetti)
+~/.claude/skills/<nome-skill>/SKILL.md
+
+# Skills di progetto (condivise con il team via Git)
+.claude/skills/<nome-skill>/SKILL.md
+
+# Skills da plugin
+<plugin>/skills/<nome-skill>/SKILL.md
+```
+
+**Caratteristiche avanzate di Claude Code rispetto agli altri agenti:**
+
+| Funzionalità | Descrizione |
+| --- | --- |
+| **Comandi slash** | Ogni skill può essere invocata manualmente con `/nome-skill` |
+| **Skills bundled** | Claude Code include skills predefinite come `/batch`, `/debug`, `/loop`, `/simplify` |
+| **Subagent execution** | Una skill può essere eseguita in un processo figlio isolato (`context: fork`) |
+| **Contesto dinamico** | Le skills possono iniettare contesto variabile con `$ARGUMENTS` e `${CLAUDE_SESSION_ID}` |
+| **Restrizione strumenti** | Si può limitare quali strumenti una skill può usare con `allowed-tools` |
+
+**Esempio di skill in Claude Code con funzionalità avanzate:**
+
+```markdown
+---
+name: deploy
+description: Deploy the application to production
+context: fork
+disable-model-invocation: true
+allowed-tools: Read, Grep
+---
+
+Deploy the application:
+1. Run the test suite
+2. Build the application
+3. Push to the deployment target
+```
+
+**Struttura di una skill Claude Code con file di supporto:**
+
+```text
+my-skill/
+├── SKILL.md          # Istruzioni principali (obbligatorio)
+├── reference.md      # Documentazione API dettagliata (caricata on-demand)
+├── examples.md       # Esempi di utilizzo (caricati on-demand)
+├── template.md       # Template che Claude può compilare
+└── scripts/
+    └── helper.py     # Script eseguibile (eseguito, non caricato nel contesto)
+```
+
+Nel file `SKILL.md` si possono referenziare i file aggiuntivi che l'agente caricherà solo quando necessario:
+
+```markdown
+## Risorse aggiuntive
+- Per i dettagli completi dell'API, vedi [reference.md](reference.md)
+- Per esempi di utilizzo, vedi [examples.md](examples.md)
+```
+
+**Condivisione delle skills in Claude Code:**
+
+Le skills possono essere condivise in tre modi:
+- **Project skills**: mettere la cartella `.claude/skills/` sotto version control (Git) per condividerle con il team
+- **Plugin skills**: creare una directory `skills/` all'interno di un plugin Claude Code
+- **Managed skills**: distribuire le skills a livello organizzativo tramite le impostazioni gestite (managed settings)
+
+### 10.3 L'ecosistema skills.sh: il registry delle skills
+
+#### Che cos'è skills.sh
+
+Il sito [skills.sh](https://skills.sh/) è il **registry pubblico** (directory) delle skills per agenti AI di coding. Funziona come un "App Store delle competenze AI": raccoglie, cataloga e permette l'installazione con un singolo comando di skills create dalla community e da organizzazioni come Vercel, Anthropic e altri.
+
+Il sito presenta una **Skills Leaderboard** (classifica) delle skills più scaricate e utilizzate, suddivisa in categorie:
+
+- **All Time**: le skills con il maggior numero di installazioni storiche
+- **Trending (24h)**: le skills in crescita nelle ultime 24 ore
+- **Hot**: le skills attualmente più popolari
+
+#### Come installare una skill da skills.sh
+
+L'installazione di una skill è estremamente semplice e avviene con un singolo comando nel terminale tramite `npx`:
+
+```bash
+npx skills add <owner/repo>
+```
+
+Dove `<owner/repo>` indica il repository GitHub che contiene le skills. Ad esempio, per installare una skill dal repository ufficiale di Vercel Labs:
+
+```bash
+npx skills add vercel-labs/skills --skill find-skills
+```
+
+Oppure dal repository ufficiale di Anthropic:
+
+```bash
+npx skills add https://github.com/anthropics/skills --skill skill-creator
+```
+
+Quando si esegue questo comando, il tool `skills`:
+1. Scarica il contenuto della skill specificata dal repository GitHub indicato
+2. Crea la cartella appropriata nel progetto (solitamente in `.agents/skills/<nome-skill>/` o `.cursor/skills/<nome-skill>/`)
+3. Deposita il file `SKILL.md` e tutti i file di supporto (script, examples, references, assets) nella cartella creata
+4. Da quel momento, l'agente AI del progetto ha accesso alla skill e la può utilizzare automaticamente
+
+**Opzioni comuni del comando `npx skills add`:**
+
+| Opzione | Descrizione |
+| --- | --- |
+| `<owner/repo>` | Repository GitHub da cui scaricare (es. `anthropics/skills`) |
+| `--skill <nome>` | Nome specifico della skill da installare dal repository |
+| URL completo | Si può usare anche l'URL completo del repository (es. `https://github.com/anthropics/skills`) |
+
+#### Le skills più importanti nell'ecosistema
+
+Tra le centinaia di skills disponibili su [skills.sh](https://skills.sh/), alcune sono particolarmente importanti e meritano una menzione speciale perché rappresentano le fondamenta dell'ecosistema.
+
+##### find-skills: la skill per trovare altre skills
+
+**`find-skills`** è attualmente la skill **più scaricata in assoluto** nella leaderboard di skills.sh (con oltre 31.900 installazioni all-time al momento della redazione). È mantenuta da Vercel Labs.
+
+**Installazione:**
+
+```bash
+npx skills add vercel-labs/skills --skill find-skills
+```
+
+**A cosa serve:**
+
+Questa skill insegna all'agente AI come cercare, valutare e installare automaticamente altre skills pertinenti al progetto su cui sta lavorando. È una skill "meta" che potenzia la capacità dell'agente di espandere autonomamente le proprie competenze.
+
+Una volta installata, è possibile chiedere all'agente:
+
+```text
+Cerca nella directory skills.sh se esistono skill adatte 
+al mio progetto .NET MAUI con architettura MVVM. 
+Se ne trovi di pertinenti, installale.
+```
+
+L'agente utilizzerà la skill `find-skills` per navigare il registry, valutare la pertinenza delle skills disponibili e proporre (o installare direttamente, se autorizzato) quelle più adatte.
+
+##### skill-creator: la meta-skill per creare nuove skills
+
+**`skill-creator`** è una delle skills più strategiche dell'ecosistema. È mantenuta da Anthropic nel repository ufficiale [github.com/anthropics/skills](https://github.com/anthropics/skills).
+
+**Installazione:**
+
+```bash
+npx skills add https://github.com/anthropics/skills --skill skill-creator
+```
+
+**A cosa serve:**
+
+`skill-creator` **non è una skill per scrivere codice**, bensì una **"meta-skill"**: è un set di istruzioni specializzate progettate per insegnare all'Intelligenza Artificiale **come si crea una nuova skill**. Una volta eseguito il comando, nel progetto verrà creata una cartella (solitamente in `.agents/skills/skill-creator/` o `.cursor/skills/skill-creator/`). Da quel momento, l'AI del progetto saprà esattamente quali sono le **best practice, i formati** (come `SKILL.md`) e le **strutture di cartelle** necessarie per auto-scrivere nuove competenze.
+
+Il vantaggio fondamentale è che si **standardizza il processo di creazione delle skills**: se si provasse a scrivere a mano le istruzioni o un semplice prompt da incollare ogni volta, si potrebbero commettere errori di sintassi nei file o dimenticare istruzioni fondamentali. Ereditando il "metodo ufficiale" di `skill-creator`, la skill che verrà prodotta sarà robusta e formattata chirurgicamente affinché l'agente AI la interpreti al 100% senza "dimenticarsi" le vostre regole durante lo sviluppo.
+
+##### Altre skills rilevanti nella leaderboard
+
+| Skill | Autore | Descrizione |
+| --- | --- | --- |
+| `vercel-react-best-practices` | Vercel Labs | Best practice per lo sviluppo React |
+| `frontend-design` | Vercel Labs | Regole per il design frontend moderno |
+| `web-design-guidelines` | Community | Linee guida per il web design |
+| `systematic-debugging` | Community | Metodologia sistematica per il debugging |
+| `test-driven-development` | Community | Pattern per lo sviluppo test-driven |
+| `git-workflow` | Community | Best practice per il workflow Git |
+| `shadcn-ui` | Community | Integrazione con la libreria UI shadcn/ui |
+| `supabase-postgres-best-practices` | Community | Pattern per Supabase e PostgreSQL |
+| `sleek-design-mobile-apps` | Community | Design elegante per app mobile |
+| `building-native-ui` | Community | Pattern per la costruzione di interfacce native |
+
+### 10.4 Formato di una Skill
+
+Ogni file SKILL.md segue un formato con frontmatter YAML e contenuto Markdown:
+
+<Accordion title="Esempio di Skill per lo sviluppo MAUI" defaultOpen={false}>
+
+```markdown
+---
+name: maui-expert
 description: Guida l'agente nello sviluppo di applicazioni .NET MAUI 
   con architettura MVVM, CommunityToolkit.Mvvm, Shell navigation 
   e gestione degli stati UI. Usare questa skill quando si lavora 
@@ -2501,7 +2856,1146 @@ public partial class SearchViewModel : ObservableObject
 
 </Accordion>
 
-### 10.4 Skill per l'integrazione API REST
+### 10.5 Installazione delle skills: livello di progetto e livello globale
+
+Le skills possono essere installate in due ambiti distinti, ciascuno con vantaggi e casi d'uso specifici.
+
+#### Installazione a livello di progetto (Project-level)
+
+Quando si installa una skill a livello di progetto, i file vengono depositati all'interno della cartella del repository corrente. Questo è l'approccio più comune e consigliato perché:
+
+- La skill è **versionata con Git** insieme al codice sorgente
+- Ogni membro del team la riceve automaticamente con `git pull`
+- Le regole sono **specifiche per quel progetto** e non interferiscono con altri
+
+Il comando `npx skills add` installa automaticamente a livello di progetto:
+
+```bash
+# Dalla root del progetto
+npx skills add https://github.com/anthropics/skills --skill skill-creator
+```
+
+La skill verrà installata in una delle seguenti cartelle (a seconda dell'agente e della configurazione):
+
+```text
+ProjectRoot/
+├── .agents/skills/skill-creator/SKILL.md    # Standard Agent Skills
+├── .claude/skills/skill-creator/SKILL.md    # Convenzione Claude Code
+├── .opencode/skills/skill-creator/SKILL.md  # Convenzione OpenCode
+└── .cursor/skills/skill-creator/SKILL.md    # Convenzione Cursor
+```
+
+#### Installazione a livello globale (User-level)
+
+Le skills globali sono condivise tra **tutti i progetti** dell'utente. Sono utili per competenze trasversali che non dipendono da un singolo repository (ad esempio una skill per le convenzioni di commit Git, per la revisione del codice, o per le best practice generali).
+
+Le cartelle globali differiscono significativamente tra i diversi agenti:
+
+| Agente | Cartella globale per le skills |
+| --- | --- |
+| **OpenCode** | `~/.config/opencode/skills/<nome>/SKILL.md` |
+| **Claude Code** | `~/.claude/skills/<nome>/SKILL.md` |
+| **Standard Agent Skills** | `~/.agents/skills/<nome>/SKILL.md` |
+
+Su **Windows**, il carattere `~` corrisponde alla cartella dell'utente (es. `C:\Users\NomeUtente\`).
+
+Per installare una skill globalmente, è sufficiente creare manualmente la cartella nella posizione corretta:
+
+```bash
+# Esempio: installare una skill globale per Claude Code (Linux/macOS)
+mkdir -p ~/.claude/skills/git-conventions
+# poi creare il file SKILL.md nella cartella
+
+# Esempio: installare una skill globale per OpenCode (Linux/macOS)
+mkdir -p ~/.config/opencode/skills/git-conventions
+# poi creare il file SKILL.md nella cartella
+```
+
+```powershell
+# Esempio su Windows per Claude Code
+New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills\git-conventions"
+# poi creare il file SKILL.md nella cartella
+
+# Esempio su Windows per OpenCode
+New-Item -ItemType Directory -Force -Path "$HOME\.config\opencode\skills\git-conventions"
+# poi creare il file SKILL.md nella cartella
+```
+
+:::caution[Attenzione alle cartelle globali diverse]
+È importante ricordare che **Claude Code e OpenCode usano cartelle globali diverse**.  
+Se si vuole che una skill globale sia disponibile in entrambi gli agenti, è necessario copiarla (o creare un link simbolico) in entrambe le posizioni:
+- `~/.claude/skills/<nome>/` per Claude Code  
+- `~/.config/opencode/skills/<nome>/` per OpenCode  
+- `~/.agents/skills/<nome>/` per la compatibilità con lo standard Agent Skills (letta da entrambi)
+:::
+
+#### Link simbolici per la compatibilità tra agenti a livello di progetto
+
+Poiché diversi agenti cercano le skills in cartelle diverse all'interno del progetto, può essere utile creare dei **link simbolici** (symlink) per evitare di duplicare i file.
+
+L'approccio consigliato è:
+
+1. Mantenere le skills nella cartella **standard** `.agents/skills/` (che è il formato aperto e interoperabile)
+2. Creare un link simbolico dalla cartella `.claude/skills/` che punta a `.agents/skills/`
+
+**Su Linux/macOS:**
+
+```bash
+# Dalla root del progetto
+# Creare la cartella .claude se non esiste
+mkdir -p .claude
+
+# Creare il link simbolico
+ln -s ../.agents/skills .claude/skills
+```
+
+Così facendo, la cartella `.claude/skills/` punterà fisicamente a `.agents/skills/`, e qualsiasi skill aggiunta in `.agents/skills/` sarà automaticamente visibile anche agli agenti che cercano in `.claude/skills/`.
+
+**Su Windows (PowerShell con privilegi di amministratore):**
+
+```powershell
+# Dalla root del progetto
+# Creare la cartella .claude se non esiste
+New-Item -ItemType Directory -Force -Path ".claude"
+
+# Creare il link simbolico
+New-Item -ItemType SymbolicLink -Path ".claude\skills" -Target ".agents\skills"
+```
+
+:::note[Perché usare i link simbolici]
+I link simbolici evitano la duplicazione dei file e garantiscono che una modifica alla skill in `.agents/skills/` sia immediatamente riflessa anche in `.claude/skills/`. Questo è particolarmente utile in team dove alcuni sviluppatori usano Claude Code e altri usano OpenCode o Cursor: tutti leggono dalla stessa fonte di verità.
+:::
+
+**Schema riassuntivo dell'architettura con link simbolici:**
+
+```text
+ProjectRoot/
+├── .agents/
+│   └── skills/                          # ← Cartella SORGENTE (origine reale)
+│       ├── maui-expert/SKILL.md
+│       ├── skill-creator/SKILL.md
+│       └── api-integration/SKILL.md
+├── .claude/
+│   └── skills -> ../.agents/skills/     # ← SYMLINK verso .agents/skills/
+├── .opencode/
+│   └── skills -> ../.agents/skills/     # ← SYMLINK verso .agents/skills/ (opzionale)
+└── ...
+```
+
+Con questa configurazione:
+- **OpenCode** trova le skills sia in `.agents/skills/` (direttamente) sia in `.opencode/skills/` (via symlink)
+- **Claude Code** trova le skills in `.claude/skills/` (via symlink)
+- **Cursor**, **Windsurf** e altri agenti compatibili trovano le skills in `.agents/skills/`
+- Tutte le modifiche avvengono in un'unica posizione
+
+### 10.6 Come le skills vengono utilizzate dall'agente AI
+
+L'utilizzo di una skill (una volta creata o installata) da parte di un agente AI è un processo fluido e, nella maggior parte dei casi, del tutto automatico. Esistono **tre modalità** principali di attivazione.
+
+#### Modalità 1: Uso Automatico (Trasparente e Predefinito)
+
+Gli agenti AI avanzati (come Claude Code, OpenCode, Cursor, Windsurf) sono programmati per "leggere" e interiorizzare automaticamente il contenuto delle cartelle di skills all'avvio del progetto (cartelle come `.agents/skills/`, `.claude/skills/`, `.opencode/skills/`, `.cursor/rules/` o simili).
+
+Quando lo sviluppatore fa una normale richiesta di programmazione, ad esempio:
+
+```text
+Aggiungi una pagina per le impostazioni dell'utente
+```
+
+L'AI analizza automaticamente il workspace, trova le skills installate (es. `maui-expert`) e **applica quelle regole di default**. Questo significa che scriverà automaticamente codice seguendo il pattern MVVM, usando il CommunityToolkit.Mvvm, la navigazione Shell e XAML pulito, **senza che lo sviluppatore debba ricordargli queste regole ogni volta**.
+
+Questo è il meccanismo a tre fasi descritto precedentemente (Discovery → Activation → Execution): l'agente conosce la skill grazie al suo nome e alla sua descrizione (Discovery), la attiva quando il task corrisponde (Activation), e segue le istruzioni (Execution).
+
+#### Modalità 2: Uso Esplicito (Nel Prompt)
+
+Se l'agente dovesse trovarsi di fronte a un problema molto ambiguo, oppure se si vuole **forzare l'uso di una competenza specifica**, è sufficiente nominare la skill all'interno della richiesta conversazionale:
+
+```text
+Devo creare un Custom Handler per un bottone su Android. 
+Per favore, usa la tua skill maui-expert per assicurarti 
+di seguire le best practice architetturali più recenti per MAUI.
+```
+
+In questo modo si **costringe** l'agente a mettere quella specifica competenza in massima priorità prima di elaborare il codice. Questa modalità è utile quando:
+
+- Il task è ambiguo e potrebbe essere interpretato in modi diversi
+- Si vuole garantire che una skill specifica venga applicata
+- Il task coinvolge un'area che potrebbe non matchare automaticamente con la descrizione della skill
+
+#### Modalità 3: Uso tramite Tagging (Negli Editor Visivi)
+
+Se si utilizza un IDE orientato all'AI come Cursor o la chat integrata in VS Code, i file descrittivi delle skill (i file `SKILL.md` generati) vengono spesso **indicizzati** dal sistema. In questi ambienti, è sufficiente usare il carattere `@` per selezionare la skill come fosse un file:
+
+```text
+Rifai l'interfaccia di questa pagina seguendo pedissequamente 
+le regole in @maui-expert
+```
+
+Questo **allega con altissima precisione** l'intero documento delle regole alla conversazione corrente della chat. È il metodo più preciso e controllato, perché garantisce che il contenuto completo della skill sia nel contesto.
+
+#### Confronto tra le tre modalità
+
+| Modalità | Quando usarla | Precisione | Sforzo richiesto |
+| --- | --- | --- | --- |
+| **Automatica** | Task chiari che corrispondono alla skill | Media-Alta | Nessuno |
+| **Esplicita** | Task ambigui o multi-skill | Alta | Minimo (nominare la skill) |
+| **Tagging (@)** | Quando serve il contesto completo | Massima | Minimo (usare @nome) |
+
+#### Il vantaggio strategico delle skills
+
+Creare una skill significa essenzialmente **"programmare l'Intelligenza Artificiale"**. Una volta depositata nel progetto, agirà come una **direttiva mentale pervasiva** che correggerà e formatterà tutte le risposte future dell'AI per allinearle al personale stile di sviluppo dello studente.
+
+I vantaggi sono molteplici:
+
+- **Consistenza**: il codice generato segue sempre le stesse regole, indipendentemente dal giorno o dalla sessione
+- **Velocità**: non serve ripetere vincoli e convenzioni ad ogni prompt
+- **Qualità**: le regole sono state pensate una volta sola, con calma, e poi applicate automaticamente
+- **Onboarding**: un nuovo membro del team riceve automaticamente tutte le convenzioni del progetto
+- **Versionamento**: le skills sono file, quindi possono essere tracciate con Git e condivise con il team
+- **Modularità**: si possono avere skills diverse per aspetti diversi del progetto (UI, API, test, deploy)
+
+### 10.7 Riepilogo dei link di riferimento per le Skills
+
+| Risorsa | URL | Descrizione |
+| --- | --- | --- |
+| Agent Skills (specifica) | [agentskills.io/what-are-skills](https://agentskills.io/what-are-skills) | Definizione ufficiale del formato Agent Skills |
+| OpenCode Skills | [opencode.ai/docs/skills](https://opencode.ai/docs/skills/) | Documentazione delle skills in OpenCode |
+| Claude Code Skills | [code.claude.com/docs/en/skills](https://code.claude.com/docs/en/skills) | Documentazione delle skills in Claude Code |
+| Skills Directory | [skills.sh](https://skills.sh/) | Registry pubblico delle skills con leaderboard |
+| Anthropic Skills (GitHub) | [github.com/anthropics/skills](https://github.com/anthropics/skills) | Repository ufficiale delle skills di Anthropic |
+| Vercel Labs Skills | [github.com/vercel-labs/skills](https://github.com/vercel-labs/skills) | Repository ufficiale delle skills di Vercel |
+
+### 10.8 Uso di skill-creator per creare la propria Skill
+
+Una volta compreso il meccanismo delle skills, vediamo come usare in pratica `skill-creator` per creare una skill personalizzata per il proprio progetto .NET MAUI. Questo è il workflow che lo studente dovrebbe seguire.
+
+#### Passo 1: Installare skill-creator nel progetto
+
+Aprire il terminale alla root del progetto MAUI ed eseguire:
+
+```bash
+npx skills add https://github.com/anthropics/skills --skill skill-creator
+```
+
+Dopo l'esecuzione, verificare che sia stata creata la cartella con il file `SKILL.md` della skill-creator (ad esempio in `.agents/skills/skill-creator/SKILL.md`).
+
+#### Passo 2: Chiedere all'agente di creare la skill personalizzata
+
+Aprire la chat dell'agente AI (OpenCode, Claude Code, Cursor, o l'agente disponibile nel proprio IDE) e inviare un prompt come il seguente:
+
+```text
+Usa la skill skill-creator che hai appena installato per generare 
+una nuova skill per il mio progetto chiamata maui-expert. 
+Questa skill deve istruirti su come scrivere codice per .NET MAUI. 
+Ecco le regole che devi includere:
+
+- Usa sempre l'architettura MVVM appoggiandoti al pacchetto NuGet 
+  CommunityToolkit.Mvvm (usando [ObservableProperty] e [RelayCommand]).
+- Per l'interfaccia utente, scrivi sempre codice XAML pulito 
+  utilizzando i binding compilati (x:DataType).
+- Gestisci la navigazione utilizzando esclusivamente la Shell Navigation.
+- Includi esempi di codice (nella cartella /examples della skill) 
+  su come fare binding di collezioni con CollectionView o ListView.
+- Gestisci sempre quattro stati nel ViewModel: IsBusy, ErrorMessage, 
+  HasData, IsEmptyState.
+- I servizi devono essere iniettati tramite costruttore (DI).
+- Non inserire mai logica nel code-behind (.xaml.cs).
+- Gestisci sempre gli errori HTTP: HttpRequestException, JsonException, 
+  TaskCanceledException.
+```
+
+L'AI, sfruttando `skill-creator`, saprà già come formattare i file correttamente secondo lo standard, ma il contenuto specifico (le regole MAUI) viene fornito dallo sviluppatore nel prompt.
+
+#### Passo 3: L'agente genera la skill
+
+L'agente analizzerà la richiesta e si occuperà di generare una nuova directory per la skill (es. `.agents/skills/maui-expert/`). All'interno creerà:
+
+```text
+.agents/skills/maui-expert/
+├── SKILL.md               # File principale con frontmatter e regole MVVM
+├── examples/
+│   ├── viewmodel.cs       # Esempio completo di ViewModel con stati
+│   ├── service.cs         # Esempio di Service REST con gestione errori
+│   ├── page.xaml          # Esempio di pagina XAML con binding
+│   └── collectionview.xaml # Esempio di CollectionView con DataTemplate
+└── references/
+    └── maui-conventions.md # Convenzioni di naming e architettura
+```
+
+#### Passo 4: Verificare e raffinare
+
+Dopo la generazione, è fondamentale:
+
+1. **Leggere il file `SKILL.md` generato** e verificare che le regole corrispondano esattamente alle proprie aspettative
+2. **Controllare gli esempi** nella cartella `examples/` per assicurarsi che siano corretti e compilabili
+3. **Testare la skill** chiedendo all'agente di generare codice e verificando che rispetti le regole definite
+4. **Iterare**: se qualche regola manca o è imprecisa, chiedere all'agente di aggiornare la skill
+
+**Prompt di test dopo la creazione della skill:**
+
+```text
+Usando la tua skill maui-expert, crea un ViewModel per una pagina 
+che mostra una lista di libri recuperandoli da una API REST. 
+Il ViewModel deve chiamarsi BooksViewModel e usare un service 
+IBookService con un metodo GetBooksAsync().
+```
+
+Se il codice generato rispetta tutte le regole definite nella skill (MVVM, CommunityToolkit, stati UI, gestione errori), allora la skill funziona correttamente.
+
+#### Esempio pratico: creare una skill di pianificazione
+
+Lo stesso approccio può essere usato per creare skills che non riguardano il codice, ma la **pianificazione del progetto**:
+
+```text
+Usa la skill skill-creator per generare una nuova skill 
+chiamata project-planner. Questa skill deve istruirti su come 
+creare un PRD (Product Requirements Document) per un progetto MAUI.
+Deve includere:
+- Template per le user stories
+- Checklist per i requisiti non funzionali
+- Schema per la roadmap iterativa
+- Formato per la Definition of Done
+```
+
+#### Esempio pratico: creare una skill dal proprio workflow con skill-creator
+
+Le skills più efficaci sono quelle che codificano le regole e i processi specifici del proprio progetto. Un esempio concreto: il workflow **Man-in-the-Loop** descritto nella sezione 3 di questa guida può essere trasformato in una skill permanente, in modo che l'agente AI segua automaticamente il ciclo a 5 fasi (Planning → Build → Review → Testing → Documentation & Git) senza doverlo riscrivere ad ogni conversazione.
+
+**Prompt utilizzato (dopo aver installato skill-creator):**
+
+```text
+Vorrei che creassi una skill che aiuta l'agente AI ad usare 
+il modello di lavoro e il project workflow che trovi descritto 
+in man-in-the-loop.md
+```
+
+In questo caso, il file `man-in-the-loop.md` contiene la specifica del workflow Man-in-the-Loop descritta nella sezione 3 della pagina corrente. L'agente, sfruttando `skill-creator`, ha generato automaticamente la seguente skill completa:
+
+<Accordion title="Skill generata: man-in-the-loop-workflow (SKILL.md completo)" defaultOpen={false}>
+
+````markdown
+  ---
+name: man-in-the-loop-workflow
+description: Enforces the Man-in-the-Loop iterative development workflow for AI-assisted .NET MAUI projects. Use this skill whenever starting a new project, beginning a new iteration, generating code, reviewing AI output, testing features, or managing project documentation and Git. It ensures the agent follows the 5-phase cycle (Planning → Build → Review → Testing → Documentation & Git) and maintains the docs-as-code structure with spec, plan, architecture, iterations, test-matrix, and prompt-log.
+---
+
+# Man-in-the-Loop Workflow
+
+This skill defines the project workflow for AI-assisted .NET MAUI development. The human (developer/student) remains in control at every stage. The AI acts as assistant, not as autonomous builder. Every piece of code must be planned, reviewed, tested, and documented before being merged.
+
+---
+
+## Phase Detection
+
+When a user sends a message, first determine which phase of the workflow they are in. Use these heuristics:
+
+| User signal | Likely phase | Agent action |
+|---|---|---|
+| "I want to start…", "new feature", "next iteration" | **Phase 1 (Planning)** | Do NOT code. Define objective, plan, branch |
+| "Here's the code", "I wrote this", "implement this" | **Phase 2 (Build)** | Verify a plan exists first, then proceed |
+| "Review this", "check the code", "is this correct?" | **Phase 3 (Review)** | List issues, don't rewrite unless asked |
+| "Does it work?", "test this", "what should I test?" | **Phase 4 (Testing)** | Propose test cases with precise steps |
+| "Can I merge?", "it compiles", "I'm done" | **Phase 5 (Doc & Git)** | Check if all prior phases are complete first |
+| Vague request ("create the page", "do everything") | **Phase 1 (Planning)** | Slow down, refine scope, propose iterations |
+
+If in doubt, default to Phase 1. It is always safer to plan than to code prematurely.
+
+---
+
+## The 5-Phase Iteration Cycle
+
+Every unit of work (feature, fix, improvement) follows a strict 5-phase cycle. Never skip a phase. Never merge code that has only been through the Build phase.
+
+### Phase 1: Planning
+
+Before writing any code, define the scope of this iteration precisely.
+
+**What the developer must provide (ask if missing):**
+- A verifiable objective (e.g., "implement BookDetailViewModel with Title, Author, IsBusy, LoadBookCommand")
+- Files to be created or modified
+- Dependencies on other parts of the project
+- Acceptance criteria ("the feature is complete when…")
+- Complexity estimate
+
+**What the agent must do:**
+- Help refine vague objectives into specific, verifiable ones
+- Propose a short plan listing files, changes, and risks
+- Suggest creating a new Git branch for this iteration (e.g., `feature/book-detail` or `it-03-detail`)
+- Never start coding without an approved plan
+
+**Handling vague requests:** If the user gives a broad request like "create the search page" or "build the whole feature", do not start implementing. Instead:
+1. Acknowledge the goal
+2. Explain that the workflow requires breaking work into small, verifiable iterations
+3. Propose 2-3 sub-iterations ordered by dependency (typically: DTO/Model → Service → ViewModel → View)
+4. Ask which sub-iteration to start with
+5. Define the verifiable objective for that sub-iteration together
+
+**Anti-pattern to catch:**
+> ❌ "Create the book detail page" → too vague, could generate ViewModel + View + Service + Model without control
+>
+> ✅ "Implement BookDetailViewModel.cs with properties Title, Author, Description, CoverUrl and a LoadBookCommand that calls IBookService.GetBookByIdAsync. Handle IsBusy, ErrorMessage, HasData. Do not create the XAML in this iteration." → verifiable and scoped
+
+### Phase 2: Build
+
+Implement only the changes defined in the plan. Nothing more.
+
+**Rules:**
+- Each prompt should address at most one feature
+- Provide project context explicitly (architecture, existing files, conventions)
+- Declare technical constraints (e.g., "use MVVM", "no new NuGet packages")
+- Specify the expected output format (e.g., "return only the C# code, no explanations")
+- If the generated code touches too many files, split it into sub-prompts
+- Follow the MVVM architecture: logic in ViewModels, HTTP calls in Services, UI in XAML
+
+### Phase 3: Review
+
+All AI-generated code must be read entirely and compared against the specification. Skipping this phase turns the process into "Vibe Coding".
+
+**Checklist the agent should verify (and prompt the developer to verify):**
+- Code respects the MVVM architecture (no logic in code-behind)
+- Class, method, and property names follow project conventions
+- No unwanted dependencies were introduced
+- Error handling is present and correct
+- Code is readable and understandable
+- No duplication of existing code
+
+**Agent behavior:** When asked to review, list the issues found without rewriting code unless explicitly asked.
+
+### Phase 4: Testing
+
+A feature is complete only after concrete verification on the device or emulator.
+
+**Minimum test areas for every iteration:**
+
+| Area           | What to verify                                                             |
+|----------------|----------------------------------------------------------------------------|
+| **Input**      | empty fields, invalid input, very long input, special characters           |
+| **API**        | correct response, HTTP errors (404, 500), timeout, malformed JSON, empty   |
+| **UI**         | loading state visible, error state shown, empty list handled, long list    |
+| **Navigation** | correct page opens, back navigation works, parameters passed correctly     |
+| **Persistence**| data saved correctly, survives app restart, edit of saved data works       |
+| **Device**     | light/dark theme, screen rotation, permissions denied by user              |
+
+**Agent behavior:** When asked, propose 8+ manual test cases with precise steps, plus 5+ edge cases.
+
+### Phase 5: Documentation & Git
+
+Throughout the iteration, commit early and often. Each coherent, tested piece of code gets its own atomic commit with a semantic message.
+
+**Semantic commit format:**
+```
+<type>: <short description>
+```
+Common types:
+- `feat:` — new feature (e.g., `feat: added WeatherService API client`)
+- `fix:` — bug fix (e.g., `fix: null binding on DetailPage`)
+- `docs:` — documentation only (e.g., `docs: updated iteration-03 log`)
+- `refactor:` — code restructuring without behavior change
+- `test:` — adding or modifying tests
+- `chore:` — build config, dependencies, tooling
+
+At the end of the iteration:
+
+1. Update the iteration log (`docs/iterations/it-XX.md`) with objective, plan, tests, and outcome
+2. Update affected documentation: `docs/spec.md`, `docs/prompt-log.md`, `docs/test-matrix.md`
+3. Make a final commit for documentation changes: `docs: completed iteration XX documentation`
+4. Merge the branch into the main branch (`main` or `develop`)
+5. Push to the remote repository
+
+**Agent behavior:** Proactively suggest commit messages based on the changes made. After each successful file creation or modification, propose a commit. Remind the developer to merge and push when the iteration is complete.
+
+---
+
+## Project Documentation Structure (Docs-as-Code)
+
+Every project must maintain this folder structure. Documents live alongside the code in the repository.
+
+```
+ProjectRoot/
+├─ .git/
+├─ .gitignore
+├─ AGENTS.md                    # Rules for AI agents
+├─ README.md                    # Project description, setup, build instructions
+├─ .github/
+│  └─ copilot-instructions.md   # Instructions for GitHub Copilot
+├─ docs/
+│  ├─ spec.md                   # Functional and non-functional specification
+│  ├─ plan.md                   # Work plan with iterations and risks
+│  ├─ architecture.md           # Technical architecture, patterns, data flow
+│  ├─ test-matrix.md            # Test matrix with cases, outcomes, bugs
+│  ├─ prompt-log.md             # Curated log of significant prompts
+│  ├─ deployment.md             # Packaging, signing, APK/AAB release notes
+│  ├─ demo-script.md            # Script for the final presentation
+│  ├─ api-notes.md              # External API notes: endpoints, limits, formats
+│  └─ iterations/               # One file per iteration
+│     ├─ it-01.md
+│     ├─ it-02.md
+│     └─ ...
+├─ src/                         # .NET MAUI project
+│  ├─ Models/
+│  ├─ Services/
+│  ├─ ViewModels/
+│  ├─ Views/
+│  ├─ Converters/
+│  ├─ Resources/
+│  └─ Platforms/
+└─ assets/
+   ├─ mockups/
+   ├─ screenshots/
+   └─ store/
+```
+
+---
+
+## Iteration Log Template
+
+When creating a new iteration log, use this structure:
+
+```markdown
+# Iteration XX
+
+## Objective
+One precise, verifiable sentence.
+
+## Plan
+- files to create
+- files to modify
+- dependencies on previous iterations
+- specific risks
+
+## Main Prompts Used
+1. "[summary of prompt 1]"
+2. "[summary of prompt 2]"
+
+## Files Created
+- path/NewFile.cs
+
+## Files Modified
+- path/ExistingFile.cs (description of change)
+
+## AI Code Accepted
+Which parts of AI-generated code were accepted without changes.
+
+## AI Code Modified Manually
+Which parts were corrected or rewritten by the developer, and why.
+
+## Tests Executed
+- [ ] Test 1: description - outcome
+- [ ] Test 2: description - outcome
+
+## Issues Found
+- Issue 1: description and cause
+
+## Corrections Made
+- Correction 1: what was done and why
+
+## Outcome
+Completed / Partial (specify what's missing) / Needs refinement
+```
+
+---
+
+## Definition of Done
+
+An iteration is complete when:
+- Code compiles without errors
+- The feature is tested on emulator or device
+- Minimum documentation is updated
+- Code has been reviewed (read and understood)
+- Important prompts are tracked in the prompt-log
+- The branch is merged and pushed
+
+---
+
+## Agent Behavior Summary
+
+Throughout the entire workflow, the agent must:
+
+1. **Never generate large code blocks unprompted** — always wait for a scoped request
+2. **Always propose a plan** before making broad changes
+3. **Limit each iteration to one well-defined feature**
+4. **Never introduce NuGet packages** without explicit justification
+5. **Never place logic in code-behind** if it belongs in a ViewModel or Service
+6. **Always handle loading, error, and empty states** in ViewModels
+7. **Never remove existing code** without explanation
+8. **Suggest commit messages** at appropriate moments
+9. **Remind the developer** to review, test, and document before merging
+10. **Track risks, dependencies, and suggested tests** in every response
+
+````
+
+</Accordion>
+
+Questa skill dimostra un punto fondamentale: **qualsiasi processo documentato nel progetto può diventare una skill**. Il workflow Man-in-the-Loop descritto nella sezione 3, una volta trasformato in skill, non è più un documento statico che lo studente deve ricordare di consultare, ma diventa un **set di regole operative** che l'agente AI applica automaticamente ad ogni interazione. L'agente sa in quale fase del ciclo si trova, sa cosa chiedere, sa cosa verificare e sa quando ricordare allo studente di testare, documentare e fare commit.
+
+#### Esempio pratico: creare una skill per lo sviluppo di applicazioni .NET MAUI secondo le best practices
+
+Seguendo lo stesso processo, è possibile creare una skill chiamata `maui-mvvm-development` che codifica tutte le regole e le best practice per lo sviluppo di applicazioni .NET MAUI. In questo modo, ogni volta che si chiede all'agente di generare codice per MAUI, esso applicherà automaticamente le regole definite nella skill (MVVM, CommunityToolkit, gestione degli stati, error handling, ecc.) senza doverlo specificare ad ogni prompt.
+
+Il promt per creare questa skill potrebbe essere:
+
+```text wrap
+Usa la skill skill-creator per generare una nuova skill chiamata maui-mvvm-development. Questa skill deve istruirti su come scrivere codice per .NET MAUI seguendo le best practice architetturali più recenti. Ecco le regole che devi includere:
+- Usa sempre l'architettura MVVM appoggiandoti al pacchetto NuGet CommunityToolkit.Mvvm (usando [ObservableProperty] e [RelayCommand]).
+- Per l'interfaccia utente, scrivi sempre codice XAML pulito utilizzando i binding compilati (x:DataType).
+- Gestisci la navigazione utilizzando esclusivamente la Shell Navigation.
+- Includi esempi di codice (nella cartella /examples della skill) su come fare binding di collezioni con CollectionView o ListView.
+- Gestisci sempre quattro stati nel ViewModel: IsBusy, ErrorMessage, HasData, IsEmptyState.
+- I servizi devono essere iniettati tramite costruttore (DI).
+- Non inserire mai logica nel code-behind (.xaml.cs).
+- Gestisci sempre gli errori HTTP: HttpRequestException, JsonException, TaskCanceledException.
+```
+
+L'output sarà una skill come la seguente:
+<Accordion title="Esempio di skill generata: maui-mvvm-development (SKILL.md completa)" defaultOpen={false}>
+
+````markdown
+---
+---
+name: maui-mvvm-development
+description: Guides the agent in developing .NET MAUI applications with MVVM architecture, CommunityToolkit.Mvvm, Shell navigation, and UI state management. Use this skill when working on .cs files, .xaml files, REST services, or ViewModels in a MAUI project.
+---
+
+# .NET MAUI — MVVM Development Guidelines
+
+You are an expert .NET MAUI developer. Whenever you write, refactor, or review code for this project, follow these guidelines rigorously. The goal is to produce maintainable, performant, and testable mobile/desktop applications.
+
+---
+
+## 1. Project Structure
+
+Organize every MAUI project with a clear separation of concerns:
+
+```
+ProjectRoot/
+├── Models/          # Plain data classes (DTOs, entities)
+├── ViewModels/      # One ViewModel per Page, inherits ObservableObject
+├── Views/           # XAML Pages and ContentViews
+├── Services/        # REST clients, local storage, platform services
+├── Converters/      # IValueConverter implementations
+├── Helpers/         # Extension methods, utility classes
+├── Resources/       # Styles, colors, fonts, images
+└── MauiProgram.cs   # DI registration entry point
+```
+
+Place each class in the matching folder. Never mix Views with ViewModels or business logic with UI code.
+
+---
+
+## 2. MVVM Architecture with CommunityToolkit.Mvvm
+
+We use the **MVVM pattern** exclusively, powered by `CommunityToolkit.Mvvm` source generators. This eliminates boilerplate and catches errors at compile time.
+
+### ViewModels
+
+- Always inherit from `ObservableObject`.
+- For ViewModels that require initialization from navigation parameters, also implement `IQueryAttributable`.
+- Mark the class as `partial` (required by the source generators).
+
+### Observable Properties
+
+Use `[ObservableProperty]` on private fields. Never implement `INotifyPropertyChanged` manually.
+
+```csharp
+public partial class ProductViewModel : ObservableObject
+{
+    [ObservableProperty]
+    private string _name;
+
+    [ObservableProperty]
+    private decimal _price;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FullDescription))]
+    private string _category;
+
+    public string FullDescription => $"{Category}: {Name}";
+}
+```
+
+Key patterns:
+- Use `[NotifyPropertyChangedFor]` when a computed property depends on another property.
+- Use `[NotifyCanExecuteChangedFor]` to re-evaluate command availability when a property changes.
+- Prefer `ObservableCollection<T>` for lists bound to `CollectionView` or `ListView`.
+
+### Commands
+
+Use `[RelayCommand]` on methods. The generator creates the `ICommand` property automatically.
+
+```csharp
+[RelayCommand]
+private async Task LoadDataAsync()
+{
+    // Async work here
+}
+
+// The generator creates: public IAsyncRelayCommand LoadDataCommand { get; }
+```
+
+For commands that depend on a condition to be executable:
+
+```csharp
+[RelayCommand(CanExecute = nameof(CanSave))]
+private async Task SaveAsync() { ... }
+
+private bool CanSave() => !string.IsNullOrWhiteSpace(Name) && !IsBusy;
+```
+
+---
+
+## 3. XAML Best Practices
+
+### Compiled Bindings (mandatory)
+
+Always declare `x:DataType` on every `ContentPage`, `DataTemplate`, and `ContentView`. This enables compiled bindings, improving performance and catching binding errors at compile time.
+
+```xml
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MyApp.ViewModels"
+             x:DataType="vm:ProductViewModel"
+             x:Class="MyApp.Views.ProductPage">
+```
+
+### Code-Behind
+
+Keep `.xaml.cs` files minimal. They should contain only:
+- `InitializeComponent()` call.
+- Pure view logic (animations, focus management) that cannot be achieved via bindings.
+- Never place business logic, HTTP calls, or data transformation here.
+
+### Layout Guidelines
+
+- Prefer `Grid` over nested `StackLayout`/`VerticalStackLayout` for complex layouts — it avoids excessive measure/arrange passes.
+- Use `Border` instead of `Frame` (which is deprecated in .NET MAUI).
+- Prefer `CollectionView` over `ListView` for better performance and flexibility.
+- Use `StaticResource` for values defined in `ResourceDictionary`; use `DynamicResource` only when the value can change at runtime (e.g., theme switching).
+
+### Styles and Theming
+
+- Define reusable styles in `Resources/Styles/Styles.xaml`.
+- Define color palettes in `Resources/Styles/Colors.xaml`.
+- Use implicit styles (without `x:Key`) for app-wide defaults, and explicit styles (with `x:Key`) for specific overrides.
+- Support light/dark themes using `AppThemeBinding`:
+
+```xml
+<Label TextColor="{AppThemeBinding Light={StaticResource Gray900},
+                                    Dark={StaticResource White}}" />
+```
+
+---
+
+## 4. Shell Navigation
+
+### Routing
+
+Always use Shell navigation. Register routes in `AppShell.xaml.cs`:
+
+```csharp
+Routing.RegisterRoute(nameof(ProductDetailPage), typeof(ProductDetailPage));
+```
+
+Navigate using:
+
+```csharp
+await Shell.Current.GoToAsync(nameof(ProductDetailPage));
+```
+
+### Parameter Passing
+
+Pass parameters as a dictionary:
+
+```csharp
+await Shell.Current.GoToAsync(nameof(ProductDetailPage), new Dictionary<string, object>
+{
+    { "ProductId", product.Id }
+});
+```
+
+Receive them with `[QueryProperty]` on the destination ViewModel:
+
+```csharp
+[QueryProperty(nameof(ProductId), "ProductId")]
+public partial class ProductDetailViewModel : ObservableObject
+{
+    [ObservableProperty]
+    private int _productId;
+
+    partial void OnProductIdChanged(int value)
+    {
+        // React to the parameter being set — load data here
+    }
+}
+```
+
+### Navigation Rules
+
+- Avoid `Navigation.PushAsync` or modal pages unless explicitly requested.
+- For "go back", use `await Shell.Current.GoToAsync("..")`.
+- Use `//` prefix for absolute routes (resetting the navigation stack).
+
+---
+
+## 5. Dependency Injection
+
+### Registration
+
+Register all services and ViewModels in `MauiProgram.cs`:
+
+```csharp
+builder.Services.AddSingleton<IApiService, ApiService>();
+builder.Services.AddTransient<ProductViewModel>();
+builder.Services.AddTransient<ProductPage>();
+```
+
+Guidelines:
+- **Singleton**: Services that maintain state or are expensive to create (e.g., `HttpClient` wrappers, database connections, settings).
+- **Transient**: ViewModels and Pages (a fresh instance for each navigation).
+- Always program against interfaces (e.g., `IApiService`) to facilitate testing and swapping implementations.
+
+### Constructor Injection
+
+Inject dependencies via constructors. Never use `Application.Current.MainPage.Handler.MauiContext.Services` or service locator patterns.
+
+```csharp
+public partial class ProductViewModel : ObservableObject
+{
+    private readonly IApiService _apiService;
+
+    public ProductViewModel(IApiService apiService)
+    {
+        _apiService = apiService;
+    }
+}
+```
+
+---
+
+## 6. REST Services & HTTP
+
+### Service Layer
+
+Isolate all API communication in dedicated Service classes. ViewModels never create `HttpClient` directly.
+
+```csharp
+public interface IApiService
+{
+    Task<List<Product>> GetProductsAsync();
+    Task<Product> GetProductByIdAsync(int id);
+}
+
+public class ApiService : IApiService
+{
+    private readonly HttpClient _httpClient;
+
+    public ApiService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<List<Product>> GetProductsAsync()
+    {
+        var response = await _httpClient.GetAsync("api/products");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Product>>();
+    }
+}
+```
+
+### HttpClient Configuration
+
+Register `HttpClient` using `IHttpClientFactory` via typed clients in `MauiProgram.cs`:
+
+```csharp
+builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.example.com/");
+});
+```
+
+This ensures proper connection pooling and avoids socket exhaustion.
+
+### Serialization
+
+- Use `System.Text.Json` for JSON serialization (not Newtonsoft.Json, unless required for compatibility).
+- Configure `JsonSerializerOptions` with `PropertyNameCaseInsensitive = true` and `CamelCase` naming policy when needed.
+
+---
+
+## 7. UI State Management
+
+Every ViewModel that loads data should expose explicit state properties:
+
+```csharp
+[ObservableProperty]
+private bool _isBusy;
+
+[ObservableProperty]
+private bool _hasError;
+
+[ObservableProperty]
+private string _errorMessage;
+
+[ObservableProperty]
+private bool _isEmpty;
+```
+
+### Loading Pattern
+
+Always follow this pattern when calling async services:
+
+```csharp
+[RelayCommand]
+private async Task LoadDataAsync()
+{
+    if (IsBusy) return;
+
+    try
+    {
+        IsBusy = true;
+        HasError = false;
+        ErrorMessage = string.Empty;
+
+        var items = await _apiService.GetProductsAsync();
+
+        Products.Clear();
+        foreach (var item in items)
+            Products.Add(item);
+
+        IsEmpty = Products.Count == 0;
+    }
+    catch (Exception ex)
+    {
+        HasError = true;
+        ErrorMessage = ex.Message;
+    }
+    finally
+    {
+        IsBusy = false;
+    }
+}
+```
+
+In XAML, bind the visual states to these properties:
+
+```xml
+<ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+
+<Label Text="{Binding ErrorMessage}"
+       IsVisible="{Binding HasError}"
+       TextColor="Red" />
+
+<Label Text="No items found."
+       IsVisible="{Binding IsEmpty}" />
+
+<CollectionView ItemsSource="{Binding Products}"
+                IsVisible="{Binding IsBusy, Converter={StaticResource InverseBoolConverter}}" />
+```
+
+---
+
+## 8. Performance Best Practices
+
+- **Startup**: Minimize work in `App.xaml.cs` and `MauiProgram.cs`. Defer heavy initialization.
+- **Images**: Use SVG (via `MauiImage`) instead of PNG when possible. Reduce image resolution to what is actually displayed.
+- **CollectionView**: Set `ItemSizingStrategy="MeasureFirstItem"` when items have a uniform size to avoid measuring every item.
+- **Compiled Bindings**: Already covered above — never omit `x:DataType`.
+- **Avoid boxing**: Prefer `bool` over `Visibility` enum to reduce allocations in bindings.
+- **Shell Flyout**: Defer page creation with `ShellContent.ContentTemplate`:
+
+```xml
+<ShellContent Title="Products"
+              ContentTemplate="{DataTemplate views:ProductPage}"
+              Route="products" />
+```
+
+---
+
+## 9. Error Handling & Resilience
+
+- Wrap all async service calls in `try/catch` as shown in the Loading Pattern.
+- For transient network errors, consider implementing retry with exponential backoff using **Polly** (if acceptable complexity).
+- Show user-friendly messages; log technical details with a logging framework (e.g., `Microsoft.Extensions.Logging`).
+- For connectivity checks, use `Connectivity.Current.NetworkAccess` before making network calls.
+
+---
+
+## 10. Platform-Specific Code
+
+When you need platform-specific behavior:
+
+1. **Prefer**: `#if ANDROID / IOS / WINDOWS` compiler directives for small snippets.
+2. **For larger logic**: Use the `/Platforms/` folder structure or partial classes with platform-specific implementations.
+3. **For abstraction**: Define an interface in the shared project and register platform-specific implementations via DI.
+
+---
+
+## 11. Testing Considerations
+
+- ViewModels should be fully testable without any MAUI dependency, because all services are injected via interfaces.
+- Name test projects `ProjectName.Tests` and mirror the folder structure.
+- Test commands, state transitions (IsBusy, HasError), and service interactions.
+- Mock services using interfaces (`IApiService`) and a mocking library (e.g., Moq, NSubstitute).
+
+
+````
+
+</Accordion>
+
+### 10.9 Utilizzo di find-skills per scoprire skill utili
+
+#### Esempio pratico: usare find-skill Esempio pratico: creare una skill di code reviews per scoprire skill utili per .NET MAUI
+
+Una volta installata la skill `find-skills` (vedi sezione 10.3), è possibile chiedere all'agente di cercare automaticamente nel registry [skills.sh](https://skills.sh/) le skills più adatte al proprio progetto.
+
+**Prompt di esempio:**
+
+```text
+Ho un progetto .NET MAUI con architettura MVVM, CommunityToolkit.Mvvm, 
+Shell navigation e integrazione API REST. 
+Usa la skill find-skills per cercare nel registry skills.sh 
+le migliori skill disponibili che possano migliorare il mio workflow 
+di sviluppo. Per ogni skill trovata, dimmi:
+1. Nome e autore
+2. A cosa serve
+3. Se è rilevante per il mio stack tecnologico
+4. Il comando per installarla
+```
+
+**Esempio di risposta reale dall'agente:**
+
+L'agente, sfruttando `find-skills`, restituisce un elenco delle skills effettivamente disponibili per .NET MAUI nel registry. Di seguito un esempio reale di output (i numeri di installazione sono indicativi e cambiano nel tempo):
+
+**🏆 Skill più raccomandate:**
+
+| # | Skill | Installazioni | Comando |
+| --- | --- | --- | --- |
+| 1 | `novotnyllc/dotnet-artisan@dotnet-ui` | 65 | `npx skills add novotnyllc/dotnet-artisan --skill dotnet-ui` |
+| 2 | `ibutters/claudecodeplugins@maui-blazor-development` | 51 | `npx skills add ibutters/claudecodeplugins --skill maui-blazor-development` |
+| 3 | `davidortinau/maui-skills@maui-performance` | 41 | `npx skills add davidortinau/maui-skills --skill maui-performance` |
+| 4 | `dotnet/skills@dotnet-maui-doctor` | 41 | `npx skills add dotnet/skills --skill dotnet-maui-doctor` |
+| 5 | `davidortinau/maui-skills@maui-data-binding` | 26 | `npx skills add davidortinau/maui-skills --skill maui-data-binding` |
+| 6 | `rimblehelm/.net-maui-skills@maui-ui-best-practices` | 23 | `npx skills add rimblehelm/.net-maui-skills --skill maui-ui-best-practices` |
+
+**📦 Altre skill rilevanti:**
+
+| # | Skill | Installazioni | Comando |
+| --- | --- | --- | --- |
+| 7 | `davidortinau/maui-skills@maui-dependency-injection` | 18 | `npx skills add davidortinau/maui-skills --skill maui-dependency-injection` |
+| 8 | `davidortinau/maui-skills@maui-shell-navigation` | 15 | `npx skills add davidortinau/maui-skills --skill maui-shell-navigation` |
+| 9 | `davidortinau/maui-skills@maui-unit-testing` | 13 | `npx skills add davidortinau/maui-skills --skill maui-unit-testing` |
+| 10 | `davidortinau/maui-skills@maui-current-apis` | 9 | `npx skills add davidortinau/maui-skills --skill maui-current-apis` |
+| 11 | `rimblehelm/.net-maui-skills@maui-project-setup` | 9 | `npx skills add rimblehelm/.net-maui-skills --skill maui-project-setup` |
+| 12 | `wshaddix/dotnet-skills@dotnet-maui-testing` | 7 | `npx skills add wshaddix/dotnet-skills --skill dotnet-maui-testing` |
+| 13 | `wshaddix/dotnet-skills@dotnet-maui-development` | 6 | `npx skills add wshaddix/dotnet-skills --skill dotnet-maui-development` |
+| 14 | `novotnyllc/dotnet-artisan@dotnet-maui-aot` | 4 | `npx skills add novotnyllc/dotnet-artisan --skill dotnet-maui-aot` |
+| 15 | `novotnyllc/dotnet-artisan@dotnet-maui-development` | 4 | `npx skills add novotnyllc/dotnet-artisan --skill dotnet-maui-development` |
+
+**📝 Note sulla qualità delle skill:**
+
+- **`davidortinau/maui-skills`** è la fonte più affidabile: David Ortinau è un **Principal Product Manager del team .NET MAUI in Microsoft**. Le sue skills riflettono le best practice ufficiali del framework.
+- **`dotnet/skills`** è il repository ufficiale del team .NET Microsoft, quindi le skills che contiene hanno un livello di affidabilità molto elevato.
+- Le skills con meno di 10 installazioni (come quelle di `wshaddix` e `novotnyllc`) vanno valutate con più cautela, ma possono comunque contenere spunti utili e pattern interessanti.
+
+Questo esempio mostra come `find-skills` agisca da **motore di raccomandazione**: analizza il contesto del progetto (stack tecnologico, framework, pattern in uso) e suggerisce le skills più pertinenti dal registry pubblico, con il comando di installazione pronto all'uso.
+
+#### Esempio pratico: usare find-skills per trovare skills di pianificazione (PRD)
+
+Le skills non servono solo per scrivere codice. Sono estremamente utili anche per la fase di **pianificazione** del progetto. Usando `find-skills` con un prompt mirato, è possibile trovare skills che aiutano a creare PRD (Product Requirements Document) e piani iterativi strutturati.
+
+**Prompt di esempio:**
+
+```text
+Usando la skill find-skills, aiutami a trovare le migliori skill 
+che permettono di definire le fasi iterative che servono 
+per sviluppare un progetto MAUI in un PRD.
+```
+
+**Risultati reali ottenuti:**
+
+**🏆 Top Skill per PRD e Piano Iterativo:**
+
+| # | Skill | Install. | Fonte | Comando |
+| --- | --- | --- | --- | --- |
+| 1 | `github/awesome-copilot@prd` | 11.9K | GitHub (ufficiale) | `npx skills add github/awesome-copilot --skill prd` |
+| 2 | `github/awesome-copilot@breakdown-feature-prd` | 7.8K | GitHub (ufficiale) | `npx skills add github/awesome-copilot --skill breakdown-feature-prd` |
+| 3 | `mattpocock/skills@write-a-prd` | 5.4K | Matt Pocock (noto educator TS) | `npx skills add mattpocock/skills --skill write-a-prd` |
+| 4 | `mattpocock/skills@prd-to-issues` | 3.5K | Matt Pocock | `npx skills add mattpocock/skills --skill prd-to-issues` |
+| 5 | `mattpocock/skills@prd-to-plan` | 1.9K | Matt Pocock | `npx skills add mattpocock/skills --skill prd-to-plan` |
+| 6 | `refoundai/lenny-skills@writing-prds` | 1.2K | Refound AI | `npx skills add refoundai/lenny-skills --skill writing-prds` |
+
+**📦 Skill per Esecuzione Piani e Workflow Iterativo:**
+
+| # | Skill | Install. | Comando |
+| --- | --- | --- | --- |
+| 7 | `obra/superpowers@executing-plans` | 31.8K | `npx skills add obra/superpowers --skill executing-plans` |
+| 8 | `tencentcloudbase/cloudbase-mcp@spec-workflow` | 43 | `npx skills add tencentcloudbase/cloudbase-mcp --skill spec-workflow` |
+| 9 | `mikeyobrien/ralph-orchestrator@pdd` | 42 | `npx skills add mikeyobrien/ralph-orchestrator --skill pdd` |
+| 10 | `adaptationio/skrillz@planning-workflow` | 16 | `npx skills add adaptationio/skrillz --skill planning-workflow` |
+| 11 | `adaptationio/skrillz@task-development` | 16 | `npx skills add adaptationio/skrillz --skill task-development` |
+| 12 | `oakoss/agent-skills@plan-first-development` | 15 | `npx skills add oakoss/agent-skills --skill plan-first-development` |
+
+**💡 Combinazione consigliata per un flusso PRD → Piano iterativo → Esecuzione nel contesto MAUI:**
+
+Per ottenere un flusso di lavoro completo che va dalla creazione del PRD all'esecuzione iterativa del progetto, il combo ideale di skills è il seguente:
+
+1. **`github/awesome-copilot@prd`** (11.9K installazioni) — per creare il PRD iniziale con requisiti funzionali, non funzionali e architettura
+2. **`github/awesome-copilot@breakdown-feature-prd`** (7.8K installazioni) — per spezzare il PRD in feature individuali (perfetto per le iterazioni del workflow Man-in-the-Loop descritto nella sezione 4!)
+3. **`mattpocock/skills@prd-to-plan`** (1.9K installazioni) — per trasformare il PRD in un piano esecutivo con task e dipendenze
+4. **`obra/superpowers@executing-plans`** (31.8K installazioni) — per guidare l'agente nell'esecuzione sistematica del piano, iterazione per iterazione
+
+Installare tutte e quattro le skills in sequenza:
+
+```bash
+npx skills add github/awesome-copilot --skill prd
+npx skills add github/awesome-copilot --skill breakdown-feature-prd
+npx skills add mattpocock/skills --skill prd-to-plan
+npx skills add obra/superpowers --skill executing-plans
+```
+
+Con queste quattro skills installate, il workflow diventa: creare il PRD con la prima skill, scomporlo in feature con la seconda, trasformarlo in piano esecutivo con la terza, e infine eseguire il piano iterativamente con la quarta, il tutto seguendo il paradigma **Man-in-the-Loop** (sezione 3) dove lo studente supervisiona ogni fase.
+
+### 10.11 Creare skill personalizzate per il proprio progetto
+
+#### Skill per la strategia di test
+
+<Accordion title="Esempio di Skill per la strategia di test" defaultOpen={false}>
+
+```markdown
+---
+name: testing-strategy
+description: Guida l'agente nella generazione di test e nella 
+  verifica della qualità del codice. Usare quando viene richiesto 
+  di generare test, verificare una feature, o analizzare un ViewModel.
+---
+
+## Principi
+
+- Ogni feature deve avere almeno 3 test manuali documentati.
+- Ogni ViewModel con dati remoti deve avere test per:
+  - caso normale (dati presenti)
+  - caso vuoto (nessun risultato)
+  - caso errore (rete assente o timeout)
+- I casi limite devono essere esplicitamente identificati.
+- I test devono essere scritti PRIMA dell'implementazione quando possibile.
+
+## Formato output
+
+Quando viene richiesto di generare test, restituire:
+1. Lista numerata dei casi di test con passi precisi.
+2. Risultato atteso per ogni caso.
+3. Casi limite separati in una sezione dedicata.
+4. Eventuali suggerimenti per test automatici.
+
+## Anti-pattern
+
+- NON testare solo il caso positivo (happy path).
+- NON ignorare gli stati di errore della UI.
+- NON generare test senza passi precisi e risultati attesi.
+```
+</Accordion>
+
+#### Skill per l'integrazione API REST
 
 Una skill specifica per le interazioni con API esterne:
 
@@ -2575,66 +4069,6 @@ public class BookService : IBookService
 ```
 
 </Accordion>
-
-### 10.5 Skill per la strategia di test
-
-<Accordion title="Esempio di Skill per la strategia di test" defaultOpen={false}>
-
-```markdown
----
-name: testing-strategy
-description: Guida l'agente nella generazione di test e nella 
-  verifica della qualità del codice. Usare quando viene richiesto 
-  di generare test, verificare una feature, o analizzare un ViewModel.
----
-
-## Principi
-
-- Ogni feature deve avere almeno 3 test manuali documentati.
-- Ogni ViewModel con dati remoti deve avere test per:
-  - caso normale (dati presenti)
-  - caso vuoto (nessun risultato)
-  - caso errore (rete assente o timeout)
-- I casi limite devono essere esplicitamente identificati.
-- I test devono essere scritti PRIMA dell'implementazione quando possibile.
-
-## Formato output
-
-Quando viene richiesto di generare test, restituire:
-1. Lista numerata dei casi di test con passi precisi.
-2. Risultato atteso per ogni caso.
-3. Casi limite separati in una sezione dedicata.
-4. Eventuali suggerimenti per test automatici.
-
-## Anti-pattern
-
-- NON testare solo il caso positivo (happy path).
-- NON ignorare gli stati di errore della UI.
-- NON generare test senza passi precisi e risultati attesi.
-```
-</Accordion>
-
-### 10.6 Come creare le proprie Skills
-
-Per creare una nuova skill nel progetto, seguire questi passi:
-
-1. **Identificare lo scopo**: per quale tipo di lavoro la skill è utile?
-2. **Scrivere il frontmatter**: nome e descrizione con indicazione chiara di quando attivarla.
-3. **Definire il contesto**: qual è la struttura del progetto? Quali tecnologie si usano?
-4. **Elencare le regole**: cosa l'agente deve fare e cosa deve evitare.
-5. **Includere pattern ed esempi**: codice corretto da usare come template.
-6. **Specificare gli anti-pattern**: errori comuni e perché vanno evitati.
-7. **Testare la skill**: verificare che l'agente produca output coerente con le regole.
-
-**Tips per skills efficaci:**
-
-- Essere specifici: una skill vaga produce output vago.
-- Meglio più skills specializzate che una onnicomprensiva.
-- Mantenere le skills aggiornate: se l'architettura del progetto cambia, aggiornare le skills.
-- Usare esempi concreti con codice reale del progetto, non codice generico.
-- Includere sempre la sezione degli anti-pattern: è la più utile per evitare errori ricorrenti.
-
----
 
 ## 11. Progettazione UI/UX con il supporto dell'AI
 
@@ -2762,7 +4196,7 @@ Non riscrivere il codice, solo elencare i problemi con spiegazione.
 Un approccio più strutturato consiste nel creare una skill dedicata alla progettazione dell'interfaccia.  
 In questo modo l'agente AI applica automaticamente le regole estetiche e di design ogni volta che lavora su file XAML o su componenti UI.
 
-Questo approccio si ispira al modello della skill **frontend-design** di Anthropic, adattato al contesto .NET MAUI.
+Questo approccio si ispira al modello della skill [**frontend-design**](https://skills.sh/anthropics/skills/frontend-design) di Anthropic, adattato al contesto .NET MAUI.
 
 #### Skill frontend-design per MAUI
 
@@ -2770,180 +4204,416 @@ Di seguito un esempio completo di skill per la progettazione UI in MAUI:
 
 <Accordion title="Skill frontend-design per MAUI" defaultOpen={false}>
 
-```markdown
+````markdown
 ---
 name: maui-ui-design
-description: Guida l'agente nella creazione di interfacce MAUI 
-  di alta qualità. Usare questa skill quando si creano o modificano 
-  file XAML, stili, risorse visive, layout o componenti UI del 
-  progetto. Genera codice XAML pulito, esteticamente curato e 
-  coerente con il design system del progetto.
+description: Guides creation of high-quality, aesthetically refined MAUI interfaces consistent with the project's design system. Use this skill when creating or modifying XAML files, styles, visual resources (Colors.xaml, Styles.xaml), layouts, templates, control templates, animations, or UI components. Invoke this skill for any work related to the visual appearance and user experience of the MAUI application.
 ---
 
-## Filosofia di design
+# .NET MAUI — UI Design Excellence
 
-Prima di scrivere codice XAML, ragionare su:
-- **Scopo**: cosa deve comunicare questa schermata? Quale azione 
-  deve compiere l'utente?
-- **Tono**: l'interfaccia deve essere minimale e pulita, oppure 
-  ricca e informativa? Formale o giocosa?
-- **Gerarchia**: cosa deve vedere l'utente per primo? Quale 
-  informazione è primaria e quale secondaria?
-- **Stati**: questa schermata ha uno stato di caricamento? Uno 
-  stato vuoto? Uno stato di errore? Tutti devono essere progettati.
+This skill guides the creation of high-quality .NET MAUI user interfaces that reject generic aesthetics and prioritize distinctive, cohesive, and functional designs.
 
-## Regole di layout
+---
 
-### Grid come layout principale
-Usare SEMPRE Grid come layout principale della pagina.
-Grid offre controllo preciso su righe e colonne, evitando 
-l'annidamento eccessivo di StackLayout.
+## Design Thinking
 
-Esempio di struttura di pagina:
-​```xml
-<ContentPage>
-  <Grid RowDefinitions="Auto,Auto,*,Auto">
-    <!-- Riga 0: Header / SearchBar -->
-    <!-- Riga 1: Titolo sezione -->
-    <!-- Riga 2: Contenuto principale (lista o dettaglio) -->
-    <!-- Riga 3: Footer o azione principale -->
-  </Grid>
-</ContentPage>
-​```
+Before writing XAML, reflect on the context and define a **clear aesthetic direction**:
 
-### Spaziatura e margini
-- Margine esterno della pagina: 16-20 pixel su tutti i lati.
-- Spaziatura tra elementi: 8-12 pixel verticalmente.
-- Padding interno delle card: 12-16 pixel.
-- Target touch minimo: 44x44 pixel (raccomandazione Apple/Google).
+- **Purpose**: What problem does this interface solve? Who will use it?
+- **Tone**: Choose a precise aesthetic — refined minimalist, bold/brutalist, organic/natural, luxury, playful, industrial, editorial, neumorphic, glassmorphism, modern flat, etc.
+- **Constraints**: Technical requirements (platform, accessibility, performance)
+- **Differentiation**: What makes this interface **unforgettable**? What's the one element users will remember?
 
-### Tipografia
-- Titoli principali: 20-24pt, Bold.
-- Titoli di sezione: 16-18pt, SemiBold.
-- Testo corpo: 14-16pt, Regular.
-- Testo secondario: 12-14pt, Regular, colore attenuato.
-- Etichette piccole: 10-12pt, Regular, colore secondario.
-- MAI usare dimensioni inferiori a 10pt su mobile.
-- Limitare le righe di testo visibili con MaxLines e LineBreakMode.
+**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work — the key is intentionality, not intensity.
 
-### Colori e temi
-- Usare SEMPRE riferimenti alle risorse colore definite in App.xaml.
-- NON usare colori hardcodati nel XAML (es. TextColor="#FF0000").
-- Supportare SEMPRE tema chiaro e tema scuro tramite AppThemeBinding.
-- Verificare il contrasto: rapporto minimo 4.5:1 per il testo normale.
+---
 
-Esempio AppThemeBinding:
-​```xml
-<Label TextColor="{AppThemeBinding 
-    Light={StaticResource TextPrimary}, 
-    Dark={StaticResource TextPrimaryDark}}" />
-​```
+## MAUI Aesthetic Principles
 
-### Immagini
-- Usare AspectFit per le immagini contenute in card o liste.
-- Usare AspectFill per le immagini di sfondo o hero.
-- Fornire SEMPRE un placeholder per le immagini remote.
-- Definire dimensioni esplicite (HeightRequest, WidthRequest).
-- Usare bordi arrotondati con Clip per le immagini:
-​```xml
-<Image Source="{Binding CoverUrl}"
-       HeightRequest="120"
-       WidthRequest="80"
-       Aspect="AspectFill">
-  <Image.Clip>
-    <RoundRectangleGeometry CornerRadius="8" 
-        Rect="0,0,80,120" />
-  </Image.Clip>
-</Image>
-​```
+### Typography
 
-## Componenti riutilizzabili
+- Choose distinctive fonts coherent with the chosen aesthetic
+- Avoid generic defaults: Inter, Roboto, Arial, system-ui
+- Define a clear typographic hierarchy in `Styles.xaml`
+- Use `FontAttributes` and `FontFamily` to differentiate:
+  - **Display/Headers**: Bold, large, distinctive font
+  - **Body**: Readable font, comfortable size (14-16sp)
+  - **Caption/Small**: Reduced font for metadata (12sp)
 
-### Card
-Le card devono avere:
-- bordi arrotondati (CornerRadius 8-12);
-- ombra leggera (Shadow);
-- padding interno coerente;
-- sfondo che si distingue dallo sfondo pagina.
-
-​```xml
-<Border StrokeShape="RoundRectangle 10"
-        Stroke="{AppThemeBinding 
-            Light={StaticResource BorderLight}, 
-            Dark={StaticResource BorderDark}}"
-        StrokeThickness="1"
-        BackgroundColor="{AppThemeBinding 
-            Light={StaticResource BackgroundSecondary}, 
-            Dark={StaticResource BackgroundSecondaryDark}}"
-        Padding="12">
-  <Border.Shadow>
-    <Shadow Brush="Black" Opacity="0.1" 
-            Radius="4" Offset="0,2" />
-  </Border.Shadow>
-  <!-- Contenuto della card -->
-</Border>
-​```
-
-### Gestione stati visivi
-Ogni pagina con dati remoti DEVE gestire 4 stati:
-
-​```xml
-<!-- Stato Loading -->
-<ActivityIndicator Grid.Row="2" 
-    IsRunning="{Binding IsBusy}" 
-    IsVisible="{Binding IsBusy}"
-    HorizontalOptions="Center" 
-    VerticalOptions="Center" />
-
-<!-- Stato Errore -->
-<VerticalStackLayout Grid.Row="2" 
-    IsVisible="{Binding ErrorMessage, 
-        Converter={StaticResource StringToBoolConverter}}"
-    HorizontalOptions="Center" VerticalOptions="Center"
-    Spacing="12">
-  <Label Text="⚠️" FontSize="40" HorizontalOptions="Center" />
-  <Label Text="{Binding ErrorMessage}" 
-         HorizontalTextAlignment="Center" />
-  <Button Text="Riprova" Command="{Binding RetryCommand}" />
-</VerticalStackLayout>
-
-<!-- Stato Vuoto -->
-<VerticalStackLayout Grid.Row="2" 
-    IsVisible="{Binding IsEmptyState}"
-    HorizontalOptions="Center" VerticalOptions="Center"
-    Spacing="12">
-  <Label Text="📭" FontSize="40" HorizontalOptions="Center" />
-  <Label Text="Nessun risultato trovato" 
-         HorizontalTextAlignment="Center" />
-</VerticalStackLayout>
-
-<!-- Contenuto principale -->
-<CollectionView Grid.Row="2" 
-    ItemsSource="{Binding Items}"
-    IsVisible="{Binding HasData}">
-  <!-- DataTemplate -->
-</CollectionView>
-​```
-
-## Anti-pattern di design da evitare
-
-- NON usare colori hardcodati nei file XAML.
-- NON creare pagine senza gestione degli stati loading/errore/vuoto.
-- NON usare StackLayout per layout complessi (preferire Grid).
-- NON dimenticare il supporto al tema scuro.
-- NON usare dimensioni di testo inferiori a 10pt su mobile.
-- NON creare pulsanti più piccoli di 44x44 pixel (target touch).
-- NON sovraccaricare le schermate di informazioni: privilegiare 
-  la chiarezza e la gerarchia visiva.
-- NON ignorare la spaziatura: margini e padding coerenti fanno 
-  la differenza tra un'app amatoriale e una professionale.
+```xml
+<Style x:Key="HeadingPrimary" TargetType="Label">
+    <Setter Property="FontFamily" Value="OpenSansExtraBold"/>
+    <Setter Property="FontSize" Value="28"/>
+    <Setter Property="FontAttributes" Value="Bold"/>
+    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource White}}"/>
+</Style>
 ```
 
+### Color and Theme
+
+- Define a cohesive palette in `Colors.xaml`
+- Dominant colors with sharp accents outperform timid palettes
+- ALWAYS support `Light` and `Dark` theme with `AppThemeBinding`
+- Use semantic colors: `Primary`, `Secondary`, `Accent`, `Surface`, `Background`, `OnError`, `OnSurface`
+
+```xml
+<Color x:Key="Primary">#6366F1</Color>
+<Color x:Key="PrimaryDark">#4F46E5</Color>
+<Color x:Key="Accent">#F59E0B</Color>
+<Color x:Key="Surface">
+    <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
+</Color>
+```
+
+### Spacing and Composition
+
+- Use generous spacing or controlled density based on the aesthetic
+- Create visual rhythm with consistent margins and padding
+- Define `Thickness` resources for consistency: `SmallMargin`, `MediumPadding`, `LargeSpacing`
+- Avoid "ghost" layouts — every space has a purpose
+
+```xml
+<Thickness x:Key="SmallMargin">4</Thickness>
+<Thickness x:Key="MediumPadding">16</Thickness>
+<Thickness x:Key="LargeSpacing">24</Thickness>
+```
+
+### Layout and Structure
+
+- Prefer `Grid` for complex layouts — more performant than nested StackLayouts
+- Use `Border` for visual containers (replaces deprecated `Frame`)
+- `CollectionView` always preferred over `ListView`
+- Explore asymmetric layouts, overlaps, grid-breaking elements
+
+```xml
+<Border StrokeShape="RoundRectangle 16"
+        StrokeThickness="0"
+        BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}">
+    <Border.Shadow>
+        <Shadow Brush="{StaticResource Primary}" Offset="0,4" Radius="12" Opacity="0.2"/>
+    </Border.Shadow>
+    <!-- Content -->
+</Border>
+```
+
+### Visual Details and Texture
+
+Create atmosphere and depth instead of defaulting to flat solids:
+
+- **Shadows**: `Shadow` on Border for depth
+- **Gradients**: `LinearGradientBrush`, `RadialGradientBrush`
+- **Borders**: `StrokeShape` with `RoundRectangle` for smooth corners
+- **Transparencies**: BackgroundColor with alpha for glassmorphism effects
+- **Patterns**: Custom backgrounds with images or drawables
+
+```xml
+<Border.Background>
+    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="{StaticResource Primary}" Offset="0"/>
+        <GradientStop Color="{StaticResource PrimaryDark}" Offset="1"/>
+    </LinearGradientBrush>
+</Border.Background>
+```
+
+### Animations and Micro-interactions
+
+MAUI supports fluid animations — use them to enhance UX:
+
+- **Transitions**: Fade, Scale, Rotation, Translation
+- **Micro-feedback**: Hover states, tap feedback
+- **Loading states**: Custom ActivityIndicator, animated progress bars
+- **XAML Animations**: Use `VisualStateManager` for states
+
+```xml
+<VisualStateManager.VisualStateGroups>
+    <VisualStateGroupList>
+        <VisualStateGroup x:Name="CommonStates">
+            <VisualState x:Name="Normal"/>
+            <VisualState x:Name="Pressed">
+                <VisualState.Setters>
+                    <Setter Property="Scale" Value="0.95"/>
+                    <Setter Property="Opacity" Value="0.8"/>
+                </VisualState.Setters>
+            </VisualState>
+            <VisualState x:Name="PointerOver">
+                <VisualState.Setters>
+                    <Setter Property="Opacity" Value="0.9"/>
+                </VisualState.Setters>
+            </VisualState>
+        </VisualStateGroup>
+    </VisualStateGroupList>
+</VisualStateManager.VisualStateGroups>
+```
+
+---
+
+## Resource Structure
+
+Organize visual resources modularly:
+
+```
+Resources/
+├── Styles/
+│   ├── Colors.xaml      # Color palette
+│   ├── Styles.xaml      # Global styles
+│   └── Fonts.xaml       # Font definitions (optional)
+├── Templates/
+│   └── ControlTemplates.xaml
+└── Images/
+    └── (images and SVG icons)
+```
+
+### Colors.xaml — Recommended Structure
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Brand Colors -->
+    <Color x:Key="Primary">#6366F1</Color>
+    <Color x:Key="PrimaryDark">#4F46E5</Color>
+    <Color x:Key="Secondary">#EC4899</Color>
+    <Color x:Key="Accent">#F59E0B</Color>
+
+    <!-- Semantic Colors -->
+    <Color x:Key="Success">#10B981</Color>
+    <Color x:Key="Warning">#F59E0B</Color>
+    <Color x:Key="Error">#EF4444</Color>
+    <Color x:Key="Info">#3B82F6</Color>
+
+    <!-- Neutrals -->
+    <Color x:Key="White">#FFFFFF</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Gray100">#F3F4F6</Color>
+    <Color x:Key="Gray200">#E5E7EB</Color>
+    <Color x:Key="Gray900">#111827</Color>
+
+    <!-- Theme-aware -->
+    <Color x:Key="Background">
+        <AppThemeBinding Light="#FAFAFA" Dark="#121212"/>
+    </Color>
+    <Color x:Key="Surface">
+        <AppThemeBinding Light="#FFFFFF" Dark="#1E1E1E"/>
+    </Color>
+    <Color x:Key="OnBackground">
+        <AppThemeBinding Light="{StaticResource Gray900}" Dark="{StaticResource White}"/>
+    </Color>
+    <Color x:Key="OnSurface">
+        <AppThemeBinding Light="{StaticResource Gray900}" Dark="{StaticResource White}"/>
+    </Color>
+
+</ResourceDictionary>
+```
+
+### Styles.xaml — Recommended Structure
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Typography -->
+    <Style x:Key="HeadingLarge" TargetType="Label">
+        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="TextColor" Value="{StaticResource OnBackground}"/>
+    </Style>
+
+    <Style x:Key="HeadingMedium" TargetType="Label">
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="TextColor" Value="{StaticResource OnBackground}"/>
+    </Style>
+
+    <Style x:Key="BodyText" TargetType="Label">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="TextColor" Value="{StaticResource OnBackground}"/>
+    </Style>
+
+    <Style x:Key="Caption" TargetType="Label">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="TextColor" Value="{StaticResource Gray500}"/>
+    </Style>
+
+    <!-- Buttons -->
+    <Style x:Key="PrimaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+        <Setter Property="TextColor" Value="{StaticResource White}"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontAttributes" Value="Bold"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="24,12"/>
+    </Style>
+
+    <Style x:Key="SecondaryButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent"/>
+        <Setter Property="TextColor" Value="{StaticResource Primary}"/>
+        <Setter Property="BorderColor" Value="{StaticResource Primary}"/>
+        <Setter Property="BorderWidth" Value="2"/>
+        <Setter Property="CornerRadius" Value="12"/>
+        <Setter Property="Padding" Value="24,12"/>
+    </Style>
+
+    <!-- Cards/Containers -->
+    <Style x:Key="Card" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource Surface}"/>
+        <Setter Property="StrokeShape" Value="RoundRectangle 16"/>
+        <Setter Property="StrokeThickness" Value="0"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Shadow">
+            <Shadow Brush="#000000"
+                    Offset="0,4"
+                    Radius="12"
+                    Opacity="0.1"/>
+        </Setter>
+    </Style>
+
+    <!-- Implicit Styles (App-wide defaults) -->
+    <Style TargetType="Label">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="TextColor" Value="{StaticResource OnBackground}"/>
+    </Style>
+
+    <Style TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+        <Setter Property="TextColor" Value="{StaticResource White}"/>
+        <Setter Property="CornerRadius" Value="8"/>
+    </Style>
+
+</ResourceDictionary>
+```
+
+---
+
+## XAML Best Practices
+
+### Compiled Bindings
+
+ALWAYS declare `x:DataType` on every `ContentPage`, `DataTemplate`, and `ContentView`:
+
+```xml
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MyApp.ViewModels"
+             x:DataType="vm:HomeViewModel"
+             x:Class="MyApp.Views.HomePage">
+```
+
+### Performance
+
+- Use `Grid` instead of nested `StackLayout` for complex layouts
+- `CollectionView` with `ItemSizingStrategy="MeasureFirstItem"` for uniform lists
+- Avoid complex bindings and converters in `DataTemplate` repeated thousands of times
+- SVG images with `MauiImage` — lighter and scalable
+
+### Accessibility
+
+- `AutomationId` for important interactive elements
+- Adequate contrast ratio for text (minimum 4.5:1)
+- Touch targets of at least 44x44 points for interactive elements
+- Labels with `SemanticProperties` for screen readers
+
+```xml
+<Button Text="Submit"
+        AutomationId="SubmitButton"
+        SemanticProperties.Hint="Submit the form"/>
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+- **Generic fonts**: Inter, Roboto, Arial as sole choices
+- **Purple gradients on white**: AI aesthetic cliché
+- **Predictable symmetric layouts**: Break the monotony
+- **Inconsistent spacing**: Define and use standard spacing
+- **Heavy shadows everywhere**: Use them with intention
+- **Colors without semantics**: Primary/Secondary have meaning
+- **Missing dark theme**: ALWAYS support both themes
+
+---
+
+## When to Create UI Components
+
+Create reusable `ContentView` when:
+
+- The same UI pattern repeats in 3+ places
+- You have a card, chip, badge, or complex element
+- You want to encapsulate complex visual logic
+
+```xml
+<!-- Components/Badge.xaml -->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             x:Class="MyApp.Components.Badge"
+             x:Name="This">
+    <Border BindingContext="{x:Reference This}"
+            StrokeShape="RoundRectangle 12"
+            BackgroundColor="{Binding BadgeColor}"
+            Padding="8,4">
+        <Label Text="{Binding Text}"
+               TextColor="White"
+               FontSize="12"
+               FontAttributes="Bold"/>
+    </Border>
+</ContentView>
+```
+
+---
+
+## Control Templates
+
+For pages with shared layout, use `ControlTemplate`:
+
+```xml
+<!-- In App.xaml or Templates/ -->
+<ControlTemplate x:Key="PageTemplate">
+    <Grid RowDefinitions="Auto, *, Auto">
+        <Label Text="{TemplateBinding BindingContext.Title}"
+               Style="{StaticResource HeadingLarge}"
+               Margin="16"/>
+
+        <ContentPresenter Grid.Row="1"/>
+
+        <Button Text="Save"
+                Grid.Row="2"
+                Margin="16"
+                Command="{TemplateBinding BindingContext.SaveCommand}"/>
+    </Grid>
+</ControlTemplate>
+```
+
+```xml
+<!-- In Page -->
+<ContentPage ControlTemplate="{StaticResource PageTemplate}">
+    <!-- Page-specific content -->
+</ContentPage>
+```
+
+---
+
+## Quality UI Checklist
+
+Before considering UI work complete:
+
+- [ ] Clear and coherent aesthetic direction
+- [ ] Color palette defined in `Colors.xaml`
+- [ ] Styles centralized in `Styles.xaml`
+- [ ] Light/Dark theme support (`AppThemeBinding`)
+- [ ] `x:DataType` on every page and template
+- [ ] Performance: Grid instead of nested StackLayout
+- [ ] Accessibility: contrast, touch targets, automation
+- [ ] Animations and feedback for interactions
+- [ ] No hardcoded values for colors, fonts, margins
+- [ ] Reusable components for repeated patterns
+
+````
 </Accordion>
 
 #### Come usare la skill in pratica
 
-Una volta creata la skill `maui-ui-design.md` nella cartella `.agent/skills/` del progetto:
+Una volta creata la skill `maui-ui-design.md` nella cartella `.agents/skills/` del progetto:
 
 1. L'agente la legge automaticamente quando lavora su file XAML.
 2. Quando si chiede di creare una nuova pagina, l'agente applica le regole di layout, colori e stati.
