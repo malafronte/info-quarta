@@ -486,7 +486,7 @@ Installando questa estensione nell'ambiente dove risiede Jupyter (solitamente l'
 
     La dashboard mostrerà automaticamente un kernel denominato `Python [conda env:analisi_dati]`. Non è richiesta alcuna registrazione manuale: creando nuovi ambienti Conda (con `ipykernel`), questi appariranno dinamicamente nella lista.
 
-## 6. Gestione della strumentazione globale: `pipx`
+## 6. Gestione della strumentazione globale: `pipx` e `uvx`
 
 Mentre `venv` e `conda` sono progettati per isolare le librerie necessarie allo sviluppo di un progetto (importabili nel codice), esiste una classe di strumenti Python destinati all'uso come applicazioni da riga di comando (CLI) stand-alone, da richiamare ovunque nel sistema.
 
@@ -575,6 +575,302 @@ pipx upgrade-all
 pipx run cowsay "Pipx è architetturalmente superiore"
 
 ```
+
+### 6.5 Approccio moderno all'esecuzione di tool: `uvx`
+
+Con l'introduzione di `uv`, l'ecosistema Python dispone di un meccanismo estremamente performante per l'esecuzione di strumenti CLI in modalita' effimera: `uvx`. Dal punto di vista semantico, `uvx` e' un alias esatto di `uv tool run`; in altri termini, i seguenti comandi sono equivalenti:
+
+```bash
+uvx ruff check .
+uv tool run ruff check .
+```
+
+L'elemento architetturalmente rilevante consiste nel fatto che `uvx` non installa stabilmente il tool nel progetto e non contamina l'ambiente virtuale corrente. Invece, crea o riusa un ambiente isolato nella cache di `uv`, esegue il comando richiesto e tratta tale ambiente come un artefatto temporaneo e ricreabile, cioe' privo di valore permanente. Se la cache viene rimossa, `uvx` ricostruira' automaticamente l'ambiente alla successiva esecuzione.
+
+Questo modello lo rende particolarmente adatto per:
+
+- esecuzioni occasionali di formatter, linter e generatori di progetto;
+
+- test rapidi di utility CLI senza installazione persistente;
+
+- uso di versioni temporanee o specifiche di un tool;
+
+- ambienti CI/CD in cui si desidera evitare installazioni globali permanenti.
+
+### 6.6 Analisi comparativa: `uvx` vs `pipx` vs `uv run`
+
+Poiche' nella pratica questi strumenti vengono spesso confusi, e' opportuno distinguerne con rigore i ruoli:
+
+| **Strumento** | **Scopo primario** | **Persistenza** | **Relazione col progetto corrente** |
+| --- | --- | --- | --- |
+| `pipx install` | Installare tool CLI globali in ambienti isolati | Persistente | Nessuna integrazione col progetto |
+| `pipx run` | Eseguire una CLI in modo temporaneo | Effimera | Nessuna integrazione col progetto |
+| `uvx` | Eseguire tool Python in ambienti effimeri con cache ad alte prestazioni | Effimera/cached | Sempre isolato dal progetto |
+| `uv run` | Eseguire comandi nel contesto del progetto | Dipende dal progetto `.venv` | Integra dipendenze e lockfile del progetto |
+
+La regola operativa puo' essere formulata come segue:
+
+- usare `uvx` quando il tool va eseguito come strumento esterno e non deve dipendere dal progetto;
+
+- usare `uv run` quando il tool deve vedere il package corrente, le dipendenze dichiarate nel `pyproject.toml` o l'ambiente lockato del repository;
+
+- usare `uv tool install` o `pipx install` quando si vuole che il comando sia disponibile stabilmente nel `PATH`.
+
+Un esempio chiarificatore:
+
+- `uvx ruff check .` e' ideale per lanciare Ruff come utility esterna;
+
+- `uv run pytest` e' preferibile a `uvx pytest`, poiche' i test devono normalmente importare il codice del progetto e usare le sue dipendenze dichiarate.
+
+### 6.7 Meccanica interna e gestione della cache
+
+Quando `uvx` esegue un tool, `uv` risolve il pacchetto richiesto, costruisce un ambiente dedicato e lo conserva nella cache globale. Tale cache ha finalita' prestazionali: evita di scaricare e reinstallare il medesimo tool a ogni invocazione. Tuttavia, la cache non equivale a installazione permanente.
+
+Le implicazioni pratiche sono:
+
+1. La prima esecuzione puo' richiedere il download del pacchetto.
+
+2. Le esecuzioni successive risultano normalmente molto piu' rapide.
+
+3. Se si esegue `uv cache clean`, l'ambiente del tool viene eliminato e verra' ricreato al bisogno.
+
+4. Se un tool e' gia' stato installato con `uv tool install`, `uvx` tende a usare quella versione installata, salvo richiesta esplicita di un'altra versione o uso del flag `--isolated`.
+
+Per ispezionare la cache di `uv`:
+
+```bash
+uv cache dir
+uv cache size
+```
+
+Per forzare un comportamento senza cache:
+
+```bash
+uvx --no-cache ruff check .
+```
+
+Tale opzione e' utile in debugging, benchmarking o flussi altamente deterministici, ma riduce il vantaggio prestazionale della cache.
+
+### 6.8 Sintassi operativa fondamentale di `uvx`
+
+#### A. Esecuzione basilare di un tool
+
+```bash
+uvx ruff check .
+uvx black --check .
+uvx http --help
+```
+
+Nel primo esempio `uvx` deduce che il comando `ruff` corrisponde al pacchetto Python `ruff`. Questa inferenza e' corretta per molti tool, ma non per tutti.
+
+#### B. Caso in cui nome del pacchetto e nome del comando differiscono
+
+Non sempre il nome del package su PyPI coincide con l'eseguibile. Un caso classico e' `httpie`, che espone i comandi `http` e `https`.
+
+```bash
+uvx --from httpie http GET https://example.org
+```
+
+Il flag `--from` permette di indicare esplicitamente quale pacchetto installare per ottenere il comando desiderato.
+
+#### C. Richiesta di una versione esatta o dell'ultima disponibile
+
+Per riprodurre una specifica versione:
+
+```bash
+uvx ruff@0.6.9 --version
+uvx pyright@1.1.390 --version
+```
+
+Per forzare l'uso dell'ultima release disponibile e aggiornare la cache associata:
+
+```bash
+uvx ruff@latest check .
+```
+
+Per vincoli piu' complessi si usa `--from`:
+
+```bash
+uvx --from 'ruff>=0.6,<0.7' ruff check .
+uvx --from 'httpie>3,<4' http --version
+```
+
+#### D. Esecuzione con dipendenze aggiuntive o plugin
+
+Talvolta il tool necessita di estensioni opzionali. In questo scenario, `uvx` supporta `--with`.
+
+```bash
+uvx --with mkdocs-material mkdocs serve
+uvx --with pytest-cov pytest --cov=src
+```
+
+In tal modo il tool principale e le dipendenze supplementari vengono risolti nello stesso ambiente effimero. Questo pattern e' particolarmente utile per ecosistemi plugin-based.
+
+#### E. Uso di extras del pacchetto
+
+Se il tool supporta extras dichiarati dal package, si puo' ricorrere ancora a `--from`.
+
+```bash
+uvx --from 'mypy[faster-cache,reports]==1.13.0' mypy src --xml-report build/mypy-report
+```
+
+Questo approccio e' piu' rigoroso rispetto all'installazione globale casuale di plugin, poiche' rende esplicita l'intera superficie di dipendenze richiesta dal comando.
+
+#### F. Esecuzione da sorgenti alternative (Git)
+
+`uvx` puo' eseguire un tool direttamente da repository Git, tag, branch o commit.
+
+```bash
+uvx --from git+https://github.com/httpie/cli httpie --version
+uvx --from git+https://github.com/httpie/cli@3.2.4 http --version
+uvx --from git+https://github.com/httpie/cli@master http --version
+```
+
+Questo e' utile per testare:
+
+- una patch non ancora pubblicata su PyPI;
+
+- una release candidate;
+
+- una branch sperimentale di un tool.
+
+### 6.9 Selezione dell'interprete Python
+
+Ogni ambiente creato da `uvx` e' associato a uno specifico interprete Python. Se necessario, e' possibile richiedere una versione esplicita tramite `--python`.
+
+```bash
+uvx --python 3.10 ruff check .
+uvx --python 3.12 pyright
+uvx --python 3.13 black .
+```
+
+Questa capacita' risulta importante quando:
+
+- si desidera verificare la compatibilita' di un tool con una certa major/minor di Python;
+
+- il tool ha requisiti minimi non soddisfatti dal Python di sistema;
+
+- si vogliono uniformare gli ambienti operativi tra workstation e CI.
+
+Inoltre, `uvx` puo' essere usato perfino per eseguire un interprete Python isolato:
+
+```bash
+uvx python
+uvx python@3.12
+```
+
+Si tratta di un meccanismo molto utile per test temporanei o per verificare rapidamente la disponibilita' di una determinata versione senza allestire manualmente un ambiente virtuale persistente.
+
+### 6.10 Modalita' isolata, refresh e controllo del comportamento
+
+Se un tool e' gia' installato in modo persistente con `uv tool install`, `uvx` puo' riusarlo. Se pero' si desidera ignorare ogni installazione persistente e forzare un ambiente autonomo, si usa `--isolated`.
+
+```bash
+uvx --isolated ruff --version
+```
+
+Questo comportamento e' utile per:
+
+- confrontare una versione installata con una effimera;
+
+- evitare interferenze con tool gia' presenti nel sistema;
+
+- validare pipeline di build o documentazione in condizioni pulite.
+
+Per forzare l'aggiornamento del contenuto cache-izzato:
+
+```bash
+uvx --refresh ruff check .
+uvx --refresh-package ruff ruff check .
+```
+
+Per operare senza accesso alla rete, riusando solo cio' che e' gia' presente localmente:
+
+```bash
+uvx --offline ruff check .
+```
+
+Questa modalita' e' appropriata in contesti air-gapped o per verificare la completezza della cache in pipeline riproducibili.
+
+### 6.11 Casi d'uso avanzati e scenari reali
+
+#### A. Formattazione o linting occasionale di repository eterogenei
+
+Se si lavora su molteplici repository ma non si desidera installare permanentemente ogni tool:
+
+```bash
+uvx ruff check .
+uvx black .
+uvx pyright
+```
+
+Questo flusso riduce l'overhead di setup e impedisce la proliferazione di installazioni globali disallineate.
+
+#### B. Generazione di documentazione con plugin opzionali
+
+```bash
+uvx --with mkdocs-material mkdocs build
+```
+
+Caso ideale quando si vuole generare documentazione una tantum senza dover mantenere un ambiente locale dedicato al solo tool di build.
+
+#### C. Test rapido di client HTTP e strumenti CLI di rete
+
+```bash
+uvx --from httpie http GET https://api.github.com/repos/astral-sh/uv
+```
+
+Questo approccio e' utile per demo in aula, troubleshooting API o test manuali veloci.
+
+#### D. Esecuzione di tool sperimentali o non ancora adottati stabilmente
+
+```bash
+uvx cookiecutter --help
+uvx copier --help
+uvx hatch --help
+```
+
+Prima di scegliere se adottare un tool nel workflow stabile, e' possibile valutarlo senza installazione persistente.
+
+#### E. Tooling in CI/CD o script di bootstrap
+
+```bash
+uvx ruff check .
+uvx pytest --version
+uvx --from 'mypy==1.13.0' mypy src
+```
+
+In pipeline temporanee, `uvx` permette di evitare configurazioni globali permanenti e rende esplicito quale comando viene richiesto in ogni step.
+
+### 6.12 Criteri decisionali: quando scegliere `uvx`
+
+Si raccomanda `uvx` quando:
+
+- il tool e' usato saltuariamente o in modo non continuativo;
+
+- si desidera evitare installazioni globali permanenti;
+
+- e' utile provare versioni diverse dello stesso strumento;
+
+- si vuole un'esecuzione rapida, isolata e facilmente ripetibile.
+
+Si raccomanda invece `uv tool install` o `pipx install` quando:
+
+- il comando deve essere sempre disponibile nel `PATH` senza prefisso `uvx`;
+
+- altri script o processi esterni si aspettano che il binario sia installato stabilmente;
+
+- si vuole gestire il ciclo di vita del tool come installazione persistente.
+
+Si raccomanda `uv run`, e non `uvx`, quando:
+
+- il comando deve operare dentro il contesto del progetto;
+
+- il tool deve importare il package locale;
+
+- il risultato deve essere coerente con `pyproject.toml`, `uv.lock` e `.venv` del repository.
+
+In sintesi, `uvx` rappresenta la soluzione di nuova generazione per il concetto di "tool eseguito al bisogno": unisce l'isolamento tipico di `pipx run` alla velocita', alla cache globale e alla coerenza ecosistemica offerte da `uv`.
 
 ## 7. Integrazione con i Sistemi di Controllo Versione (Git e GitHub)
 
@@ -1053,15 +1349,693 @@ line_length = 88
 
 ```
 
-### 9.4 Pylance e il Language Server Protocol
+### 9.4 Type Checking Statico Moderno con `ty`
 
-Indipendentemente dalla scelta tra Ruff e la toolchain classica, **Pylance** (basato su Pyright) rimane il motore di intelligence raccomandato per VS Code. Esso opera in parallelo ai linter:
+Accanto al linting e alla formattazione, lo sviluppo Python professionale richiede un controllo statico dei tipi (*static type checking*) capace di intercettare errori semantici prima dell'esecuzione: accessi a membri inesistenti, ritorni incompatibili, usi impropri di `Optional`, importazioni di simboli non coerenti con gli stub, mismatch tra collezioni e type hints. In questo contesto, [`ty`](https://docs.astral.sh/ty/) rappresenta una delle proposte piu' moderne dell'ecosistema: e' un **type checker e language server scritto in Rust**, sviluppato da Astral, con un'attenzione particolare a prestazioni, analisi incrementale e integrazione editoriale.
 
-- **Pylance:** Fornisce autocompletamento, "Go to Definition", e type checking (se abilitato con `"python.analysis.typeCheckingMode": "basic"`).
+Dal punto di vista architetturale, `ty` non sostituisce Ruff: i due strumenti operano su piani diversi e complementari.
 
-- **Ruff/Pylint:** Forniscono controllo di stile e ricerca bug.
+- **Ruff**: linting, stile, formattazione, ordinamento import, classi di bug note.
 
-La combinazione **Ruff + Pylance** rappresenta oggi lo standard aureo per prestazioni ed ergonomia.
+- **ty**: analisi statica dei tipi, coerenza semantica tra annotazioni, inferenza, controllo delle importazioni e diagnostica di tipo.
+
+La combinazione `ruff + ty` costituisce quindi una toolchain moderna interamente basata su strumenti ad alte prestazioni scritti in Rust.
+
+#### 1. Cosa controlla concretamente `ty`
+
+Un type checker statico non "esegue" il programma: analizza il codice e verifica che le operazioni siano coerenti con i tipi dichiarati o inferiti. Si consideri il seguente esempio minimale:
+
+```python
+from typing import Optional
+
+def upper_name(name: Optional[str]) -> str:
+        return name.upper()
+
+```
+
+Il codice puo' sembrare innocuo, ma il parametro `name` puo' assumere anche valore `None`; dunque l'invocazione `name.upper()` non e' garantita. Un type checker come `ty` segnala il problema prima ancora che il ramo difettoso venga eseguito a runtime.
+
+Un esempio corretto e' il seguente:
+
+```python
+from typing import Optional
+
+def upper_name(name: Optional[str]) -> str:
+        if name is None:
+                return ""
+        return name.upper()
+
+```
+
+Gli scenari in cui `ty` risulta particolarmente utile sono:
+
+- basi di codice di media e grande dimensione con molti moduli e import incrociati;
+
+- progetti con API interne tipizzate (`dataclass`, `TypedDict`, `Protocol`, generics);
+
+- backend FastAPI o librerie riutilizzabili, ove la stabilita' delle interfacce pubbliche e' fondamentale;
+
+- refactoring estesi, nei quali il type checking previene regressioni silenziose.
+
+#### 2. Modalita' di installazione: nessun setup, globale, locale al progetto
+
+`ty` puo' essere adottato con diversi livelli di persistenza operativa.
+
+##### A. Esecuzione immediata senza installazione persistente
+
+Il metodo piu' rapido e' usare `uvx`, che esegue `ty` in un ambiente effimero ma cache-izzato:
+
+```bash
+uvx ty check
+uvx ty check src tests
+uvx ty check --watch
+```
+
+Questa modalita' e' ideale per:
+
+- provare il tool su un repository esistente senza modificare le dipendenze;
+
+- eseguire verifiche una tantum in aula o in CI sperimentali;
+
+- valutare rapidamente il livello di rumore diagnostico prima di adottarlo stabilmente.
+
+##### B. Installazione globale stabile
+
+Se si desidera avere il comando disponibile ovunque nel `PATH`, si puo' installare `ty` come tool globale.
+
+Con `uv`:
+
+```bash
+uv tool install ty@latest
+ty version
+```
+
+Aggiornamento:
+
+```bash
+uv tool upgrade ty
+```
+
+Con `pipx`:
+
+```bash
+pipx install ty
+ty version
+```
+
+Aggiornamento:
+
+```bash
+pipx upgrade ty
+```
+
+Con `pip` nell'ambiente Python corrente:
+
+```bash
+pip install ty
+ty version
+```
+
+L'installazione via `pip` e' appropriata solo se si accetta di legare `ty` allo specifico interprete corrente; per uso sistemico risultano generalmente preferibili `uv tool install` o `pipx`.
+
+##### C. Installazione come dipendenza di sviluppo del singolo progetto
+
+Questo e' il modello piu' rigoroso per team e repository versionati, poiche' vincola la versione dello strumento al progetto stesso.
+
+Con `uv`:
+
+```bash
+uv add --dev ty
+uv run ty check
+```
+
+Aggiornamento controllato della dipendenza:
+
+```bash
+uv lock --upgrade-package ty
+uv sync
+```
+
+Con `pip` dentro il `.venv` del progetto:
+
+```bash
+pip install ty
+ty check
+```
+
+In termini metodologici, la regola puo' essere formulata cosi':
+
+- usare `uvx ty check` per esperimenti o esecuzioni spot;
+
+- usare `uv tool install ty` o `pipx install ty` per un tool personale sempre disponibile;
+
+- usare `uv add --dev ty` per garantire coerenza tra tutti i collaboratori del progetto.
+
+#### 3. Uso basilare senza configurazione dedicata
+
+Una caratteristica importante di `ty` e' la capacita' di funzionare bene anche in progetti senza configurazione esplicita. In assenza di setup avanzato:
+
+- cerca l'ambiente virtuale attivo tramite `VIRTUAL_ENV`;
+
+- se non trova un ambiente attivo, prova a individuare una directory `.venv` nella root del progetto;
+
+- in ultima istanza usa un interprete `python3` o `python` disponibile nel `PATH`.
+
+Pertanto, in un repository Python semplice, spesso e' sufficiente:
+
+```bash
+ty check
+```
+
+Oppure, se si vuole limitare l'analisi a percorsi specifici:
+
+```bash
+ty check src
+ty check src tests
+ty check app/main.py
+```
+
+Per mantenere il controllo continuamente attivo durante lo sviluppo:
+
+```bash
+ty check --watch
+```
+
+Esempio di progetto minimale senza configurazione dedicata:
+
+```text
+progetto_minimale/
+├── .venv/
+├── src/
+│   └── main.py
+└── pyproject.toml
+
+```
+
+Se `src/main.py` contiene annotazioni corrette e il `.venv` e' attivo o rilevabile, `ty` puo' operare immediatamente senza alcun file `ty.toml`.
+
+#### 4. Progetto moderno con `pyproject.toml`: configurazione consigliata
+
+Quando il progetto usa gia' `pyproject.toml`, la configurazione piu' naturale consiste nell'aggiungere la sezione `[tool.ty]`. Questo approccio centralizza in un unico file sia i metadati del progetto sia la configurazione del type checker.
+
+Esempio realistico per progetto con layout `src/`:
+
+```toml
+[project]
+name = "inventory-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.ty.src]
+include = ["src", "tests"]
+exclude = ["tests/fixtures/**", "generated/**"]
+
+[tool.ty.environment]
+python-version = "3.12"
+root = ["./src"]
+
+[tool.ty.rules]
+possibly-unresolved-reference = "warn"
+
+[tool.ty.terminal]
+output-format = "full"
+error-on-warning = false
+
+[[tool.ty.overrides]]
+include = ["tests/**", "**/test_*.py"]
+
+[tool.ty.overrides.rules]
+possibly-unresolved-reference = "ignore"
+```
+
+Questa configurazione esprime alcune best practice importanti:
+
+- `project.requires-python` aiuta `ty` a inferire correttamente la versione target del linguaggio;
+
+- `[tool.ty.src]` delimita esplicitamente il perimetro dell'analisi;
+
+- `[tool.ty.environment]` e' utile per specificare versione Python, root del progetto e, se necessario, interprete o ambiente non standard;
+
+- `[tool.ty.rules]` permette di graduare severita' diverse (`ignore`, `warn`, `error`);
+
+- `[[tool.ty.overrides]]` consente di allentare o irrigidire il controllo su aree specifiche, ad esempio test, file generati o directory sperimentali.
+
+Esecuzione tipica in questo scenario:
+
+```bash
+uv run ty check
+uv run ty check --watch
+```
+
+#### 5. Progetto senza `pyproject.toml` o con configurazione separata: `ty.toml`
+
+Non tutti i repository Python adottano una configurazione centralizzata in `pyproject.toml`. Nei progetti legacy, negli script didattici o nei repository multi-tool puo' essere preferibile un file dedicato `ty.toml`.
+
+In questo caso, la struttura della configurazione e' identica, ma **senza il prefisso `[tool.ty]`**.
+
+Esempio:
+
+```toml
+[src]
+include = ["src", "scripts"]
+exclude = ["build/**", "legacy/**"]
+
+[environment]
+python = "./.venv"
+python-version = "3.11"
+root = ["./src", "./scripts"]
+
+[rules]
+possibly-unresolved-reference = "warn"
+
+[analysis]
+allowed-unresolved-imports = ["vendor.**"]
+
+[terminal]
+output-format = "concise"
+```
+
+Questa variante e' appropriata quando:
+
+- il progetto non usa `pyproject.toml`;
+
+- si vuole mantenere il type checker separato dalla configurazione packaging/build;
+
+- si desidera una migrazione graduale, introducendo `ty` senza riorganizzare il repository.
+
+Va inoltre ricordato che, se in una stessa directory coesistono sia `pyproject.toml` sia `ty.toml`, `ty.toml` ha precedenza per la configurazione di `ty`.
+
+#### 6. Configurazioni pratiche per casi comuni
+
+##### A. Progetto moderno con layout `src/` e test separati
+
+```text
+inventory-service/
+├── .venv/
+├── pyproject.toml
+├── src/
+│   └── inventory_service/
+│       ├── __init__.py
+│       └── api.py
+└── tests/
+        └── test_api.py
+```
+
+Comandi consigliati:
+
+```bash
+uv add --dev ty
+uv run ty check
+```
+
+Configurazione consigliata: `root = ["./src"]`, inclusione di `src` e `tests`, override meno severi per test o fixture.
+
+##### B. Repository di script senza packaging formale
+
+```text
+script-utilities/
+├── .venv/
+├── scripts/
+│   ├── cleanup.py
+│   └── report.py
+└── ty.toml
+```
+
+Comandi consigliati:
+
+```bash
+ty check scripts
+ty check --watch scripts
+```
+
+Configurazione tipica: `include = ["scripts"]`, `python = "./.venv"`, output conciso.
+
+##### C. Repository legacy con dipendenze scarsamente tipizzate
+
+In codebase storiche e' frequente incontrare librerie prive di type hints affidabili o moduli interni non risolti perfettamente. In tali casi, si puo' adottare una strategia graduale:
+
+```toml
+[tool.ty.analysis]
+allowed-unresolved-imports = ["legacy_vendor.**"]
+replace-imports-with-any = ["pandas.**"]
+
+[tool.ty.rules]
+possibly-unresolved-reference = "warn"
+```
+
+Questo approccio riduce il rumore iniziale, consentendo di introdurre il type checking in modo incrementale invece di bloccare immediatamente tutta la pipeline.
+
+#### 7. Esecuzione esplicita con interprete o ambiente non standard
+
+Se `ty` non riesce a individuare correttamente l'ambiente, e' possibile specificarlo in modo esplicito.
+
+Da CLI:
+
+```bash
+ty check --python .venv
+ty check --python .venv/bin/python
+ty check --python .\.venv
+```
+
+Oppure via configurazione:
+
+```toml
+[tool.ty.environment]
+python = "./custom-venv/.venv"
+python-version = "3.12"
+```
+
+Questo e' particolarmente utile quando:
+
+- il virtual environment si trova in una directory non convenzionale;
+
+- si lavora con piu' ambienti Python paralleli;
+
+- si vuole rendere deterministica la risoluzione delle dipendenze in CI/CD.
+
+#### 8. Integrazione con VS Code
+
+L'integrazione editoriale di `ty` e' uno dei punti piu' interessanti dello strumento. Astral mantiene una estensione ufficiale per VS Code: `astral-sh.ty`.
+
+L'estensione offre:
+
+- diagnostica di type checking in tempo reale;
+
+- linguaggio server con navigazione del codice, completamenti, hover, auto-import e inlay hints;
+
+- integrazione diretta con la configurazione di `ty` e con l'ambiente Python del workspace.
+
+##### Modalita' A: usare `ty` come language server principale
+
+Questa modalita' e' coerente con una toolchain completamente centrata su Astral (`ruff + ty + uv`). L'estensione `ty` imposta di default `python.languageServer` a `"None"` per evitare di eseguire contemporaneamente due language server Python.
+
+Configurazione consigliata di `.vscode/settings.json`:
+
+```json
+{
+    "python.languageServer": "None",
+    "ty.diagnosticMode": "workspace",
+    "ty.inlayHints.variableTypes": true,
+    "ty.inlayHints.callArgumentNames": true,
+    "ty.completions.autoImport": true,
+    "ty.importStrategy": "fromEnvironment"
+}
+```
+
+Questa configurazione e' adatta quando si vuole che `ty` gestisca sia type checking sia servizi LSP principali.
+
+##### Modalita' B: usare `ty` solo per type checking e Pylance per IntelliSense
+
+In alcuni team puo' essere preferibile mantenere **Pylance** per completamento, navigazione e funzionalita' consolidate Microsoft, delegando a `ty` la sola diagnostica di tipo.
+
+Configurazione consigliata:
+
+```json
+{
+    "python.languageServer": "Pylance",
+    "ty.disableLanguageServices": true,
+    "ty.diagnosticMode": "workspace",
+    "ty.showSyntaxErrors": false
+}
+```
+
+Questa modalita' e' utile quando:
+
+- il team usa gia' Pylance e non vuole modificare radicalmente l'ergonomia editoriale;
+
+- si desidera confrontare gradualmente la qualita' diagnostica di `ty` rispetto a Pyright/Pylance;
+
+- si vuole evitare la sovrapposizione di hover, completamenti e definizioni provenienti da due server distinti.
+
+##### Modalita' C: forzare un binario specifico di `ty`
+
+Se il workspace usa una installazione locale o un path non standard, l'estensione consente di indicare esplicitamente l'eseguibile:
+
+```json
+{
+    "ty.path": ["${workspaceFolder}/.venv/Scripts/ty.exe"],
+    "ty.diagnosticMode": "workspace"
+}
+```
+
+Oppure, in ambiente POSIX:
+
+```json
+{
+    "ty.path": ["${workspaceFolder}/.venv/bin/ty"]
+}
+```
+
+In alternativa, si puo' indicare un interprete Python da cui l'estensione tentera' di ricavare `ty`:
+
+```json
+{
+    "ty.interpreter": ["${workspaceFolder}/.venv/bin/python"]
+}
+```
+
+##### Modalita' D: tre setup pronti per `settings.json`
+
+Alla luce dei test pratici piu' comuni in VS Code, e' utile distinguere tre profili operativi gia' pronti, ciascuno con obiettivi diversi. I seguenti blocchi sono concepiti per essere copiati nella configurazione utente o di workspace, fermo restando che l'impostazione `python.defaultInterpreterPath` e' da intendersi come **fallback iniziale** e non come selezione permanente dell'interprete del progetto.
+
+Se si desidera un interprete globale iniziale per i workspace nuovi, si puo' usare:
+
+```json
+"python.defaultInterpreterPath": "c:\\Program Files\\Python313\\python.exe"
+```
+
+Se invece si lavora sistematicamente con ambienti virtuali locali al repository, e' spesso preferibile omettere questa impostazione nelle user settings e selezionare l'interprete del progetto tramite il comando `Python: Select Interpreter`.
+
+###### Setup 1: `Ruff + Pylance` senza `ty`
+
+Questo e' il profilo piu' conservativo e, nella pratica, spesso quello che fornisce l'hover piu' ricco e dettagliato su classi, funzioni e simboli della libreria standard.
+
+```json
+"[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    }
+},
+"ruff.lineLength": 88,
+"ruff.lint.select": [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "SIM",
+    "PL",
+    "D",
+    "UP"
+],
+"python.languageServer": "Pylance",
+"python.analysis.typeCheckingMode": "standard",
+"python.analysis.autoImportCompletions": true,
+"python.analysis.importFormat": "absolute",
+"python.analysis.autoIndent": true,
+"python.analysis.enableTroubleshootMissingImports": true,
+"python.analysis.indexing": false
+```
+
+Cosa viene attivato in questo setup:
+
+- **Ruff**: formattazione, linting, fix automatici e organizzazione import;
+
+- **Pylance**: hover, completamento, go to definition, IntelliSense e type checking;
+
+- **ty**: non coinvolto nel workflow editoriale.
+
+Quando sceglierlo:
+
+- se si desidera la massima qualita' dell'esperienza editoriale in VS Code;
+
+- se si preferiscono hover piu' ricchi e documentativi;
+
+- se non e' necessario introdurre `ty` direttamente nell'editor.
+
+###### Setup 2: `Ruff + ty` come full Astral stack
+
+Questo profilo disattiva Pylance come language server e affida a `ty` sia il type checking sia i servizi LSP principali.
+
+```json
+"[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    }
+},
+"ruff.lineLength": 88,
+"ruff.lint.select": [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "SIM",
+    "PL",
+    "D",
+    "UP"
+],
+"python.languageServer": "None",
+"ty.disableLanguageServices": false,
+"ty.diagnosticMode": "workspace",
+"ty.inlayHints.variableTypes": true,
+"ty.inlayHints.callArgumentNames": true,
+"ty.completions.autoImport": true
+```
+
+Cosa viene attivato in questo setup:
+
+- **Ruff**: formattazione, linting, fix automatici e organizzazione import;
+
+- **ty**: type checking, hover, completamento, go to definition, inlay hints e auto-import;
+
+- **Pylance**: disattivato come language server.
+
+Quando sceglierlo:
+
+- se si vuole una toolchain coerente con l'ecosistema Astral (`uv + ruff + ty`);
+
+- se si accetta un hover talvolta piu' sintetico rispetto a Pylance;
+
+- se si desidera che il controllo statico e i servizi di linguaggio provengano dallo stesso tool.
+
+###### Setup 3: `Ruff + Pylance + ty` con `ty` solo per type checking
+
+Questo profilo ibrido mantiene Pylance per l'ergonomia editoriale e usa `ty` solo per la diagnostica di tipo.
+
+```json
+"[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit",
+        "source.organizeImports": "explicit"
+    }
+},
+"ruff.lineLength": 88,
+"ruff.lint.select": [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "SIM",
+    "PL",
+    "D",
+    "UP"
+],
+"python.analysis.typeCheckingMode": "off",
+"python.analysis.autoImportCompletions": true,
+"python.analysis.importFormat": "absolute",
+"python.analysis.autoIndent": true,
+"python.analysis.enableTroubleshootMissingImports": true,
+"python.analysis.indexing": false,
+"python.languageServer": "Pylance",
+"ty.disableLanguageServices": true,
+"ty.diagnosticMode": "workspace"
+```
+
+Cosa viene attivato in questo setup:
+
+- **Ruff**: formattazione, linting, fix automatici e organizzazione import;
+
+- **Pylance**: hover, completamento, go to definition e IntelliSense;
+
+- **ty**: type checking diagnostico nel workspace, senza hover o altri language services;
+
+- **Pylance type checking**: disattivato, per evitare sovrapposizioni con `ty`.
+
+Quando sceglierlo:
+
+- se si desidera mantenere l'hover e l'IntelliSense di Pylance;
+
+- se si vuole sperimentare `ty` come solo type checker;
+
+- se si desidera una migrazione graduale verso toolchain piu' moderne.
+
+Osservazione pratica importante:
+
+- in molti ambienti reali, il primo setup (`Ruff + Pylance`) continua a offrire l'hover piu' completo e ricco;
+
+- il secondo setup (`Ruff + ty`) privilegia la coerenza della toolchain Astral, ma puo' mostrare hover piu' essenziali;
+
+- il terzo setup (`Ruff + Pylance + ty`) e' teoricamente il piu' bilanciato, ma va verificato empiricamente nel proprio ambiente VS Code, poiche' l'interazione tra estensioni puo' variare.
+
+#### 9. Workflow operativi raccomandati
+
+##### Workflow A: adozione immediata senza cambiare il progetto
+
+```bash
+uvx ty check
+uvx ty check --watch
+```
+
+Ideale per audit iniziale di un repository esistente.
+
+##### Workflow B: progetto moderno con `uv`, Ruff e ty
+
+```bash
+uv add --dev ruff ty
+uv run ruff check .
+uv run ty check
+```
+
+Questo e' probabilmente il workflow piu' pulito per un nuovo progetto Python moderno.
+
+##### Workflow C: tool globale personale
+
+```bash
+uv tool install ty@latest
+ty check ~/progetti/mio-script
+```
+
+Appropriato per chi lavora spesso su repository eterogenei e vuole avere `ty` sempre disponibile senza entrare ogni volta in un venv.
+
+#### 10. Criteri decisionali
+
+Si raccomanda `ty` quando:
+
+- si desidera introdurre type checking statico in modo moderno e veloce;
+
+- si lavora gia' con `uv` e `ruff` e si vuole mantenere coerenza di ecosistema;
+
+- si vuole usare un language server capace di type checking incrementale ad alte prestazioni;
+
+- si preferisce una configurazione graduale, con regole modulabili tra `warn`, `error` e `ignore`.
+
+Si raccomanda invece di procedere con cautela nei seguenti casi:
+
+- codebase molto legacy con annotazioni quasi assenti, ove potrebbe essere necessario un onboarding graduale;
+
+- repository in cui il team dipende fortemente da un setup editoriale gia' costruito attorno a Pylance o mypy;
+
+- pipeline esistenti che richiedono una migrazione pianificata delle convenzioni di type checking.
+
+In sintesi, `ty` non va interpretato come semplice "linter dei tipi", ma come un componente strutturale della qualita' del software Python moderno: puo' essere usato senza setup, installato globalmente o versionato nel progetto, e si integra bene sia in workflow minimali sia in architetture professionali basate su `uv`, `ruff` e VS Code.
+
+### 9.5 Pylance, `ty` e il Language Server Protocol
+
+Nel panorama attuale di VS Code, **Pylance** e **ty** possono essere visti come due strategie differenti per portare intelligence editoriale e controllo statico nel workflow Python.
+
+- **Pylance**: eccelle nell'ecosistema Microsoft, offre IntelliSense maturo ed e' basato su Pyright.
+
+- **ty**: unisce type checking e language server in un tool unico, moderno e molto veloce, integrato nativamente con l'ecosistema Astral.
+
+- **Ruff/Pylint**: continuano a coprire il dominio del linting, dello stile e di alcune classi di bug non prettamente tipizzate.
+
+Le combinazioni operative piu' sensate oggi sono:
+
+- **Ruff + Pylance**: workflow molto diffuso, conservativo e ben supportato.
+
+- **Ruff + ty**: workflow moderno, coerente con `uv`, ad alte prestazioni.
+
+- **Ruff + Pylance + ty (solo diagnostica)**: soluzione ibrida per migrazioni graduali.
 
 ## 10. Tassonomia dei Casi d'Uso e Architetture di Riferimento
 
